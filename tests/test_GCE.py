@@ -266,6 +266,9 @@ class GCE_test(tests.vFXTTestCase.Base):
         instance = service.get_instance(self.gce['existing'][0]) # well known instance
         self.assertTrue(service.instance_in_use_addresses(instance))
 
+        available_addrs, _ = service.get_available_addresses(count=1)
+        self.assertFalse(service.instance_in_use_addresses(instance, '{}/32'.format(available_addrs[0])))
+
     def test_get_available_addresses(self):
         service = self.mk_gce_service()
         self.assertTrue(service.get_available_addresses())
@@ -343,6 +346,40 @@ class GCE_test(tests.vFXTTestCase.Base):
             i2.add_address(addr)
             i2.refresh()
             self.assertTrue(addr in i2.in_use_addresses())
+
+        finally:
+            if i1:
+                i1.destroy()
+            if i2:
+                i2.destroy()
+
+    def test_ip_alias(self):
+        from vFXT.serviceInstance import ServiceInstance
+        service = self.mk_gce_service()
+
+        subnetwork_region = service._zone_to_region(service.zones[0])
+        subnetworks = [_ for _ in service._get_subnetworks(subnetwork_region)]
+        if not subnetworks:
+            self.skipTest("skipping tests for no subnetwork configuration")
+        ipalias_range = subnetworks[0].get('ipCidrRange')
+
+        i1 = None
+        i2 = None
+        try:
+            i1 = ServiceInstance.create(service, self.gce['instance_type'], 'vfxttest-ip-alias-1', self.gce['image'], metadata={'purpose':'test'}, tags=['avere-dev'])
+            i2 = ServiceInstance.create(service, self.gce['instance_type'], 'vfxttest-ip-alias-2', self.gce['image'], metadata={'purpose':'test'}, tags=['avere-dev'])
+
+            addrs, _ = service.get_available_addresses(count=1, addr_range=ipalias_range)
+
+            # add to first instance
+            i1.add_address(addrs[0])
+            self.assertTrue(addrs[0] in i1.in_use_addresses())
+            self.assertTrue(addrs[0] not in i2.in_use_addresses())
+
+            # move it
+            i2.add_address(addrs[0])
+            self.assertTrue(addrs[0] not in i1.in_use_addresses())
+            self.assertTrue(addrs[0] in i2.in_use_addresses())
 
         finally:
             if i1:

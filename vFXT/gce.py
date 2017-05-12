@@ -260,13 +260,6 @@ class Service(ServiceBase):
         except vFXTServiceTimeout as e:
             raise vFXTServiceConnectionFailure(e)
 
-        if self.private_range:
-            # cannot overlap with the network range(s)
-            ranges = [Cidr(_) for _ in self._get_network_address_ranges()]
-            addr_from_private_range = Cidr(self.private_range).start_address()
-            if any([_.contains(addr_from_private_range) for _ in ranges]):
-                raise vFXTConfigurationException('Unable to use the specified address range {} for VM instances'.format(self.private_range))
-
         if not no_connection_test:
             self.connection_test()
 
@@ -961,7 +954,10 @@ class Service(ServiceBase):
             Arguments:
                 instance: backend instance
         '''
-        return instance['networkInterfaces'][0].get('networkIP')
+        try:
+            return instance['networkInterfaces'][0]['networkIP']
+        except Exception:
+            log.error("Unable to find first networkInterface networkIP in {}".format(instance))
 
     def fqdn(self, instance): # XXX revisit
         '''Provide the fully qualified domain name of the instance
@@ -1295,13 +1291,23 @@ class Service(ServiceBase):
         addresses = set()
 
         if category in ['all', 'interfaces']:
-            for instance in self.find_instances(all_regions=False):
+            for instance in self.find_instances(all_regions=True):
                 for interface in instance['networkInterfaces']:
                     interface_address = interface.get('networkIP')
-                    if not interface_address:
-                        continue
-                    if c.contains(interface_address):
-                        addresses.add(interface_address)
+                    if interface_address:
+                        if c.contains(interface_address):
+                            addresses.add(interface_address)
+                    if 'aliasIpRanges' in interface:
+                        ip_aliases = interface.get('aliasIpRanges')
+                        for ip_alias in ip_aliases:
+                            if '/' in ip_alias['ipCidrRange'] and ip_alias['ipCidrRange'].split('/')[-1] != '32':
+                                alias_range = Cidr(ip_alias['ipCidrRange'])
+                                alias_addresses = Cidr.expand_address_range(alias_range.start_address(), alias_range.end_address())
+                                addresses.update(alias_addresses)
+                                continue
+                            alias_address = ip_alias['ipCidrRange'].split('/')[0]
+                            if c.contains(alias_address):
+                                addresses.add(alias_address)
 
         if category in ['all', 'routes']:
             search = 'destRange eq .*/32' # only point to point addresses
@@ -1330,16 +1336,32 @@ class Service(ServiceBase):
 
             Raises: vFXTConfigurationException
         '''
+        honor_reserves = True # leave out reserved (first 4) addresses in a cidr range
+
         # find an unused range, either provided or default
-        addr_range = addr_range or self.private_range or self.DEFAULT_CLUSTER_NETWORK_RANGE
+        addr_range = addr_range or self.private_range
+        if not addr_range:
+            network = self._get_network()
+            if 'subnetworks' in network:
+                subnetwork = self._get_subnetwork(self.subnetwork_id)
+                if 'secondaryIpRanges' in subnetwork:
+                    honor_reserves = False
+                    r = subnetwork['secondaryIpRanges'][0] # XXX only using the first one (support more than one if avail?)
+                    addr_range = r['ipCidrRange']
+                    log.debug("Using subnetwork {} {} secondary range of {}".format(subnetwork['name'], r.get('rangeName', 'unnamed'), r['ipCidrRange']))
+                else:
+                    addr_range = subnetwork['ipCidrRange']
+        # otherwise we use our defaults
+        addr_range = addr_range or self.DEFAULT_CLUSTER_NETWORK_RANGE
+
         used = self.in_use_addresses(addr_range)
         if in_use:
             used.extend(in_use)
             used = list(set(used))
-        addr_cidr  = Cidr(addr_range)
+        addr_cidr = Cidr(addr_range)
 
         try:
-            avail   = addr_cidr.available(count, contiguous, used)
+            avail   = addr_cidr.available(count, contiguous, used, honor_reserves)
             netmask = "255.255.255.255" # hardcoded for gce /32
             return (avail, netmask)
         except Exception as e:
@@ -1416,7 +1438,7 @@ class Service(ServiceBase):
         conn       = self.connection()
         network    = self._get_network()
         zone       = options.get('zone') or self.zones[0]
-        subnetwork = options.get('subnetwork') or None
+        subnetwork = options.get('subnetwork') or self.subnetwork_id
         disk_type  = options.get('disk_type') or machine_defs['root_disk_type']
         root_size  = options.get('root_size') or None
         metadata   = options.get('metadata', None)
@@ -1462,21 +1484,17 @@ class Service(ServiceBase):
         body['networkInterfaces'] = [{'network': network['selfLink']}]
 
         if subnetwork:
-            sn = self._get_subnetwork(subnetwork)
-            body['networkInterfaces'][0]['subnetwork'] = sn['selfLink']
-            body['networkInterfaces'][0]['network'] = sn['network']
+            subnetwork = self._get_subnetwork(subnetwork)
+            body['networkInterfaces'][0]['subnetwork'] = subnetwork['selfLink']
+            body['networkInterfaces'][0]['network'] = subnetwork['network']
         else:
             subnetwork_region = self._zone_to_region(zone)
             subnetworks = [_ for _ in self._get_subnetworks(subnetwork_region)]
-            if self.subnetwork_id:
-                _subnetworks = [_ for _ in subnetworks if _['name'] == self.subnetwork_id]
-                if _subnetworks:
-                    body['networkInterfaces'][0]['subnetwork'] = _subnetworks[0]['selfLink']
-                else:
-                    raise vFXTConfigurationException("Unable to find subnetwork {}".format(self.subnetwork_id))
-            elif subnetworks: # no subnetwork specified, but we have them so use one
-                log.warning("No subnetwork specified, picking {}".format(subnetworks[0]['selfLink']))
-                body['networkInterfaces'][0]['subnetwork'] = subnetworks[0]['selfLink']
+            if subnetworks: # no subnetwork specified, but we have them so use one
+                subnetwork = subnetworks[0]
+                log.warning("No subnetwork specified, picking {}".format(subnetwork['selfLink']))
+                body['networkInterfaces'][0]['subnetwork'] = subnetwork['selfLink']
+                body['networkInterfaces'][0]['network'] = subnetwork['network']
 
         # optional ephemeral address
         if options.get('auto_public_address', False):
@@ -1485,6 +1503,16 @@ class Service(ServiceBase):
             body['networkInterfaces'][0]['accessConfigs'] = nat_config
         if options.get('private_ip_address', False):
             body['networkInterfaces'][0]['networkIP'] = options.get('private_ip_address')
+        if 'secondary_addresses' in options:
+            body['networkInterfaces'][0]['aliasIpRanges'] = []
+            for secondary_address in options.get('secondary_addresses'):
+                ip_cidr_range = {'ipCidrRange': secondary_address}
+                # if this is part of a subnetwork secondary range, we have to name it
+                if subnetwork:
+                    for secondary_range in subnetwork.get('secondaryIpRanges', []):
+                        if Cidr(secondary_range['ipCidrRange']).contains(secondary_address):
+                            ip_cidr_range['subnetworkRangeName'] = secondary_range['rangeName']
+                body['networkInterfaces'][0]['aliasIpRanges'].append(ip_cidr_range)
 
         scopes = options.get('scopes') or self.DEFAULT_SCOPES
         if not isinstance(scopes, list) or not all([_.startswith('http') for _ in scopes]):
@@ -1923,21 +1951,6 @@ class Service(ServiceBase):
             cluster.name         = self.CLUSTER_NODE_NAME_RE.search(cluster.nodes[0].name()).groups()[0]
 
     # gce specific
-    def _get_network_address_ranges(self):
-        conn = self.connection()
-        ranges = set()
-        networks = _gce_do(conn.networks().list, project=self.network_project_id)['items']
-        for network in networks:
-            # for legacy, non-subnet networks
-            ipv4_range = network.get('IPv4Range')
-            if ipv4_range:
-                ranges.add(ipv4_range)
-            for subnetwork_id in network.get('subnetworks', []):
-                subnetwork = self._get_subnetwork(subnetwork_id.split('/')[-1])
-                ranges.add(subnetwork.get('ipCidrRange'))
-                # subnetwork.secondaryIpRanges[*]['ipCidrRange'] are allowed to be used by instances
-        return list(ranges)
-
     def _get_network(self):
         '''Get the network object'''
         conn = self.connection()
@@ -2230,42 +2243,81 @@ class Service(ServiceBase):
 
         '''
         conn = self.connection()
+        addr = Cidr('{}/32'.format(address)) # validates
+        dest = '{}/32'.format(addr.address)
+        zone = instance['zone'].split('/')[-1]
+        network = self._get_network()
+
         try:
-            addr = Cidr('{}/32'.format(address)) # validates
-            dest = '{}/32'.format(addr.address)
+            # need to check network/subnetwork ranges, if this address falls within those ranges
+            # we can use the ip alias feature... otherwise we fall back to the route approach.
+            ipalias_ranges = []
+            subnetwork = None
+            if self.subnetwork_id:
+                subnetwork = self._get_subnetwork(self.subnetwork_id)
+            if not subnetwork:
+                subnetwork_region = self._zone_to_region(zone)
+                subnetworks = [_ for _ in self._get_subnetworks(subnetwork_region)]
+                if subnetworks: # no subnetwork specified, but we have them so use one
+                    subnetwork = subnetworks[0]
+            if subnetwork:
+                if 'ipCidrRange' in subnetwork:
+                    ipalias_ranges.append(subnetwork.get('ipCidrRange'))
+                for subrange in subnetwork.get('secondaryIpRanges', []):
+                    if 'ipCidrRange' in subrange:
+                        ipalias_ranges.append(subrange.get('ipCidrRange'))
 
-            # check for existing
-            dest_filter = 'destRange eq {}'.format(dest)
-            resp = _gce_do(conn.routes().list, project=self.network_project_id, filter=dest_filter)
-            if 'items' in resp:
-                existing = resp['items']
-                network_selflink = self._get_network()['selfLink']
-                # if we are the next hop instance for a route in our current network
-                if instance['selfLink'] in [_['nextHopInstance'] for _ in existing if _['network'] == network_selflink and 'nextHopInstance' in _]:
-                    raise vFXTConfigurationException("Instance already has a route for this address: {}".format(dest))
-                if not options.get('allow_reassignment', True):
-                    raise vFXTConfigurationException("Route already assigned: {}".format(existing))
+            if any([Cidr(_).contains(address) for _ in ipalias_ranges]):
+                nic = instance['networkInterfaces'][0] # XXX only care about the first iface
+                aliases = nic.get('aliasIpRanges', [])
+                if dest in [_['ipCidrRange'] for _ in aliases]:
+                    raise vFXTConfigurationException("Address already assigned: {}".format(address))
 
-                for route in existing:
-                    log.debug("Deleting route {}".format(route['name']))
-                    resp = _gce_do(conn.routes().delete, project=self.network_project_id, route=route['name'])
-                    self._wait_for_operation(resp, msg='route to be deleted', op_type='globalOperations')
+                aliases.append({'ipCidrRange': dest})
+                nic['aliasIpRanges'] = aliases
 
-            # add the route
-            body = {
-                'name': '{}-{}'.format(self.name(instance), addr.address.replace('.', '-')),
-                'network': self._get_network()['selfLink'],
-                'nextHopInstance': instance['selfLink'],
-                'destRange': dest,
-                'priority': options.get('priority') or 900,
-            }
-            log.debug('Adding instance address body {}'.format(body))
-            resp = _gce_do(conn.routes().insert, project=self.network_project_id, body=body)
-            self._wait_for_operation(resp, msg='route to be created', op_type='globalOperations')
+                other_instance = self._who_has_ip(address)
+                if other_instance:
+                    log.debug("{} has {}, removing".format(other_instance['name'], address))
+                    self.remove_instance_address(other_instance, address)
+
+                log.debug('Adding instance address body {}'.format(nic))
+                resp = _gce_do(conn.instances().updateNetworkInterface, instance=instance['name'], project=self.project_id, zone=zone, networkInterface=nic['name'], body=nic)
+                self._wait_for_operation(resp, msg='IP Alias configuration', zone=zone)
+
+            else: # XXX or fall back to routes
+                # check for existing
+                dest_filter = 'destRange eq {}'.format(dest)
+                resp = _gce_do(conn.routes().list, project=self.network_project_id, filter=dest_filter)
+                if 'items' in resp:
+                    existing = resp['items']
+                    network_selflink = network['selfLink']
+                    # if we are the next hop instance for a route in our current network
+                    if instance['selfLink'] in [_['nextHopInstance'] for _ in existing if _['network'] == network_selflink and 'nextHopInstance' in _]:
+                        raise vFXTConfigurationException("Instance already has a route for this address: {}".format(dest))
+                    if not options.get('allow_reassignment', True):
+                        raise vFXTConfigurationException("Route already assigned: {}".format(existing))
+
+                    for route in existing:
+                        log.debug("Deleting route {}".format(route['name']))
+                        resp = _gce_do(conn.routes().delete, project=self.network_project_id, route=route['name'])
+                        self._wait_for_operation(resp, msg='route to be deleted', op_type='globalOperations')
+
+                # add the route
+                body = {
+                    'name': '{}-{}'.format(self.name(instance), addr.address.replace('.','-')),
+                    'network': network['selfLink'],
+                    'nextHopInstance': instance['selfLink'],
+                    'destRange': dest,
+                    'priority': options.get('priority') or 900,
+                }
+                log.debug('Adding instance address body {}'.format(body))
+                resp = _gce_do(conn.routes().insert,project=self.network_project_id, body=body)
+                self._wait_for_operation(resp, msg='route to be created', op_type='globalOperations')
         except vFXTConfigurationException as e:
             raise
         except Exception as e:
-            raise vFXTServiceFailure("Failed to create route: {}".format(e))
+            raise vFXTServiceFailure("Failed to add address: {}".format(e))
 
     def remove_instance_address(self, instance, address):
         '''Remove an instance route address
@@ -2277,23 +2329,36 @@ class Service(ServiceBase):
             Raises: vFXTServiceFailure
         '''
         conn = self.connection()
+        addr = Cidr('{}/32'.format(address)) # validates
+        dest = '{}/32'.format(addr.address)
+        zone = instance['zone'].split('/')[-1]
+
         try:
-            addr = Cidr('{}/32'.format(address)) # validates
-            expr = 'destRange eq {}/32'.format(addr.address)
-            routes = _gce_do(conn.routes().list, project=self.network_project_id, filter=expr)
-            if not routes or 'items' not in routes:
-                raise vFXTConfigurationException("No route was found for {}".format(addr.address))
-            for route in routes['items']:
-                if instance['selfLink'] != route['nextHopInstance']:
-                    log.warning("Skipping route destined for other host: {} -> {}".format(address, route['nextHopInstance']))
-                    continue
-                log.debug("Deleting route {}".format(route['name']))
-                resp = _gce_do(conn.routes().delete, project=self.network_project_id, route=route['name'])
-                self._wait_for_operation(resp, msg='route to be deleted', op_type='globalOperations')
+            nic = instance['networkInterfaces'][0]
+            aliases = nic.get('aliasIpRanges', [])
+            if dest not in [_['ipCidrRange'] for _ in nic.get('aliasIpRanges', [])]:
+                # XXX or fall back on routes
+                expr = 'destRange eq {}'.format(dest)
+                routes = _gce_do(conn.routes().list, project=self.network_project_id,filter=expr)
+                if not routes or 'items' not in routes:
+                    #raise vFXTConfigurationException("No route was found for {}".format(addr.address))
+                    raise vFXTConfigurationException("Address not assigned: {}".format(address))
+                for route in routes['items']:
+                    if instance['selfLink'] != route['nextHopInstance']:
+                        log.warning("Skipping route destined for other host: {} -> {}".format(address, route['nextHopInstance']))
+                        continue
+                    log.debug("Deleting route {}".format(route['name']))
+                    resp = _gce_do(conn.routes().delete, project=self.network_project_id, route=route['name'])
+                    self._wait_for_operation(resp, msg='route to be deleted', op_type='globalOperations')
+                return
+            # prune the ip aliases
+            nic['aliasIpRanges'] = [_ for _ in aliases if _['ipCidrRange'] != dest]
+            resp = _gce_do(conn.instances().updateNetworkInterface, instance=instance['name'], project=self.project_id, zone=zone, networkInterface=nic['name'], body=nic)
+            self._wait_for_operation(resp, msg='IP Alias configuration', zone=zone)
         except vFXTConfigurationException as e:
             raise
         except Exception as e:
-            raise vFXTServiceFailure("Failed to delete route: {}".format(e))
+            raise vFXTServiceFailure("Failed to remove address: {}".format(e))
 
     def instance_in_use_addresses(self, instance, category='all'):
         '''Get the in use addresses for the instance
@@ -2309,9 +2374,17 @@ class Service(ServiceBase):
         if category in ['all', 'instance']:
             for interface in instance['networkInterfaces']:
                 interface_address = interface.get('networkIP')
-                if not interface_address:
-                    continue
-                addresses.add(interface_address)
+                if interface_address:
+                    addresses.add(interface_address)
+                if 'aliasIpRanges' in interface:
+                    ip_aliases = interface.get('aliasIpRanges')
+                    for ip_alias in ip_aliases:
+                        # we don't need to support ranges here... that just means they are auto assigned
+                        # and not a specific address
+                        # addresses.update(set(Cidr.expand_address_range(cidr_alias.start_address(), cidr_alias.end_address())))
+                        if '/' in ip_alias['ipCidrRange'] and ip_alias['ipCidrRange'].split('/')[-1] != '32':
+                            continue
+                        addresses.add(ip_alias['ipCidrRange'].split('/')[0])
 
         if category in ['all', 'routes']:
             search = 'nextHopInstance eq .*/{}'.format(instance['name'])
@@ -2436,6 +2509,8 @@ class Service(ServiceBase):
             "foo"
             "projects/project-foo/regions/us-east1/subnetworks/foo"
         '''
+        if not subnetwork:
+            raise vFXTConfigurationException("You must specify a subnetwork name")
         parts = subnetwork.split('/')
         if len(parts) not in [1, 6]:
             raise vFXTConfigurationException("Invalid subnetwork name: {}".format(subnetwork))

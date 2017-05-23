@@ -396,8 +396,17 @@ class Service(ServiceBase):
 
         if not all([access_key, secret_key]):
             raise vFXTConfigurationException("Unable to read local credentials.  Try 'aws configure help'")
-
         log.debug("Read access key {} and secret key from local credentials".format(access_key))
+
+        if not kwargs.get('region'):
+            config_path = os.path.join(os.path.expanduser('~'), '.aws', 'config')
+            cred_config.load_from_path(config_path)
+            region = cred_config.get(profile, 'region')
+            if not region:
+                raise vFXTConfigurationException("Unable to read region.  Try 'aws configure help'")
+            kwargs['region'] = region
+            log.debug("Read region {} from local configuration".format(region))
+
         return Service(access_key=access_key, secret_access_key=secret_key, security_token=token, **kwargs)
 
     @classmethod

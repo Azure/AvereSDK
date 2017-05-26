@@ -933,19 +933,32 @@ class Cluster(object):
         '''Destroy the cluster
 
             Arguments:
-                remove_buckets (bool=False): EXPERIMENTAL bucket removal
+                remove_buckets (bool, optional): EXPERIMENTAL bucket removal (defaults to False)
+                quick_destroy (bool, optional) skip cleanup steps that prevent data loss (defaults to False)
 
                 **options: passed to ServiceInstance.destroy()
         '''
         buckets = []
-        if remove_buckets:
-            try:
-                buckets = [d['bucket'] for c in [self.xmlrpc().corefiler.get(cf) \
-                            for cf in self.xmlrpc().corefiler.list()] \
-                            for d in c.values() \
-                            if 'bucket' in d and d['s3Type'] == self.service.S3TYPE_NAME]
-            except Exception as e:
-                log.debug("Failed to lookup buckets: {}".format(e))
+        if not options.pop('quick_destroy', False):
+            xmlrpc = self.xmlrpc()
+
+            # remove all junctions
+            for vserver in xmlrpc.vserver.list():
+                log.info("Suspending vserver {}".format(vserver))
+                activity = xmlrpc.vserver.suspend(vserver)
+                self._xmlrpc_wait_for_activity(activity, "Failed to suspend vserver {}".format(vserver))
+                for junction in xmlrpc.vserver.listJunctions(vserver):
+                    log.info("Removing junction {} from vserver {}".format(junction['path'], vserver))
+                    activity = xmlrpc.vserver.removeJunction(vserver, junction['path'])
+                    self._xmlrpc_wait_for_activity(activity, "Failed to remove junction {} from vserver {}".format(junction['path'], vserver))
+
+            # remove corefilers to force a flush
+            corefilers = {k:v for _ in xmlrpc.corefiler.list() for k,v in xmlrpc.corefiler.get(_).items()}
+            for corefiler, data in corefilers.items():
+                if 'bucket' in data and data['s3Type'] == self.service.S3TYPE_NAME:
+                    buckets.append(data['bucket'])
+                log.info("Removing corefiler {}".format(corefiler))
+                self.remove_corefiler(corefiler)
 
         self.parallel_call(self.nodes, 'destroy', **options)
         if remove_buckets and buckets:

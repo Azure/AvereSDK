@@ -196,8 +196,7 @@ def main():
     parser.add_argument("--skip-cleanup", help="Do not cleanup buckets, volumes, instances, etc on failure", action="store_true")
     parser.add_argument("--wait-for-state", help="When done configuring the vFXT cluster wait for cluster state red, yellow, or green. The default is yellow.",
                     choices=['red', 'yellow', 'green'], default="yellow")
-    parser.add_argument("--poll-time", help=argparse.SUPPRESS, # seconds per poll when waiting
-                        default=1, type=int)
+    parser.add_argument("--poll-time", help=argparse.SUPPRESS, default=1, type=int) # seconds per poll when waiting
     parser.add_argument('--proxy-uri', help='Proxy resource for API calls, example http://user:pass@172.16.16.20:8080/', metavar="URL", type=_validate_url)
     parser.add_argument('--ssh-key', help="SSH key for cluster authentication (path to public key file for GCE, key name for AWS)", type=str, default=None)
 
@@ -239,6 +238,7 @@ def main():
     cluster_opts.add_argument('--cluster-address-range-start', help=argparse.SUPPRESS, type=_validate_ip)
     cluster_opts.add_argument('--cluster-address-range-end', help=argparse.SUPPRESS, type=_validate_ip)
     cluster_opts.add_argument('--cluster-address-range-netmask', help=argparse.SUPPRESS, type=_validate_ip)
+    cluster_opts.add_argument('--quick-destroy', help="Skip cleanup steps that prevent data loss", action="store_true")
 
     # corefiler
     cluster_opts.add_argument("--no-corefiler", help="Skip creating core filer", action='store_true')
@@ -576,7 +576,7 @@ def main():
         node_names = ', '.join([i.name() for i in cluster.nodes])
         logger.info("Destroying cluster with nodes {}".format(node_names))
         try:
-            cluster.destroy()
+            cluster.destroy(quick_destroy=args.quick_destroy)
         except Exception as e:
             if args.debug:
                 logger.exception(e)

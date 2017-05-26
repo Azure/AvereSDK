@@ -1312,7 +1312,7 @@ class Cluster(object):
         activity = self.xmlrpc().vserver.create(name, {'firstIP': start_address, 'lastIP': end_address, 'netmask':netmask})
         self._xmlrpc_wait_for_activity(activity, "Failed to create vserver {}".format(name), retries=retries)
 
-    def add_vserver_junction(self, vserver, corefiler, path=None, export='/', subdir=None, retries=ServiceBase.WAIT_FOR_STATUS):
+    def add_vserver_junction(self, vserver, corefiler, path=None, export='/', subdir=None, retries=ServiceBase.XMLRPC_RETRIES):
         '''Add a Junction to a Vserver
 
             Arguments:

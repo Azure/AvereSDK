@@ -105,6 +105,7 @@ def _add_nfs_corefiler(cluster, logger, args):
     server = args.nfs_mount.split(':')[0]
     logger.info("Creating core filer {}".format(corefiler))
     cluster.attach_corefiler(corefiler, server)
+    return corefiler
 
 def _add_bucket_corefiler(cluster, logger, args):
     bucketname = args.bucket or "{}-{}".format(cluster.name, str(uuid.uuid4()).lower().replace('-', ''))[0:63]
@@ -126,6 +127,7 @@ def _add_bucket_corefiler(cluster, logger, args):
         logger.info("Attaching an existing bucket {} to corefiler {}".format(bucketname, corefiler))
         bucket_opts['existing_data'] = args.bucket_not_empty
         cluster.attach_bucket(corefiler, bucketname, master_password=args.admin_password, **bucket_opts)
+    return corefiler
 
 def main():
     parser = argparse.ArgumentParser(description="Create an Avere vFXT cluster", version=vFXT.__version__)

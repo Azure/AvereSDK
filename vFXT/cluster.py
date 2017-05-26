@@ -1155,7 +1155,7 @@ class Cluster(object):
                 try:
                     r = self.xmlrpc().corefiler.activateMasterKey(corefiler, key['keyId'], key['recoveryFile'])
                     if r != 'success':
-                        raise vFXTConfigurationException(response)
+                        raise vFXTConfigurationException(r)
                     break
                 except Exception as e:
                     log.debug(e)

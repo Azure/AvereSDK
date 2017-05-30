@@ -494,6 +494,36 @@ class Cluster(object):
             retries -= 1
             self._sleep()
 
+    def _xmlrpc_do(self, f, *args, **kwargs):
+        '''Run an xmlrpc function, retrying depending on the xmlrpc Fault
+
+            Arguments:
+                f (callable): rpc proxy function to call
+                *args: rpc arg list
+                **kwargs: rpc arg keywords
+
+            _xmlrpc_do_retries kwarg is special, defaults to XMLRPC_RETRIES
+
+            Retry errors include
+                100 AVERE_ERROR
+                102 AVERE_ENOENT
+                109 AVERE_EBUSY
+        '''
+        retry_errors = [100, 102, 109]
+        retries = kwargs.pop('_xmlrpc_do_retries', self.service.XMLRPC_RETRIES)
+        while True:
+            try:
+                return f(*args, **kwargs)
+            except xmlrpclib_Fault as e:
+                log.debug("avere xmlrpc failure: {}".format(e))
+                if retries == 0 or int(e.faultCode) not in retry_errors:
+                    raise
+            except Exception as e:
+                log.debug("avere xmlrpc failure: {}".format(e))
+                if retries == 0:
+                    raise
+            retries -= 1
+
     def _xmlrpc_wait_for_activity(self, activity, error_msg, retries=None):
         '''Wait for a xmlrpc activity to complete
 

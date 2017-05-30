@@ -97,9 +97,9 @@ class AWS_test(tests.vFXTTestCase.Base):
     def test_create_instance(self):
         from vFXT.serviceInstance import ServiceInstance
         service = self.mk_aws_service()
-        name = 'vfxttest-lg-test-{}'.format(int(time.time()))
-        instance = ServiceInstance.create(service, self.aws['instance_type'], name, self.aws['ami'], subnet=self.aws['subnet'], tags={'Name':'vfxt-test-deleteme'})
-        self.assertTrue(instance.instance.tags['Name'] == 'vfxt-test-deleteme')
+        name = 'vfxtpy-unittest-{}'.format(int(time.time()))
+        instance = ServiceInstance.create(service, self.aws['instance_type'], name, self.aws['ami'], subnet=self.aws['subnet'], tags={'Name':name})
+        self.assertTrue(instance.instance.tags['Name'] == name)
 
         try:
             self.assertTrue(instance.name())

@@ -135,7 +135,7 @@ class GCE_test(tests.vFXTTestCase.Base):
     def test_create_instance(self):
         from vFXT.serviceInstance import ServiceInstance
         service = self.mk_gce_service()
-        name = 'vfxttest-lg-test-{}'.format(int(time.time()))
+        name = 'vfxtpy-unittest-{}'.format(int(time.time()))
         instance = ServiceInstance.create(service, self.gce['instance_type'], name, self.gce['image'], metadata={'purpose':'test'}, tags=['avere-dev'])
         self.assertTrue('avere-dev' in instance.instance['tags']['items'])
         self.assertTrue(service._get_metadata(instance.instance, 'purpose') == 'test')

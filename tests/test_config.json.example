@@ -19,7 +19,8 @@
         "existing_instances": ["an existing instance id to test against", "2nd instance id"],
         "vfxt_image": null,
         "check_on_instance": false,
-        "check_from_environment": false
+        "check_from_environment": false,
+        "private_range": null
     },
     "aws": {
         "enabled": true,

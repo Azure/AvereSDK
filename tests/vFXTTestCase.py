@@ -42,6 +42,7 @@ class Base(unittest.TestCase):
             self.gce['vfxt_image']              = test_config['gce']['vfxt_image']
             self.gce['check_on_instance']       = test_config['gce']['check_on_instance']
             self.gce['check_from_environment']  = test_config['gce']['check_from_environment']
+            self.gce['private_range']           = test_config['gce']['private_range']
             self.aws = {}                       # aws options
             self.aws['enabled']                 = test_config['aws']['enabled']
             self.aws['access_key']              = test_config['aws']['access_key']
@@ -78,6 +79,7 @@ class Base(unittest.TestCase):
         zone_id         = self.gce['zone_id']
         network_id      = self.gce['network_id']
         key_file        = self.gce['key_file']
-        return GCE(client_email=client_email, key_file=key_file, zone=zone_id, project_id=project_id, network_id=network_id)
+        private_range   = self.gce['private_range']
+        return GCE(client_email=client_email, key_file=key_file, zone=zone_id, project_id=project_id, network_id=network_id, private_range=private_range)
 
 

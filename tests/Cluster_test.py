@@ -79,7 +79,7 @@ class Cluster_test(tests.vFXTTestCase.Base):
             self.assertTrue(cluster.in_use_addresses('cluster'))
 
             node_count = len(cluster.nodes)
-            cluster.add_nodes(3)
+            cluster.add_nodes(1)
             new_node_count = len(cluster.nodes)
             self.assertTrue(new_node_count > node_count)
             self.assertTrue(new_node_count == len(cluster.xmlrpc().node.list()))
@@ -152,7 +152,7 @@ class Cluster_test(tests.vFXTTestCase.Base):
             self.assertTrue(cluster.in_use_addresses('cluster'))
 
             node_count = len(cluster.nodes)
-            cluster.add_nodes(3)
+            cluster.add_nodes(1)
             new_node_count = len(cluster.nodes)
             self.assertTrue(new_node_count > node_count)
             self.assertTrue(new_node_count == len(cluster.xmlrpc().node.list()))

@@ -355,12 +355,17 @@ def main():
             if args.subnetwork:
                 service.subnetwork_id = args.subnetwork
         else:
-            if not args.from_environment and not all([args.network, args.zone, args.key_file]):
-                logger.error("Arguments network, zone, and key or key-file are required")
-                parser.exit(1)
-            if not args.key_file and not all([args.client_email, args.project]):
-                logger.error("Arguments client_email and project are required with key")
-                parser.exit(1)
+            if args.from_environment:
+                if not all([args.project, args.network, args.zone]):
+                    logger.error("Arguments project, network, and zone are required with environment")
+                    parser.exit(1)
+            else:
+                if not all([args.network, args.zone, args.key_file]):
+                    logger.error("Arguments network, zone, and key or key-file are required")
+                    parser.exit(1)
+                if not args.key_file and not all([args.client_email, args.project]):
+                    logger.error("Arguments client_email and project are required with key")
+                    parser.exit(1)
 
             opts = {
                 'client_email': args.client_email,

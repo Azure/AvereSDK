@@ -60,6 +60,13 @@ class GCE_test(tests.vFXTTestCase.Base):
         self.assertRaises(vFXT.service.vFXTConfigurationException, Service, client_email='', zone='', project_id='', network_id='')
         self.assertRaises(vFXT.service.vFXTServiceConnectionFailure, Service, client_email='fake', key_file='not_real', zone='', project_id='fake', network_id='')
 
+    def test__init___with_key_data(self):
+        service = self.mk_gce_service()
+        import json
+        key_data = json.load(open(self.gce['key_file']))
+        withkey = Service(key_data=key_data, zone=service.zones[0], network_id=service.network_id)
+        self.assertIsInstance(withkey, vFXT.gce.Service)
+
     def test_init__with_incomplete(self):
         self.assertRaises(vFXT.service.vFXTConfigurationException, Service, network_id='', zone='', project_id='', client_email='')
         self.assertRaises(vFXT.service.vFXTConfigurationException, Service, network_id='', zone='', project_id='asdf', client_email='')

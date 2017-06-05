@@ -192,7 +192,7 @@ class Service(ServiceBase):
         self.defaults     = {}
         self.client_email = client_email
         self.key_file     = key_file
-        self.key_data     = None
+        self.key_data     = key_data
         self.access_token = access_token
         self.project_id   = project_id
         self.zones        = [zone] if isinstance(zone, basestring) else zone

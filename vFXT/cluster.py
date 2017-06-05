@@ -93,7 +93,7 @@ try:
     cluster.add_vserver_junction('vserver', 'aws')
 except Exception as e:
     cluster.destroy(remove_buckets=True)
-    raise e
+    raise
 
 
 '''

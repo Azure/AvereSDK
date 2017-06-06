@@ -134,6 +134,7 @@ class Service(ServiceBase):
         "r4.2xlarge":   {"data_disk_count":10, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":True, "node_count":3},
         "r4.4xlarge":   {"data_disk_count":10, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":True, "node_count":3},
         "r4.8xlarge":   {"data_disk_count":10, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":True, "node_count":3},
+        "r4.16xlarge":   {"data_disk_count":10, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":False, "node_count":3},
     }
     MACHINE_TYPES=MACHINE_DEFAULTS.keys()
     DEFAULTS_URL="http://avere-dist.s3-website-us-west-2.amazonaws.com/vfxtdefaults.json"

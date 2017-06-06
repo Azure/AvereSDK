@@ -202,6 +202,7 @@ class Cluster(object):
                 size (int, optional): size of cluster (node count)
                 root_image (str, optional): root disk image name
                 skip_cleanup (bool, optional): do not clean up on failure
+                skip_support_configuration (bool, optional): do not setup initial support configuration
                 address_range_start (str, optional): The first of a custom range of addresses to use for the cluster
                 address_range_end (str, optional): The last of a custom range of addresses to use for the cluster
                 address_range_netmask (str, optional): cluster address range netmask
@@ -215,6 +216,7 @@ class Cluster(object):
         c.proxy           = options.get('proxy_uri', None)
         c.trace_level     = options.get('trace_level', None)
         c.join_mgmt       = False if options.get('join_instance_address', False) else True
+        c.skip_support_cfg= options.get('skip_support_configuration') or False
 
         if c.proxy:
             c.proxy = validate_proxy(c.proxy) # imported from vFXT.service
@@ -1485,27 +1487,28 @@ class Cluster(object):
 
         self.set_default_proxy()
 
-        # set support customerId to the cluster name
-        log.info("Setting support customerId to {}".format(self.name))
-        try:
-            response = self._xmlrpc_do(self.xmlrpc().support.modify, {'customerId':self.name})
-            if response[0] != 'success':
-                raise vFXTConfigurationException(response)
-        except Exception as e:
-            log.error("Failed setting customerId: {}".format(e))
+        if not self.skip_support_cfg:
+            # set support customerId to the cluster name
+            log.info("Setting support customerId to {}".format(self.name))
+            try:
+                response = self._xmlrpc_do(self.xmlrpc().support.modify, {'customerId':self.name})
+                if response[0] != 'success':
+                    raise vFXTConfigurationException(response)
+            except Exception as e:
+                log.error("Failed setting customerId: {}".format(e))
 
-        # enable SPS for billing mode
-        log.info("Enabling SPS")
-        try:
-            support_opts = {'SPSLinkEnabled':'yes', 'statsMonitor': 'yes', 'generalInfo': 'yes'}
-            if self.trace_level:
-                support_opts['traceLevel'] = self.trace_level
-                support_opts['rollingTrace'] = 'yes'
-            response = self._xmlrpc_do(self.xmlrpc().support.modify, support_opts)
-            if response[0] != 'success':
-                raise vFXTConfigurationException(response)
-        except Exception as e:
-            log.error("Failed enabling SPS: {}".format(e))
+            # enable SPS for billing mode
+            log.info("Enabling SPS")
+            try:
+                support_opts = {'SPSLinkEnabled':'yes', 'statsMonitor': 'yes', 'generalInfo': 'yes'}
+                if self.trace_level:
+                    support_opts['traceLevel'] = self.trace_level
+                    support_opts['rollingTrace'] = 'yes'
+                response = self._xmlrpc_do(self.xmlrpc().support.modify, support_opts)
+                if response[0] != 'success':
+                    raise vFXTConfigurationException(response)
+            except Exception as e:
+                log.error("Failed enabling SPS: {}".format(e))
 
         # try and enable HA early if we have support in the AvereOS release for single node
         try:

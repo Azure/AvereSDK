@@ -1972,8 +1972,7 @@ class Service(ServiceBase):
             Returns: dict zone:[types]
         '''
         response = _gce_do(self.connection().machineTypes().aggregatedList, project=self.project_id)
-        return dict((zone.split('/')[1], [mt['name'] for mt in response['items'][zone]['machineTypes']])
-                    for zone in response['items'])
+        return {zone_name.split('/')[1]: [mt['name'] for mt in zone_data.get('machineTypes', [])] for zone_name, zone_data in response['items'].items()}
 
     def _zone_names(self):
         '''Get a list of zone names

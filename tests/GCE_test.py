@@ -330,6 +330,7 @@ class GCE_test(tests.vFXTTestCase.Base):
         zones = service._zone_names()
         self.assertTrue(zones)
         self.assertTrue(service._zone_to_region(zones[0]))
+        self.assertTrue(service._zone_machine_types())
         self.assertRaises(vFXT.service.vFXTConfigurationException, service._zone_to_region, 'invalid-zone')
 
 

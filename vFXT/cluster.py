@@ -1502,14 +1502,18 @@ class Cluster(object):
             log.info("Enabling SPS")
             try:
                 support_opts = {'SPSLinkEnabled':'yes', 'statsMonitor': 'yes', 'generalInfo': 'yes'}
-                if self.trace_level:
-                    support_opts['traceLevel'] = self.trace_level
-                    support_opts['rollingTrace'] = 'yes'
                 response = self._xmlrpc_do(self.xmlrpc().support.modify, support_opts)
                 if response[0] != 'success':
                     raise vFXTConfigurationException(response)
             except Exception as e:
                 log.error("Failed enabling SPS: {}".format(e))
+
+        if self.trace_level:
+            try:
+                support_opts = {'traceLevel': self.trace_level, 'rollingTrace': 'yes'}
+                response = self._xmlrpc_do(self.xmlrpc().support.modify, support_opts)
+            except Exception as e:
+                log.error("Failed enabling tracing: {}".format(e))
 
         # try and enable HA early if we have support in the AvereOS release for single node
         try:

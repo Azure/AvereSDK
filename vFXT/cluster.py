@@ -255,7 +255,7 @@ class Cluster(object):
 
         # should get all the nodes joined by now
         try:
-            retries = int(options.get('join_wait', 180+(180*math.log(len(c.nodes)))))
+            retries = int(options.get('join_wait', 500+(500*math.log(len(c.nodes)))))
             c.wait_for_nodes_to_join(retries=retries)
         except (KeyboardInterrupt, Exception) as e:
             log.error('Failed to wait for nodes to join: {}'.format(e))

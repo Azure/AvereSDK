@@ -1285,7 +1285,7 @@ class Service(ServiceBase):
                     role_name=node_opts['role']['role_name'],
                     **instance_options
         )
-        log.info("Created {} ({})".format(n.id, n.private_ip_address))
+        log.info("Created {}/{} ({})".format(node_name, n.id, n.private_ip_address))
         return n
 
     def create_cluster(self, cluster, **options):

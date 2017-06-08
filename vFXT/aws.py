@@ -1426,6 +1426,7 @@ class Service(ServiceBase):
             if not options.get('skip_configuration'):
                 cluster.first_node_configuration(wait_for_state=options.get('wait_for_state', 'yellow'))
             options.update(opts)
+            options['private_addresses'] = private_ips
             self.add_cluster_nodes(cluster, cluster_size - 1, **options)
         except vFXTNodeExistsException as e:
             log.error("Failed to create node: {}".format(e))

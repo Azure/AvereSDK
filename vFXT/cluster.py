@@ -529,6 +529,7 @@ class Cluster(object):
                 if retries == 0:
                     raise
             retries -= 1
+            self._sleep()
 
     def _xmlrpc_wait_for_activity(self, activity, error_msg, retries=None):
         '''Wait for a xmlrpc activity to complete

@@ -67,7 +67,7 @@ class Cluster_test(tests.vFXTTestCase.Base):
 
             # add vserver, corefiler
             cluster.add_vserver('vserver')
-            cluster.wait_for_healthcheck(state='yellow', duration=10)
+            cluster.wait_for_healthcheck(state='green', duration=10)
             self.assertTrue(cluster.xmlrpc().vserver.get('vserver'))
             cluster.make_test_bucket(name, 's3')
             self.assertTrue('s3' in cluster.xmlrpc().corefiler.list())
@@ -93,7 +93,7 @@ class Cluster_test(tests.vFXTTestCase.Base):
             self.assertTrue(cluster.is_on())
             self.assertFalse(cluster.is_shelved())
         except Exception as e:
-            log.debug(e)
+            log.error(e)
             raise
         finally:
             cluster.destroy()
@@ -140,7 +140,7 @@ class Cluster_test(tests.vFXTTestCase.Base):
 
             # add vserver, corefiler
             cluster.add_vserver('vserver')
-            cluster.wait_for_healthcheck(state='yellow', duration=10)
+            cluster.wait_for_healthcheck(state='green', duration=10)
             self.assertTrue(cluster.xmlrpc().vserver.get('vserver'))
             cluster.make_test_bucket(name, 'gcs')
             self.assertTrue('gcs' in cluster.xmlrpc().corefiler.list())
@@ -166,7 +166,7 @@ class Cluster_test(tests.vFXTTestCase.Base):
             self.assertTrue(cluster.is_on())
             self.assertFalse(cluster.is_shelved())
         except Exception as e:
-            log.debug(e)
+            log.error(e)
             raise
         finally:
             cluster.destroy()

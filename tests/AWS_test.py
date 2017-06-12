@@ -127,7 +127,7 @@ class AWS_test(tests.vFXTTestCase.Base):
             instance.restart()
             self.assertTrue(instance.is_on())
         except Exception as e:
-            log.debug(e)
+            log.error(e)
             raise
         finally:
             instance.destroy()

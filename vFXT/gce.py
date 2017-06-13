@@ -1481,8 +1481,8 @@ class Service(ServiceBase):
         use_local_ssd = False
         if node_opts['data_disk_type'] == 'local-ssd':
             use_local_ssd = True
-            if int(node_opts['data_disk_size']) > 375:
-                raise vFXTConfigurationException("{} is larger than 375, the maximum for local-ssd disk sizes".format(node_opts['data_disk_size']))
+            # local-ssd sizes cannot be anything but 375
+            node_opts['data_disk_size'] = 375
             if int(node_opts['data_disk_count']) > 8:
                 raise vFXTConfigurationException("{} is larger than 8, the maximum for number of local-ssd disks".format(node_opts['data_disk_count']))
 

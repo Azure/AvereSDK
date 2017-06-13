@@ -1488,32 +1488,23 @@ class Cluster(object):
 
         self.set_default_proxy()
 
+        # minimum, required support config
+        support_opts = {'statsMonitor': 'yes', 'generalInfo': 'yes'}
+        # SPS support config
         if not self.skip_support_cfg:
-            # set support customerId to the cluster name
-            log.info("Setting support customerId to {}".format(self.name))
-            try:
-                response = self._xmlrpc_do(self.xmlrpc().support.modify, {'customerId':self.name})
-                if response[0] != 'success':
-                    raise vFXTConfigurationException(response)
-            except Exception as e:
-                log.error("Failed setting customerId: {}".format(e))
-
-            # enable SPS for billing mode
             log.info("Enabling SPS")
-            try:
-                support_opts = {'SPSLinkEnabled':'yes', 'statsMonitor': 'yes', 'generalInfo': 'yes'}
-                response = self._xmlrpc_do(self.xmlrpc().support.modify, support_opts)
-                if response[0] != 'success':
-                    raise vFXTConfigurationException(response)
-            except Exception as e:
-                log.error("Failed enabling SPS: {}".format(e))
-
+            support_opts['SPSLinkEnabled'] = 'yes'
+            support_opts['customerId'] = self.name
         if self.trace_level:
-            try:
-                support_opts = {'traceLevel': self.trace_level, 'rollingTrace': 'yes'}
-                response = self._xmlrpc_do(self.xmlrpc().support.modify, support_opts)
-            except Exception as e:
-                log.error("Failed enabling tracing: {}".format(e))
+            log.info("Setting trace {}".format(self.trace_level))
+            support_opts['traceLevel'] = self.trace_level
+            support_opts['rollingTrace'] = 'yes'
+        try:
+            response = self._xmlrpc_do(self.xmlrpc().support.modify, support_opts)
+            if response[0] != 'success':
+                raise vFXTConfigurationException(response)
+        except Exception as e:
+            log.error("Failed to configure support options: {}".format(e))
 
         # try and enable HA early if we have support in the AvereOS release for single node
         try:

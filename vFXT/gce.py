@@ -1290,6 +1290,8 @@ class Service(ServiceBase):
         }
         if self.key_file:
             data['key_file'] = self.key_file
+        if self.key_data:
+            data['key_data'] = self.key_data
         if self.access_token:
             data['access_token'] = self.access_token
         if self.s3_access_key:

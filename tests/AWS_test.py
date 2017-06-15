@@ -274,6 +274,10 @@ class AWS_test(tests.vFXTTestCase.Base):
         service = self.mk_aws_service()
         self.assertTrue(service._get_all_subnets())
 
+    def test_check(self):
+        service = self.mk_aws_service()
+        self.assertTrue(service.check() == None)
+
 
 if __name__ == '__main__':
     unittest.main()

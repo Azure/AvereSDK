@@ -333,6 +333,10 @@ class GCE_test(tests.vFXTTestCase.Base):
         self.assertTrue(service._zone_machine_types())
         self.assertRaises(vFXT.service.vFXTConfigurationException, service._zone_to_region, 'invalid-zone')
 
+    def test_check(self):
+        service = self.mk_gce_service()
+        self.assertTrue(service.check() == None)
+
 
 if __name__ == '__main__':
     unittest.main()

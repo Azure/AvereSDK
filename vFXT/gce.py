@@ -512,24 +512,33 @@ class Service(ServiceBase):
         conn = self.connection()
         project_quotas = conn.projects().get(project=self.project_id).execute()['quotas']
         for q in project_quotas:
-            if q['usage']/q['limit'] > percentage:
-                log.warn("QUOTA ALERT: Using {} of {} {} for the project".format(int(q['usage']), int(q['limit']), q['metric'].lower().capitalize().replace('_', ' ')))
+            usage = int(q.get('usage') or 0)
+            limit = int(q.get('limit') or 0)
+            metric = q.get('metric').lower().capitalize().replace('_', ' ')
+            if limit and usage/limit > percentage:
+                log.warn("QUOTA ALERT: Using {} of {} {} for the project".format(usage, limit, metric))
             else:
-                log.debug("Using {} of {} {} for the project".format(int(q['usage']), int(q['limit']), q['metric'].lower().capitalize().replace('_', ' ')))
+                log.debug("Using {} of {} {} for the project".format(usage, limit, metric))
 
         region = self._zone_to_region(self.zones[0])
         region_quotas = conn.regions().get(project=self.project_id, region=region).execute()['quotas']
         for q in region_quotas:
-            if q['usage']/q['limit'] > percentage:
-                if q['metric'] == 'CPUS':
-                    q['usage'] += core_count
-                if q['metric'] == 'SSD_TOTAL_GB':
-                    q['usage'] += ssd_count
-                if q['metric'] == 'LOCAL_SSD_TOTAL_GB':
-                    q['usage'] += local_ssd_count
-                log.warn("QUOTA ALERT: Using {} of {} {} for the region".format(int(q['usage']), int(q['limit']), q['metric'].lower().capitalize().replace('_', ' ')))
+            usage = int(q.get('usage') or 0)
+            limit = int(q.get('limit') or 0)
+            metric = q.get('metric')
+
+            if metric == 'CPUS':
+                usage += core_count
+            if metric == 'SSD_TOTAL_GB':
+                usage += ssd_count
+            if metric == 'LOCAL_SSD_TOTAL_GB':
+                usage += local_ssd_count
+
+            metric = metric.lower().capitalize().replace('_', ' ')
+            if limit and usage/limit > percentage:
+                log.warn("QUOTA ALERT: Using {} of {} {} for the region".format(usage, limit, metric))
             else:
-                log.debug("Using {} of {} {} for the region".format(int(q['usage']), int(q['limit']), q['metric'].lower().capitalize().replace('_', ' ')))
+                log.debug("Using {} of {} {} for the region".format(usage, limit, metric))
 
     def _auth_http(self, scopes=None):
         '''Simple wrapper for the HTTP object credential authorization

@@ -140,11 +140,11 @@ class Service(ServiceBase):
     DEFAULTS_URL="http://avere-dist.s3-website-us-west-2.amazonaws.com/vfxtdefaults.json"
     S3TYPE_NAME='AMAZON'
     COREFILER_CRED_TYPE='s3'
-    INSTANCENAME_RE=re.compile('[a-zA-Z0-9\ \t\+\-=\._:\/@]+$')
+    INSTANCENAME_RE=re.compile(r'[a-zA-Z0-9\ \t\+\-=\._:\/@]+$')
     ARN="aws"
     IAM_HOST='iam.amazonaws.com'
     AWS_INSTANCE_HOST='169.254.169.254'
-    S3URL_RE=re.compile('s3://(?P<bucket>[^\/]*)/(?P<path>.*)$')
+    S3URL_RE=re.compile(r's3://(?P<bucket>[^\/]*)/(?P<path>.*)$')
     IAM_BUCKET_POLICY=['s3:GetLifecycleConfiguration',
                        's3:GetBucketLocation',
                        's3:ListBucket',

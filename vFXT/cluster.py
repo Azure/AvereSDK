@@ -979,9 +979,9 @@ class Cluster(object):
             # remove all junctions
             for vserver in self._xmlrpc_do(xmlrpc.vserver.list):
                 log.info("Suspending vserver {}".format(vserver))
-                activity = xmlrpc.vserver.suspend(vserver)
+                activity = self._xmlrpc_do(xmlrpc.vserver.suspend, vserver)
                 self._xmlrpc_wait_for_activity(activity, "Failed to suspend vserver {}".format(vserver))
-                for junction in xmlrpc.vserver.listJunctions(vserver):
+                for junction in self._xmlrpc_do(xmlrpc.vserver.listJunctions, vserver):
                     log.info("Removing junction {} from vserver {}".format(junction['path'], vserver))
                     activity = self._xmlrpc_do(xmlrpc.vserver.removeJunction, vserver, junction['path'])
                     self._xmlrpc_wait_for_activity(activity, "Failed to remove junction {} from vserver {}".format(junction['path'], vserver))

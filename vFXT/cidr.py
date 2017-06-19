@@ -122,23 +122,23 @@ class Cidr(object):
         i = self.from_address(ip)
         return i & self.mask == self.addr & self.mask
 
-    def available(self, count=1, contiguous=True, used=None):
+    def available(self, count=1, contiguous=True, used=None, honor_reserves=True):
         '''Return a list of available addresses that are not in the used list
-
-           Reserves (skips) first 4 addresses as well as the last address in the
-            block. http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Subnets.html#SubnetSize
 
             Arguments:
                 count (int): number of addresses
                 contiguous (bool): list should be contiguous (defaults True)
                 used (list, optional): list of used addresses to skip
+                honor_reserves (bool, optional): skips first 4 addresses as well as the last
+                    address in the block.  These are commonly reserved by cloud providers.
             Returns: list
         '''
         used = set(used or [])
         # reserved addresses
-        for offset in range(0,4):
-            used.add(self.to_address(self.start()+offset))
-        used.add(self.to_address(self.end()))
+        if honor_reserves:
+            for offset in range(0,4):
+                used.add(self.to_address(self.start()+offset))
+            used.add(self.to_address(self.end()))
 
         r = []
         for addr in self.addresses():

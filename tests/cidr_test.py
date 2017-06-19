@@ -133,6 +133,8 @@ class cidr_test(tests.vFXTTestCase.Base):
         self.assertTrue(cmp(c.available(count=5, used=used), ['10.1.1.201', '10.1.1.202', '10.1.1.203', '10.1.1.204', '10.1.1.205']) == 0)
         self.assertTrue(cmp(c.available(count=3, used=used, contiguous=False), ['10.1.1.197', '10.1.1.198', '10.1.1.199']) == 0)
         self.assertRaises(Exception, c.available, count=16, used=used)
+        self.assertRaises(Exception, c.available, count=16)
+        self.assertTrue(len(c.available(count=16, honor_reserves=False)) == 16)
 
     def test_display(self):
         c = Cidr('10.1.1.200/28')

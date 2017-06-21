@@ -2346,7 +2346,7 @@ class Service(ServiceBase):
         try:
             if len(parts) == 1:
                 subnetwork_region = self._zone_to_region(self.zones[0])
-                subnetworks = self._get_subnetworks(subnetwork_region)
+                subnetworks = [_ for _ in self._get_subnetworks(subnetwork_region) if _['name'] == subnetwork]
                 if not subnetworks:
                     raise Exception('No such subnetwork')
                 return subnetworks[0]

@@ -119,10 +119,10 @@ def _add_bucket_corefiler(cluster, logger, args):
     if not args.bucket:
         logger.info("Creating corefiler {} with new bucket: {}".format(corefiler, bucketname))
         if args.govcloud:
-            cluster.service.create_bucket(bucketname)
+            cluster.service.create_bucket(bucketname, storage_class=args.storage_class)
             cluster.attach_bucket(corefiler, '{}:{}'.format(bucketname, cluster.service.region), **bucket_opts)
         else:
-            cluster.make_test_bucket(bucketname=bucketname, corefiler=corefiler, **bucket_opts)
+            cluster.make_test_bucket(bucketname=bucketname, corefiler=corefiler, storage_class=args.storage_class, **bucket_opts)
     else: # existing bucket
         logger.info("Attaching an existing bucket {} to corefiler {}".format(bucketname, corefiler))
         bucket_opts['existing_data'] = args.bucket_not_empty
@@ -190,6 +190,7 @@ def main():
     gce_opts.add_argument("--service-account", help="GCE service account to use for the cluster (or default)", type=str, default=None)
     gce_opts.add_argument("--scopes", nargs='+', help="GCE scopes to use for the cluster", type=_validate_url, default=None)
     gce_opts.add_argument("--instance-addresses", nargs='+', help="GCE instance addresses to use", type=_validate_ip, default=None)
+    gce_opts.add_argument("--storage-class", help="GCE bucket storage class", default=None, type=str)
 
     # optional arguments
     parser.add_argument("-d", "--debug", help="Give verbose feedback", action="store_true")
@@ -391,6 +392,11 @@ def main():
             args.metadata = {n.split(':')[0]: (n.split(':')[1] or '') for n in args.metadata if len(n.split(':')) > 1}
         else:
             args.metadata = {}
+
+        if args.storage_class:
+            if not args.storage_class in Service.STORAGE_CLASSES:
+                logger.error("Invalid storage class.  Must be one of {}".format(', '.join(Service.STORAGE_CLASSES)))
+                parser.exit(1)
 
         if args.ssh_key:
             try:

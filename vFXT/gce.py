@@ -1087,8 +1087,9 @@ class Service(ServiceBase):
 
             Arguments:
                 name (str): bucket name to create
-                storage_class (str, optional): storage class of STANDARD, NEARLINE,
-                    or DURABLE_REDUCED_AVAILABILITY
+                storage_class (str, optional): storage class of MULTI_REGIONAL, REGIONAL,
+                    STANDARD, NEARLINE, COLDLINE, and DURABLE_REDUCED_AVAILABILIT
+                region (str, optional): region for the bucket if using REGIONAL (defaults to service default region)
 
             Raises: vFXTServiceFailure
         '''
@@ -1101,6 +1102,10 @@ class Service(ServiceBase):
             raise vFXTConfigurationException("{} is not a valid storage class".format(storage_class))
 
         body = {'name':name, 'storageClass': storage_class}
+        if storage_class == 'REGIONAL':
+            region = options.get('region') or self._zone_to_region(self.zones[0])
+            body['location'] = region
+        log.debug("Bucket create request {}".format(body))
         return _gce_do(storage_service.buckets().insert,project=self.project_id, body=body)
 
     def delete_bucket(self, name):

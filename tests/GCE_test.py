@@ -245,6 +245,18 @@ class GCE_test(tests.vFXTTestCase.Base):
         service.create_bucket(name)
         service.delete_bucket(name)
 
+    def test_create_bucket_storage_classes(self):
+        service = self.mk_gce_service()
+        name = '{}'.format(str(uuid.uuid4()).lower().replace('-','')[0:55])
+        for storage_class in service.STORAGE_CLASSES:
+            b = service.create_bucket(name, storage_class=storage_class)
+            try:
+                self.assertTrue(b['storageClass'] == storage_class)
+            finally:
+                service.delete_bucket(name)
+            # need to throttle. "The project exceeded the rate limit for creating and deleting buckets"
+            time.sleep(60)
+
     def test_gs_get_object(self):
         service = self.mk_gce_service()
         fd, name = tempfile.mkstemp()

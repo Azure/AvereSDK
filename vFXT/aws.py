@@ -921,7 +921,7 @@ class Service(ServiceBase):
             return instance.private_dns_name
 
     # storage/buckets
-    def create_bucket(self, name, tags=None):
+    def create_bucket(self, name, **options):
         '''Create a bucket
 
             Arguments:
@@ -945,6 +945,7 @@ class Service(ServiceBase):
         # tagging
         btags  = boto.s3.tagging.Tags()
         tagset = boto.s3.tagging.TagSet()
+        tags = options.get('tags', {})
         if tags:
             for k,v in tags.iteritems():
                 tagset.add_tag(k,v)

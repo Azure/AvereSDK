@@ -1098,7 +1098,7 @@ class Cluster(object):
         '''
         bucketname      = bucketname or "{}-{}".format(self.name, str(uuid.uuid4()).lower().replace('-',''))[0:63]
         corefiler       = corefiler or bucketname
-        self.service.create_bucket(bucketname)
+        self.service.create_bucket(bucketname, **options)
         log.info("Created bucket {} ".format(bucketname))
         return self.attach_bucket(corefiler, bucketname, master_password=self.admin_password, proxy=proxy, remove_on_fail=remove_on_fail, **options)
 

@@ -484,7 +484,7 @@ def main():
                     logger.exception(e)
                 logger.error("Failed to configure core filer: {}".format(e))
                 if not args.skip_cleanup:
-                    cluster.destroy(remove_buckets=False if args.bucket else True) # will not remove a non-empty bucket
+                    cluster.destroy(quick_destroy=True, remove_buckets=False if args.bucket else True) # will not remove a non-empty bucket
                 parser.exit(1)
 
         if not args.no_vserver:
@@ -512,7 +512,7 @@ def main():
                     logger.exception(e)
                 logger.error("Failed to configure vserver: {}".format(e))
                 if not args.skip_cleanup:
-                    cluster.destroy(remove_buckets=False if args.bucket else True) # will not remove a non-empty bucket
+                    cluster.destroy(quick_destroy=True, remove_buckets=False if args.bucket else True) # will not remove a non-empty bucket
                 parser.exit(1)
 
         cluster_version = cluster.xmlrpc().cluster.get()['activeImage']

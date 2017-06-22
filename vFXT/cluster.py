@@ -238,7 +238,7 @@ class Cluster(object):
                 return
         except KeyboardInterrupt:
             if not options.get('skip_cleanup', False):
-                c.destroy()
+                c.destroy(quick_destroy=True)
             raise
 
         # any service specific instance checks should happen here... the checks
@@ -248,7 +248,7 @@ class Cluster(object):
         except (KeyboardInterrupt, Exception) as e:
             log.error('Failed to wait for service checks: {}'.format(e))
             if not options.get('skip_cleanup', False):
-                c.destroy()
+                c.destroy(quick_destroy=True)
             else:
                 c.telemetry()
             raise
@@ -260,7 +260,7 @@ class Cluster(object):
         except (KeyboardInterrupt, Exception) as e:
             log.error('Failed to wait for nodes to join: {}'.format(e))
             if not options.get('skip_cleanup', False):
-                c.destroy()
+                c.destroy(quick_destroy=True)
             else:
                 c.telemetry()
             raise
@@ -280,7 +280,7 @@ class Cluster(object):
         except (KeyboardInterrupt, Exception) as e:
             log.error("Cluster failed: {}".format(e))
             if not options.get('skip_cleanup', False):
-                c.destroy()
+                c.destroy(quick_destroy=True)
             else:
                 c.telemetry()
             raise vFXTCreateFailure(e)

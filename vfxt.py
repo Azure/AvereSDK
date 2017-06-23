@@ -422,6 +422,9 @@ def main():
         logger.debug("Cache size {} specified, setting disk count and size to {}, {}".format(args.node_cache_size, args.data_disk_count, args.data_disk_size))
 
     if args.create:
+        # run a service check first
+        service.check()
+
         # minimum args for create
         if not all([args.instance_type, args.cluster_name, args.admin_password]):
             logger.error("Arguments instance-type, cluster-name, and admin-password are required")

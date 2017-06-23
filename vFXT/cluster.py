@@ -537,7 +537,6 @@ class Cluster(object):
             Arguments:
             activity (str): cluster activity UUID
             error_msg (str): Exception text on error
-            xmlrpc (xmlrpcClt): xmlrpc handle
             retries (int, optional): max retries, otherwise loops indefinitely
         '''
         if activity == 'success':
@@ -551,6 +550,7 @@ class Cluster(object):
                 response = xmlrpc.cluster.getActivity(activity)
             except Exception as e:
                 log.exception("Failed to get activity {}: {}".format(activity, e))
+                xmlrpc = self.xmlrpc()
 
             if 'state' in response:
                 if response['state'] == 'success':

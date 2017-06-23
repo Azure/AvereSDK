@@ -522,12 +522,12 @@ class Service(ServiceBase):
         conn = self.connection()
 
         log.info("Performing quota check")
-        account_attributes = conn.describe_account_attributes();
+        account_attributes = conn.describe_account_attributes()
         max_instances = filter(lambda x: x.attribute_name == 'max-instances', account_attributes)
         if not max_instances:
             raise vFXTServiceFailure("Failed to lookup max instance quota")
         max_count = int(max_instances[0].attribute_values[0])
-        instance_count = len([i for r in conn.get_all_reservations() for i in r.instances]) + instances
+        instance_count = len([i for r in conn.get_all_reservations() for i in r.instances]) + (instances or 0)
         if (instance_count+0.0)/max_count > percentage:
             log.warn("QUOTA ALERT: Using {} of {} instances".format(instance_count, max_count))
         else:

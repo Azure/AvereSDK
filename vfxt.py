@@ -141,7 +141,7 @@ def main():
     action_opts.add_argument("--add-nodes", help="Add nodes to an existing cluster", action="store_true")
     action_opts.add_argument("--shelve", help=argparse.SUPPRESS, action="store_true")
     action_opts.add_argument("--unshelve", help=argparse.SUPPRESS, action="store_true")
-    action_opts.add_argument("--upgrade", help=argparse.SUPPRESS, action="store_true")
+    action_opts.add_argument("--upgrade", help='Upgrade a cluster', action="store_true")
     action_opts.add_argument("--check", help="Run checks for api access and quotas", action="store_true")
     action_opts.add_argument("--interact", help="Use the Python interpreter", action="store_true")
 
@@ -228,7 +228,7 @@ def main():
     cluster_opts.add_argument("--root-size", help="Total size of the boot disk (in GB)",
                         default=None, type=int)
     cluster_opts.add_argument("--configuration-expiration", help=argparse.SUPPRESS, default=Cluster.CONFIGURATION_EXPIRATION, type=int) # Number of minutes until the cluster.cfg file should expire
-    cluster_opts.add_argument('--upgrade-url', help=argparse.SUPPRESS) # Url to an armada package for upgrading
+    cluster_opts.add_argument('--upgrade-url', help="Url to an AvereOS upgrade packagea")
     cluster_opts.add_argument('--cluster-range', help='IP address range (cidr format) to use for addressing', default=None,
                         type=lambda x: str(Cidr(x)))
     cluster_opts.add_argument('--cluster-proxy-uri', help='Proxy resource for the cluster configuration, example http://user:pass@172.16.16.20:8080/.  NOTE: using the address rather than hostname is preferred in the event DNS is not reachable.', metavar="URL", type=_validate_url)

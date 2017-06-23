@@ -610,14 +610,16 @@ class Cluster(object):
             log.debug("Telemetry failed: {}".format(e))
             raise vFXTStatusFailure('Telemetry failed: {}'.format(e))
 
-    def upgrade(self, upgrade_url, retries=ServiceBase.WAIT_FOR_HEALTH_CHECKS):
+    def upgrade(self, upgrade_url, retries=None):
         '''Upgrade a cluster from the provided URL
 
             Arguments:
                 upgrade_url (str): URL for armada package
+                retries (int, optional): retry count for switching active images
 
             Raises: vFXTConnectionFailure
         '''
+        retries     = retries or int(500+(500*math.log(len(self.nodes))))
         cluster     = self._xmlrpc_do(self.xmlrpc().cluster.get)
         alt_image   = cluster['alternateImage']
 
@@ -642,8 +644,10 @@ class Cluster(object):
                                 if act['id'] not in existing_activities # skip existing
                                 if act['process'] == 'Cluster upgrade' # look for cluster upgrade or download
                                 or 'software download' in act['process']]
-                if 'failure' in [a['state'] for a in activities]:
-                    raise vFXTConfigurationException("Failed to download upgrade image")
+                failures = [_ for _ in activities if 'failure' in _['state']]
+                if failures:
+                    errmsg = ', '.join([': '.join([_['process'], _['status']]) for _ in failures])
+                    raise vFXTConfigurationException("Failed to download upgrade image: {}".format(errmsg))
                 if op_retries % 10 == 0:
                     log.debug('Current activities: {}'.format(', '.join([act['status'] for act in activities])))
 
@@ -681,12 +685,18 @@ class Cluster(object):
         log.debug("existing activities prior to upgrade: {}".format(existing_activities))
         op_retries = retries
         while cluster['activeImage'] != alt_image:
-            log.debug("activeImage {} != {}".format(cluster['activeImage'],alt_image))
             self._sleep()
             try:
-                log.debug("getting cluster info")
+                # we may end up with hung connections as our VIFs move...
+                def signal_handler(signum, stack):
+                    log.debug("Signal handler for sig {}: {}".format(signum, stack))
+                    raise vFXTConnectionFailure("Connection alarm raised")
+                import signal
+                if hasattr(signal, 'alarm') and hasattr(signal, 'SIGALRM'):
+                    signal.signal(signal.SIGALRM, signal_handler)
+                    signal.alarm(60)
+
                 cluster    = self._xmlrpc_do(self.xmlrpc().cluster.get)
-                log.debug("getting activities")
                 activities = [act for act in self._xmlrpc_do(self.xmlrpc().cluster.listActivities)
                                 if act['id'] not in existing_activities # skip existing
                                 if act['process'] == 'Cluster upgrade' # look for cluster upgrade or activate
@@ -694,19 +704,26 @@ class Cluster(object):
                 if 'failed' in [a['state'] for a in activities]:
                     raise vFXTConfigurationException("Failed to activate alternate image")
                 if op_retries % 10 == 0:
-                    log.debug('Current activities: {}'.format(', '.join([act['status'] for act in activities])))
+                    log.info('Waiting for active image to switch to {}'.format(alt_image))
+                    activity_status = ', '.join([act['status'] for act in activities])
+                    if activity_status:
+                        log.debug('Current activities: {}'.format(activity_status))
             except vFXTConfigurationException as e:
                 log.debug(e)
                 raise
             except Exception as e:
                 log.debug("Retrying upgrade check: {}".format(e))
+            finally:
+                # reset SIGALRM handler
+                if hasattr(signal, 'alarm') and hasattr(signal, 'SIGALRM'):
+                    signal.alarm(0)
+                    signal.signal(signal.SIGALRM, signal.SIG_DFL)
+
             op_retries -= 1
-            log.debug("op_retries is now {}".format(op_retries))
             if op_retries == 0:
                 raise vFXTConnectionFailure("Timeout waiting for active image")
 
-        upgrade_status = self._xmlrpc_do(self.xmlrpc().cluster.upgradeStatus)
-        log.info(upgrade_status.get('status', 'Unknown'))
+        log.info("Upgrade complete")
 
     def add_nodes(self, count=1, **options):
         '''Add nodes to the cluster

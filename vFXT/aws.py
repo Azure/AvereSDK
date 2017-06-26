@@ -1939,40 +1939,43 @@ class Service(ServiceBase):
         subnet = _aws_do(vpc.get_all_subnets, subnet_ids=[subnet_id])[0]
         return subnet
 
-    def in_use_addresses(self, cidr_block):
+    def in_use_addresses(self, cidr_block, category='all'):
         '''Return a list of in use addresses within the specified cidr
 
             Arguments:
                 cidr_block (str)
+                category (str): all, interfaces, routes
         '''
         vpcconn = self.connection(connection_type='vpc')
         c       = Cidr(cidr_block)
         used    = set()
 
         # XXX whole lotta expensiveness
-        try:
-            addrs = [r.destination_cidr_block.split('/')[0]
-                    for rt in _aws_do(vpcconn.get_all_route_tables)
-                    for r in rt.routes
-                    if r.instance_id and
-                    c.contains(r.destination_cidr_block.split('/')[0])]
-            used.update(addrs)
-        except Exception as e:
-            log.error('Failed to determine in use addresses by routes: {}'.format(e))
-            raise vFXTServiceFailure('Failed to determine in use addresses by routes: {}'.format(e))
+        if category in ['all', 'routes']:
+            try:
+                addrs = [r.destination_cidr_block.split('/')[0]
+                        for rt in _aws_do(vpcconn.get_all_route_tables)
+                        for r in rt.routes
+                        if r.instance_id and
+                        c.contains(r.destination_cidr_block.split('/')[0])]
+                used.update(addrs)
+            except Exception as e:
+                log.error('Failed to determine in use addresses by routes: {}'.format(e))
+                raise vFXTServiceFailure('Failed to determine in use addresses by routes: {}'.format(e))
 
         # search all network interface private ip addresses that fail within the specified block
         # XXX whole lotta expensiveness
-        try:
-            conn = self.connection()
-            addrs = [addr.private_ip_address
-                        for iface in _aws_do(conn.get_all_network_interfaces)
-                        for addr in iface.private_ip_addresses
-                        if c.contains(addr.private_ip_address)]
-            used.update(addrs)
-        except Exception as e:
-            log.error('Failed to determine in use addresses by instances: {}'.format(e))
-            raise vFXTServiceFailure('Failed to determine in use addresses by instances: {}'.format(e))
+        if category in ['all', 'interfaces']:
+            try:
+                conn = self.connection()
+                addrs = [addr.private_ip_address
+                            for iface in _aws_do(conn.get_all_network_interfaces)
+                            for addr in iface.private_ip_addresses
+                            if c.contains(addr.private_ip_address)]
+                used.update(addrs)
+            except Exception as e:
+                log.error('Failed to determine in use addresses by instances: {}'.format(e))
+                raise vFXTServiceFailure('Failed to determine in use addresses by instances: {}'.format(e))
 
         return list(used)
 

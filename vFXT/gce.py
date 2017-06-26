@@ -628,11 +628,12 @@ class Service(ServiceBase):
 
         return self.local.connections[connection_sig]
 
-    def find_instances(self, search=None):
+    def find_instances(self, search=None, all_regions=True):
         '''Returns all or filtered list of instances
 
             Arguments:
                 search (str, optional): search query
+                all_regions (bool, optional): search all regions, not just the current
 
             Search examples:
                 field [ne|eq] expression
@@ -642,17 +643,18 @@ class Service(ServiceBase):
         '''
         conn = self.connection()
         instances = []
-        for zone in self._zone_names():
+        for zone in self._zone_names(all_regions):
             r =  _gce_do(conn.instances().list, project=self.project_id, filter=search, zone=zone)
             if r and 'items' in r:
                 instances.extend(r['items'])
         return instances
 
-    def get_instances(self, instance_ids):
+    def get_instances(self, instance_ids, all_regions=True):
         '''Returns a list of instances with the given instance ID list
 
             Arguments:
                 instance_ids ([str]): list of instance id strings
+                all_regions (bool, optional): search all regions, not just the current
 
             Returns:
                 [objs]: list of backend instance objects
@@ -661,23 +663,24 @@ class Service(ServiceBase):
         search = 'name eq {}'.format(id_str)
         conn   = self.connection()
         instances = []
-        for zone in self._zone_names():
+        for zone in self._zone_names(all_regions):
             r = _gce_do(conn.instances().list, project=self.project_id, filter=search, zone=zone)
             if r and 'items' in r:
                 instances.extend(r['items'])
         return instances
 
-    def get_instance(self, instance_id):
+    def get_instance(self, instance_id, all_regions=True):
         '''Get a specific instance by instance ID
 
             Arguments:
                 instance_id (str)
+                all_regions (bool, optional): search all regions, not just the current
 
             Returns:
                 obj or None
         '''
         conn   = self.connection()
-        for zone in self._zone_names():
+        for zone in self._zone_names(all_regions):
             try:
                 return _gce_do(conn.instances().get, project=self.project_id, instance=instance_id, zone=zone)
             except:
@@ -1229,7 +1232,7 @@ class Service(ServiceBase):
         addresses = set()
 
         if category in ['all', 'interfaces']:
-            for instance in self.find_instances():
+            for instance in self.find_instances(all_regions=False):
                 for interface in instance['networkInterfaces']:
                     interface_address = interface.get('networkIP')
                     if not interface_address:
@@ -1844,7 +1847,7 @@ class Service(ServiceBase):
         # lookup nodes that have one of our primary IP addresses.. for now we
         # have to fetch all the instances and search here instead of server side
         # https://code.google.com/p/google-compute-engine/issues/detail?id=533
-        nodes = [n for n in self.find_instances() if self.ip(n) in node_ips]
+        nodes = [n for n in self.find_instances(all_regions=False) if self.ip(n) in node_ips]
         if nodes:
             cluster.nodes        = [ServiceInstance(self, instance=n) for n in nodes]
             cluster.zones        = list(set([node['zone'].split('/')[-1] for node in nodes]))
@@ -1993,8 +1996,10 @@ class Service(ServiceBase):
         response = _gce_do(self.connection().machineTypes().aggregatedList, project=self.project_id)
         return {zone_name.split('/')[1]: [mt['name'] for mt in zone_data.get('machineTypes', [])] for zone_name, zone_data in response['items'].items()}
 
-    def _zone_names(self):
+    def _zone_names(self, all_regions=True):
         '''Get a list of zone names
+            Arguments:
+                all_regions (bool, optional): return zones for all regions, True
             Returns: list
         '''
         if not hasattr(self.local, '_zone_names'):
@@ -2003,7 +2008,11 @@ class Service(ServiceBase):
             regions = _gce_do(conn.regions().list,project=self.project_id)['items']
             all_zones = [zone.split('/')[-1] for region in regions if 'zones' in region for zone in region['zones']]
             self.local._zone_names.extend([_ for _ in all_zones if _ not in self.zones])
-        return self.local._zone_names
+        if all_regions:
+            return self.local._zone_names
+        else:
+            region = self._zone_to_region(self.zones[0])
+            return [_ for _ in self.local._zone_names if _.startswith(region)]
 
     def _zone_to_region(self, zone):
         '''Return the name of the region for a given zone

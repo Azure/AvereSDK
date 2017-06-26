@@ -207,6 +207,7 @@ class ServiceInstance(object):
                 address (str): IP address
                 options (dict): passed to service backend
         '''
+        self.refresh()
         self.service.add_instance_address(self.instance, address, **options)
         self.refresh()
 
@@ -216,6 +217,7 @@ class ServiceInstance(object):
             Arguments:
                 address (str): IP address
         '''
+        self.refresh()
         self.service.remove_instance_address(self.instance, address)
         self.refresh()
 

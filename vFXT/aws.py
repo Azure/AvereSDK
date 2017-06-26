@@ -1435,7 +1435,7 @@ class Service(ServiceBase):
         except Exception as e:
             log.error("Failed to create node: {}".format(e))
             if not options.get('skip_cleanup', False):
-                cluster.destroy()
+                cluster.destroy(quick_destroy=True)
             raise vFXTCreateFailure(e)
 
     def post_destroy_cluster(self, cluster):

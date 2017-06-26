@@ -2364,6 +2364,12 @@ class Service(ServiceBase):
             log.debug("Failed to find subnetwork {}: {}".format(subnetwork, e))
             raise vFXTConfigurationException("Failed to find subnetwork {}: {}".format(subnetwork, e))
 
+    def _who_has_ip(self, address):
+        instances = self.find_instances(all_regions=False)
+        for i in instances:
+            if address in self.instance_in_use_addresses(i):
+                return i
+        return None
 
 def _gce_do(f, retries=ServiceBase.CLOUD_API_RETRIES, **options):
     '''GCE function call wrapper with variable retries

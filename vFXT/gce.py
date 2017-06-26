@@ -1217,31 +1217,34 @@ class Service(ServiceBase):
         '''
         return self.NTP_SERVERS
 
-    def in_use_addresses(self, cidr_block):
+    def in_use_addresses(self, cidr_block, category='all'):
         '''Return a list of in use addresses within the specified cidr
 
             Arguments:
                 cidr_block (str)
+                category (str): all, interfaces, routes
         '''
         conn      = self.connection()
         c         = Cidr(cidr_block)
         addresses = set()
 
-        for instance in self.find_instances():
-            for interface in instance['networkInterfaces']:
-                interface_address = interface.get('networkIP')
-                if not interface_address:
-                    continue
-                if c.contains(interface_address):
-                    addresses.add(interface_address)
+        if category in ['all', 'interfaces']:
+            for instance in self.find_instances():
+                for interface in instance['networkInterfaces']:
+                    interface_address = interface.get('networkIP')
+                    if not interface_address:
+                        continue
+                    if c.contains(interface_address):
+                        addresses.add(interface_address)
 
-        search = 'destRange eq .*/32' # only point to point addresses
-        resp   = _gce_do(conn.routes().list, project=self.project_id, filter=search)
-        if resp and 'items' in resp:
-            for route in resp['items']:
-                addr = route['destRange'].split('/')[0]
-                if c.contains(addr):
-                    addresses.add(addr)
+        if category in ['all', 'routes']:
+            search = 'destRange eq .*/32' # only point to point addresses
+            resp   = _gce_do(conn.routes().list, project=self.project_id, filter=search)
+            if resp and 'items' in resp:
+                for route in resp['items']:
+                    addr = route['destRange'].split('/')[0]
+                    if c.contains(addr):
+                        addresses.add(addr)
 
         return list(addresses)
 

@@ -571,17 +571,14 @@ class Cluster(object):
 
     @classmethod
     def _log_conditions(cls, xmlrpc_handle):
-        '''Warn the condition names, debug log the full conditions
+        '''Debug log the conditions
 
             This is useful when we are polling and want to show what is going
             on with the cluster while we wait.
         '''
         try:
             conditions = xmlrpc_handle.alert.conditions()
-            if conditions:
-                condition_names = [_['name'] for _ in conditions]
-                log.warn("Current conditions: {}".format(', '.join(condition_names)))
-                log.debug(conditions)
+            log.debug("Current conditions: {}".format(conditions))
         except Exception as e:
             log.debug("Failed to get condition list: {}".format(e))
 

@@ -288,6 +288,7 @@ class Service(ServiceBase):
           'numeric-project-id':'/computeMetadata/v1/project/numeric-project-id',
           'zone-id':'/computeMetadata/v1/instance/zone',
           'network-id':'/computeMetadata/v1/instance/network-interfaces/0/network',
+          'ip':'/computeMetadata/v1/instance/network-interfaces/0/ip',
           'access-token':'/computeMetadata/v1/instance/service-accounts/default/token',
           'scopes':'/computeMetadata/v1/instance/service-accounts/default/scopes',
           'email':'/computeMetadata/v1/instance/service-accounts/default/email',

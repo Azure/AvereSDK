@@ -453,9 +453,14 @@ class Service(ServiceBase):
                           proxy_uri=proxy_uri, on_instance=True)
             srv.local.instance_data = instance_data
             region      = srv._zone_to_region(zone_id)
-            subnetworks = [_['name'] for _ in srv._get_subnetworks(region)]
+            # no subnetwork in metadata... figure out which subnetwork owns our address
+            subnetworks = srv._get_subnetworks(region)
             if subnetworks:
-                srv.subnetwork_id = subnetworks[0]
+                for subnetwork in subnetworks:
+                    if Cidr(subnetwork['ipCidrRange']).contains(instance_data['ip']):
+                        srv.subnetwork_id = subnetwork['name']
+                if not srv.subnetwork_id:
+                    srv.subnetwork_id = subnetworks[0]['name']
             return srv
         except (vFXTServiceFailure, vFXTServiceConnectionFailure) as e:
             raise

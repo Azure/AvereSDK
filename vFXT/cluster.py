@@ -1237,10 +1237,11 @@ class Cluster(object):
             retries -= 1
             self._sleep()
 
-        log.info("*** IT IS STRONGLY RECOMMENDED THAT YOU CREATE A NEW CLOUD ENCRYPTION KEY AND SAVE THE")
-        log.info("*** KEY FILE (AND PASSWORD) BEFORE USING YOUR NEW CLUSTER.  WITHOUT THESE, IT WILL NOT")
-        log.info("*** BE POSSIBLE TO RECOVER YOUR DATA AFTER A FAILURE")
-        log.info("Do this at https://{}/avere/fxt/cloudFilerKeySettings.php".format(self.mgmt_ip))
+        if options.get('crypto_mode') != 'DISABLED':
+            log.info("*** IT IS STRONGLY RECOMMENDED THAT YOU CREATE A NEW CLOUD ENCRYPTION KEY AND SAVE THE")
+            log.info("*** KEY FILE (AND PASSWORD) BEFORE USING YOUR NEW CLUSTER.  WITHOUT THESE, IT WILL NOT")
+            log.info("*** BE POSSIBLE TO RECOVER YOUR DATA AFTER A FAILURE")
+            log.info("Do this at https://{}/avere/fxt/cloudFilerKeySettings.php".format(self.mgmt_ip))
 
         return key
 

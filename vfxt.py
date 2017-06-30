@@ -229,6 +229,7 @@ def main():
                         default=None, type=int)
     cluster_opts.add_argument("--configuration-expiration", help=argparse.SUPPRESS, default=Cluster.CONFIGURATION_EXPIRATION, type=int) # Number of minutes until the cluster.cfg file should expire
     cluster_opts.add_argument('--upgrade-url', help="Url to an AvereOS upgrade packagea")
+    cluster_opts.add_argument('--upgrade-non-ha', help="Perform a non-HA upgrade", action="store_true")
     cluster_opts.add_argument('--cluster-range', help='IP address range (cidr format) to use for addressing', default=None,
                         type=lambda x: str(Cidr(x)))
     cluster_opts.add_argument('--cluster-proxy-uri', help='Proxy resource for the cluster configuration, example http://user:pass@172.16.16.20:8080/.  NOTE: using the address rather than hostname is preferred in the event DNS is not reachable.', metavar="URL", type=_validate_url)
@@ -711,7 +712,7 @@ def main():
             logger.error("Cluster not found.")
             parser.exit(1)
         try:
-            cluster.upgrade(args.upgrade_url)
+            cluster.upgrade(args.upgrade_url, ha=not args.upgrade_non_ha)
         except Exception as e:
             if args.debug:
                 logger.exception(e)

@@ -607,12 +607,13 @@ class Cluster(object):
             log.debug("Telemetry failed: {}".format(e))
             raise vFXTStatusFailure('Telemetry failed: {}'.format(e))
 
-    def upgrade(self, upgrade_url, retries=None):
+    def upgrade(self, upgrade_url, retries=None, ha=True):
         '''Upgrade a cluster from the provided URL
 
             Arguments:
                 upgrade_url (str): URL for armada package
                 retries (int, optional): retry count for switching active images
+                ha (bool, optional): do an HA upgrade, True
 
             Raises: vFXTConnectionFailure
         '''
@@ -675,7 +676,7 @@ class Cluster(object):
         # instead we should be able to use self.xmlrpc().cluster.upgradeStatus()['allowActivate']
 
         log.info("Activating alternate image")
-        response = self._xmlrpc_do(self.xmlrpc().cluster.activateAltImage)
+        response = self._xmlrpc_do(self.xmlrpc().cluster.activateAltImage, ha)
         log.debug("activateAltImage response: {}".format(response))
 
         existing_activities = [a['id'] for a in self._xmlrpc_do(self.xmlrpc().cluster.listActivities)]

@@ -4,6 +4,7 @@
         "enabled": true,
         "zone_id": "us-central1-b",
         "network_id": "fill in your network",
+        "subnetwork_id": "default",
         "zones": [
             "us-central1-a",
             "us-central1-b",

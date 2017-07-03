@@ -34,6 +34,7 @@ class Base(unittest.TestCase):
             self.gce['zone_id']                 = test_config['gce']['zone_id']
             self.gce['zones']                   = test_config['gce']['zones']
             self.gce['network_id']              = test_config['gce']['network_id']
+            self.gce['subnetwork_id']           = test_config['gce']['subnetwork_id']
             self.gce['image']                   = test_config['gce']['image']
             self.gce['instance_type']           = test_config['gce']['instance_type']
             self.gce['existing']                = test_config['gce']['existing_instances']

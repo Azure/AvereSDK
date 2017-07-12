@@ -86,6 +86,7 @@ class Cluster_test(tests.vFXTTestCase.Base):
 
             node_count = len(cluster.nodes)
             cluster.add_nodes(2)
+            cluster.rebalance_directory_managers()
             new_node_count = len(cluster.nodes)
             self.assertTrue(new_node_count > node_count)
             self.assertTrue(new_node_count == len(cluster.xmlrpc().node.list()))
@@ -102,6 +103,7 @@ class Cluster_test(tests.vFXTTestCase.Base):
             log.error(e)
             raise
         finally:
+            cluster.telemetry()
             cluster.destroy()
 
     def test__init__gce(self):
@@ -159,6 +161,7 @@ class Cluster_test(tests.vFXTTestCase.Base):
 
             node_count = len(cluster.nodes)
             cluster.add_nodes(2)
+            cluster.rebalance_directory_managers()
             new_node_count = len(cluster.nodes)
             self.assertTrue(new_node_count > node_count)
             self.assertTrue(new_node_count == len(cluster.xmlrpc().node.list()))
@@ -175,6 +178,7 @@ class Cluster_test(tests.vFXTTestCase.Base):
             log.error(e)
             raise
         finally:
+            cluster.telemetry()
             cluster.destroy()
 
     def test_bad_machine_type_aws(self):

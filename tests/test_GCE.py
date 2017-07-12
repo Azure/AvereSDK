@@ -58,7 +58,20 @@ class GCE_test(tests.vFXTTestCase.Base):
 
     def test__init___with_bad_keyfile(self):
         self.assertRaises(vFXT.service.vFXTConfigurationException, Service, client_email='', zone='', project_id='', network_id='')
+        # non json file makes it through file presence check
         self.assertRaises(vFXT.service.vFXTServiceConnectionFailure, Service, client_email='fake', key_file='not_real', zone='', project_id='fake', network_id='')
+        # No such file or directory
+        self.assertRaises(IOError, Service, client_email='fake', key_file='not_real.json', zone='', project_id='fake', network_id='')
+        fd, name = tempfile.mkstemp(suffix='.json')
+        try:
+            with os.fdopen(fd, 'w') as f:
+                import json
+                key_data = json.load(open(self.gce['key_file']))
+                del key_data['client_email']
+                json.dump(key_data, f)
+            self.assertRaises(vFXT.service.vFXTConfigurationException, Service, key_file=name, zone='', project_id='fake', network_id='')
+        finally:
+            os.remove(name)
 
     def test__init___with_key_data(self):
         service = self.mk_gce_service()
@@ -67,6 +80,16 @@ class GCE_test(tests.vFXTTestCase.Base):
         withkey = Service(key_data=key_data, zone=service.zones[0], network_id=service.network_id)
         self.assertIsInstance(withkey, vFXT.gce.Service)
 
+    def test__init___with_bad_key_data(self):
+        service = self.mk_gce_service()
+        import json
+        key_data = json.load(open(self.gce['key_file']))
+        del(key_data['client_email'])
+        self.assertRaises(vFXT.service.vFXTConfigurationException, Service, key_data=key_data, zone=service.zones[0], network_id=service.network_id)
+        key_data = json.load(open(self.gce['key_file']))
+        del(key_data['project_id'])
+        self.assertRaises(vFXT.service.vFXTConfigurationException, Service, key_data=key_data, zone=service.zones[0], network_id=service.network_id)
+
     def test_init__with_incomplete(self):
         self.assertRaises(vFXT.service.vFXTConfigurationException, Service, network_id='', zone='', project_id='', client_email='')
         self.assertRaises(vFXT.service.vFXTConfigurationException, Service, network_id='', zone='', project_id='asdf', client_email='')
@@ -74,6 +97,10 @@ class GCE_test(tests.vFXTTestCase.Base):
     def test__init__with_bad_proxy(self):
         service = self.mk_gce_service()
         self.assertRaises(vFXT.service.vFXTServiceConnectionFailure, Service, key_file=service.key_file, zone=service.zones[0], project_id=service.project_id, network_id=service.network_id, proxy_uri='http://172.16.30.30:9999')
+
+    def test__init__with_bad_subnetwork(self):
+        service = self.mk_gce_service()
+        self.assertRaises(vFXT.service.vFXTConfigurationException, Service, key_file=service.key_file, zone=service.zones[0], project_id=service.project_id, network_id=service.network_id, subnetwork_id='nosuchsubnetwork')
 
     def test_connection(self):
         service = self.mk_gce_service()

@@ -71,6 +71,10 @@ class GCE_test(tests.vFXTTestCase.Base):
         self.assertRaises(vFXT.service.vFXTConfigurationException, Service, network_id='', zone='', project_id='', client_email='')
         self.assertRaises(vFXT.service.vFXTConfigurationException, Service, network_id='', zone='', project_id='asdf', client_email='')
 
+    def test__init__with_bad_proxy(self):
+        service = self.mk_gce_service()
+        self.assertRaises(vFXT.service.vFXTServiceConnectionFailure, Service, key_file=service.key_file, zone=service.zones[0], project_id=service.project_id, network_id=service.network_id, proxy_uri='http://172.16.30.30:9999')
+
     def test_connection(self):
         service = self.mk_gce_service()
         self.assertIsInstance(service.connection('compute'), googleapiclient.discovery.Resource)

@@ -68,6 +68,14 @@ class AWS_test(tests.vFXTTestCase.Base):
                 subnet=self.aws['subnet']
         )
 
+    def test_bad_proxy(self):
+        self.assertRaises(vFXT.service.vFXTServiceConnectionFailure, Service,
+            region='invalid',
+            access_key=self.aws['access_key'],
+            secret_access_key=self.aws['secret_access_key'],
+            subnet=self.aws['subnet'],
+            proxy_uri='http://172.16.30.30:9999')
+
     def test_no_subnets(self):
         self.assertRaises(vFXT.service.vFXTConfigurationException,
             Service,

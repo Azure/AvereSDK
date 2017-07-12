@@ -990,14 +990,15 @@ class Cluster(object):
         buckets = []
         if not options.pop('quick_destroy', False):
             xmlrpc = self.xmlrpc()
+            cluster_name = self.name or 'unknown'
 
             # remove all junctions
             for vserver in self._xmlrpc_do(xmlrpc.vserver.list):
-                log.info("Suspending vserver {}".format(vserver))
+                log.info("Suspending vserver {} on cluster {}".format(vserver, cluster_name))
                 activity = self._xmlrpc_do(xmlrpc.vserver.suspend, vserver)
                 self._xmlrpc_wait_for_activity(activity, "Failed to suspend vserver {}".format(vserver))
                 for junction in self._xmlrpc_do(xmlrpc.vserver.listJunctions, vserver):
-                    log.info("Removing junction {} from vserver {}".format(junction['path'], vserver))
+                    log.info("Removing junction {} from vserver {} on cluster {}".format(junction['path'], vserver, cluster_name))
                     activity = self._xmlrpc_do(xmlrpc.vserver.removeJunction, vserver, junction['path'])
                     self._xmlrpc_wait_for_activity(activity, "Failed to remove junction {} from vserver {}".format(junction['path'], vserver))
 
@@ -1006,13 +1007,13 @@ class Cluster(object):
             for corefiler, data in corefilers.items():
                 if 'bucket' in data and data['s3Type'] == self.service.S3TYPE_NAME:
                     buckets.append(data['bucket'])
-                log.info("Removing corefiler {}".format(corefiler))
+                log.info("Removing corefiler {} on cluster {}".format(corefiler, cluster_name))
                 self.remove_corefiler(corefiler)
 
         self.parallel_call(self.nodes, 'destroy', **options)
         if remove_buckets and buckets:
             for bucket_name in buckets:
-                log.debug("Deleting bucket {}".format(bucket_name))
+                log.debug("Deleting bucket {} on cluster {}".format(bucket_name, cluster_name))
                 try:
                     # TODO will fail as non-empty
                     self.service.delete_bucket(bucket_name)

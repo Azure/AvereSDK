@@ -26,6 +26,12 @@ log = logging.getLogger(__name__)
 
 class Cluster_test(tests.vFXTTestCase.Base):
 
+    def setUp(self):
+        tests.vFXTTestCase.Base.setUp(self)
+        if not self.create_clusters:
+            self.skipTest("skipping tests for cluster creation")
+
+
     def test__init__aws(self):
         if not self.aws['enabled']:
             self.skipTest("skipping test for AWS")

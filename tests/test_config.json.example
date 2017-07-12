@@ -1,7 +1,7 @@
 {
     "create_clusters": false,
     "gce": {
-        "enabled": true,
+        "enabled": false,
         "zone_id": "us-central1-b",
         "network_id": "fill in your network",
         "subnetwork_id": "default",
@@ -24,7 +24,7 @@
         "private_range": null
     },
     "aws": {
-        "enabled": true,
+        "enabled": false,
         "access_key": "account access key",
         "secret_access_key": "account secret access key",
         "s3_access_key": "can reuse access_key here",

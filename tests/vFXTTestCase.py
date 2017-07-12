@@ -79,8 +79,9 @@ class Base(unittest.TestCase):
         project_id      = self.gce['project_id']
         zone_id         = self.gce['zone_id']
         network_id      = self.gce['network_id']
+        subnetwork_id   = self.gce['subnetwork_id']
         key_file        = self.gce['key_file']
         private_range   = self.gce['private_range']
-        return GCE(client_email=client_email, key_file=key_file, zone=zone_id, project_id=project_id, network_id=network_id, private_range=private_range)
+        return GCE(client_email=client_email, key_file=key_file, zone=zone_id, project_id=project_id, network_id=network_id, private_range=private_range, subnetwork_id=subnetwork_id)
 
 

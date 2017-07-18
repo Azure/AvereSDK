@@ -123,6 +123,7 @@ class Service(ServiceBase):
         'n1-standard-8':    {'data_disk_size':250,'data_disk_type':'pd-ssd','data_disk_count':1,'node_count':3,'root_disk_type':'pd-ssd'},
         'n1-standard-16':   {'data_disk_size':250,'data_disk_type':'pd-ssd','data_disk_count':1,'node_count':3,'root_disk_type':'pd-ssd'},
         'n1-standard-32':   {'data_disk_size':250,'data_disk_type':'pd-ssd','data_disk_count':1,'node_count':3,'root_disk_type':'pd-ssd'},
+        'custom-6-40960':   {'data_disk_size':250,'data_disk_type':'pd-ssd','data_disk_count':1,'node_count':3,'root_disk_type':'pd-ssd'},
     }
     MACHINE_TYPES=MACHINE_DEFAULTS.keys()
     DEFAULTS_URL="http://storage.googleapis.com/avere-dist/vfxtdefaults.json"
@@ -503,7 +504,10 @@ class Service(ServiceBase):
         if machine_type and instances:
             machine_type_cores = 1
             try:
-                machine_type_cores = int(machine_type.split('-')[-1])
+                if machine_type.startswith('custom-'):
+                    machine_type_cores = int(machine_type.split('-')[-2])
+                else:
+                    machine_type_cores = int(machine_type.split('-')[-1])
             except ValueError: pass
             core_count = instances * machine_type_cores
 

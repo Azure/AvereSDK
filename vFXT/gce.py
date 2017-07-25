@@ -612,7 +612,8 @@ class Service(ServiceBase):
             if self.local.instance_data['token_expires'] < int(time.time()):
                 log.debug("Access token expired, forcing refresh")
                 self.local.connections = {}
-        except: pass
+        except Exception:
+            pass
 
         if not hasattr(self.local, 'connections'):
             self.local.connections = {}
@@ -693,7 +694,7 @@ class Service(ServiceBase):
         for zone in self._zone_names(all_regions):
             try:
                 return _gce_do(conn.instances().get, project=self.project_id, instance=instance_id, zone=zone)
-            except:
+            except Exception:
                 pass
         return None
 
@@ -848,7 +849,8 @@ class Service(ServiceBase):
             try: # need to delete any leftover disks
                 resp = _gce_do(conn.disks().delete, project=self.project_id, zone=zone, disk=d['deviceName'])
                 self._wait_for_operation(resp, msg='disk to be deleted', zone=zone)
-            except: pass
+            except Exception:
+                pass
 
         expr   = "nextHopInstance eq .*/{}$".format(instance['name'])
         routes = _gce_do(conn.routes().list, project=self.project_id,filter=expr)
@@ -858,7 +860,8 @@ class Service(ServiceBase):
             try: # need to delete any leftover routes
                 resp = _gce_do(conn.routes().delete, project=self.project_id, route=route['name'])
                 self._wait_for_operation(resp, msg='route to be deleted', zone=zone)
-            except: pass
+            except Exception:
+                pass
 
     def is_on(self, instance):
         '''Return True if the instance is currently on
@@ -885,7 +888,7 @@ class Service(ServiceBase):
         try:
             metadata = instance['metadata']['items']
             return 'shelved' in [v for opts in metadata for v in opts.values()]
-        except:
+        except Exception:
             return False
 
     def name(self, instance):
@@ -994,7 +997,7 @@ class Service(ServiceBase):
                 self._wait_for_operation(r, msg='disk to be detached', zone=zone)
                 r = _gce_do(disk_srv.delete, project=self.project_id, zone=zone, disk=name)
                 self._wait_for_operation(r, msg='disk to be deleted', zone=zone)
-            except:
+            except Exception:
                 detach_failed.append(name)
 
             # XXX assume all volume attributes are uniform
@@ -1041,7 +1044,7 @@ class Service(ServiceBase):
         try:
             attrs = self._get_metadata(instance, "shelved").split('|')
             vol_count, vol_size, vol_type = attrs[0:3]
-        except:
+        except Exception:
             log.error("{} does not have data in the shelved tag".format(instance['name']))
             return
 
@@ -1390,7 +1393,7 @@ class Service(ServiceBase):
         if boot_disk_image:
             try:
                 boot_image = _gce_do(conn.images().get, project=self.project_id, image=boot_disk_image)
-            except:
+            except Exception:
                 log.debug("Could not find boot_disk_image in our list of images, assuming public/other")
                 boot_image['selfLink'] = boot_disk_image
 
@@ -1913,7 +1916,7 @@ class Service(ServiceBase):
             value = [i['value'] for i in items if i['key'] == key][0]
             log.debug("Fetched metadata {}={}".format(key, value))
             return value
-        except:
+        except Exception:
             log.debug("No such metadata key:{}".format(key))
             return None
 
@@ -2265,7 +2268,8 @@ class Service(ServiceBase):
                 try:
                     nat_addresses = [_['natIP'] for _ in interface['accessConfigs']]
                     addresses.update(set(nat_addresses))
-                except: pass
+                except Exception:
+                    pass
 
         return list(addresses)
 
@@ -2336,7 +2340,7 @@ class Service(ServiceBase):
         '''
         try:
             return self.defaults['machineimages']['current']
-        except:
+        except Exception:
             raise vFXTConfigurationException("You must provide a root disk image.")
 
     def _disable_disk_auto_delete(self, instance, disk_name):

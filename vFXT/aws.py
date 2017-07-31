@@ -1843,12 +1843,20 @@ class Service(ServiceBase):
         except Exception as e:
             raise vFXTServiceFailure("Failed to determine DNS configuration: {}".format(e))
 
-    def get_ntp_servers(self):
+    def get_ntp_servers(self, subnet_id=None):
         '''Get NTP server addresses
+            Arguments:
+                subnet_id (str): subnet id (optional if given to constructor)
+
             Returns:
                 [str]: list of NTP server addresses
         '''
-        return    self.NTP_SERVERS
+        subnet_id = subnet_id or self.subnets[0]
+        try:
+            opts = self._get_dhcp_options(subnet_id)
+            return opts.get('ntp-servers') or self.NTP_SERVERS
+        except Exception:
+            return self.NTP_SERVERS
 
     def get_default_router(self, subnet_id=None):
         '''Get default route address

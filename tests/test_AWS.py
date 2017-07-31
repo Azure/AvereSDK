@@ -190,6 +190,13 @@ class AWS_test(tests.vFXTTestCase.Base):
         result = service.get_ntp_servers()
         self.assertTrue(result)
         self.assertTrue(service.get_ntp_servers() == result)
+    def test_all_default_ntp(self):
+        # we should always get a response for any subnet, either subnet
+        # configuration or our built in defaults
+        service = self.mk_aws_service()
+        for sn in service._get_all_subnets():
+            result = service.get_ntp_servers(sn.id)
+            self.assertTrue(result)
 
     def test_instance_in_use_addresses(self):
         service = self.mk_aws_service()

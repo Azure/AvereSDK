@@ -1383,11 +1383,12 @@ class Service(ServiceBase):
 
         boot_image = {}
 
-        try:
-            boot_image = _gce_do(conn.images().get, project=self.project_id, image=boot_disk_image)
-        except:
-            log.debug("Could not find boot_disk_image in our list of images, assuming public/other")
-            boot_image['selfLink'] = boot_disk_image
+        if boot_disk_image:
+            try:
+                boot_image = _gce_do(conn.images().get, project=self.project_id, image=boot_disk_image)
+            except:
+                log.debug("Could not find boot_disk_image in our list of images, assuming public/other")
+                boot_image['selfLink'] = boot_disk_image
 
         # gce instance defaults
         # https://cloud.google.com/compute/docs/reference/latest/instances#resource

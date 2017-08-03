@@ -20,6 +20,15 @@ import xmlrpclib
 import errno
 import sys
 
+def _setup_https_sock(h, verbose):
+    if verbose:
+        h.set_debuglevel(1)
+    h.connect()
+    h.sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)    # disable Nagle algorithm and send small requests immediately
+    h.sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE,1) # check for dead servers
+    h.sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPINTVL, 15) # probe every 15 seconds
+    h.sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPCNT, 8)    # up to 8 attempts == 120 seconds
+
 class CookieAuthXMLRPCTransport(xmlrpclib.SafeTransport):
     '''xmlrpclib.Transport that sends HTTP cookie.'''
     def __init__(self, use_datetime=0, do_cert_checks=True):
@@ -59,7 +68,7 @@ class CookieAuthXMLRPCTransport(xmlrpclib.SafeTransport):
             for i in (0, 1):
                 try:
                     return self.single_request(host, handler, request_body, verbose)
-                except socket.error, e:
+                except socket.error as e:
                     if i or e.errno not in (errno.ECONNRESET, errno.ECONNABORTED, errno.EPIPE):
                         raise
                 except httplib.BadStatusLine: #close after we sent request
@@ -67,19 +76,17 @@ class CookieAuthXMLRPCTransport(xmlrpclib.SafeTransport):
                         raise
         else:
             h = self.make_connection(host)
-            if verbose:
-                h.set_debuglevel(1)
+            _setup_https_sock(h, verbose)
             self.send_request(h, handler, request_body)
             self.send_host(h, host)
             self.send_user_agent(h)
             self.send_content(h, request_body)
-            errcode, errmsg, headers = h.getreply() # pylint: disable=no-member
+            errcode, errmsg, headers = h.getreply()
             if errcode != 200:
-                raise xmlrpclib.ProtocolError(
-                    host + handler,
-                    errcode, errmsg,
-                    headers
-                    )
+                raise xmlrpclib.ProtocolError(host + handler,
+                                              errcode, errmsg,
+                                              headers
+                                              )
             cookie_header = headers.getheaders('Set-Cookie')
             if cookie_header:
                 self._cookie = '; '.join(cookie_header)
@@ -93,8 +100,7 @@ class CookieAuthXMLRPCTransport(xmlrpclib.SafeTransport):
     def single_request(self, host, handler, request_body, verbose=0):
         '''Issue an XML-RPC request on a persistent HTTPConnection.'''
         h = self.make_connection(host)
-        if verbose:
-            h.set_debuglevel(1)
+        _setup_https_sock(h, verbose)
 
         try:
             self.send_request(h, handler, request_body)
@@ -121,13 +127,10 @@ class CookieAuthXMLRPCTransport(xmlrpclib.SafeTransport):
         #discard any response data and raise exception
         if (response.getheader("content-length", 0)):
             response.read()
-        raise xmlrpclib.ProtocolError(
-            host + handler,
-            response.status, response.reason,
-            response.msg,
-            )
-
-
+        raise xmlrpclib.ProtocolError(host + handler,
+                                      response.status, response.reason,
+                                      response.msg,
+                                      )
 
 def getXmlrpcClient(server_uri, verbose=False, do_cert_checks=True):
     '''Return an xmlrpc client which supports authentication via cookies'''

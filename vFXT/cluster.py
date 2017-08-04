@@ -1339,6 +1339,9 @@ class Cluster(object):
             Otherwise, calling with or without a size leads to the addresses being determined via
             get_available_addresses().
         '''
+        if name in self._xmlrpc_do(self.xmlrpc().vserver.list):
+            raise vFXTConfigurationException("Vserver '{}' exists".format(name))
+
         if not all([netmask, start_address, end_address]):
             in_use_addrs        = self.in_use_addresses()
             vserver_ips,netmask = self.service.get_available_addresses(count=size or len(self.nodes), contiguous=True, in_use=in_use_addrs)
@@ -1353,6 +1356,22 @@ class Cluster(object):
         log.info("Creating vserver {} ({}-{}/{})".format(name, start_address, end_address, netmask))
         activity = self._xmlrpc_do(self.xmlrpc().vserver.create, name, {'firstIP': start_address, 'lastIP': end_address, 'netmask':netmask})
         self._xmlrpc_wait_for_activity(activity, "Failed to create vserver {}".format(name), retries=retries)
+
+        # wait for vserver to become available
+        vserver_retries = retries
+        log.debug("Waiting for vserver '{}' to show up".format(name))
+        while True:
+            try:
+                if name in self._xmlrpc_do(self.xmlrpc().vserver.list):
+                    break
+                if vserver_retries % 10 == 0:
+                    log.debug("{} not yet configured".format(name))
+            except Exception as e:
+                log.debug(e)
+            vserver_retries -= 1
+            if vserver_retries == 0:
+                raise vFXTConfigurationException("Timed out waiting for vserver '{}' to show up.".format(name))
+            self._sleep()
 
     def add_vserver_junction(self, vserver, corefiler, path=None, export='/', subdir=None, retries=ServiceBase.XMLRPC_RETRIES):
         '''Add a Junction to a Vserver

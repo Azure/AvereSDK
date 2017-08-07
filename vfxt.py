@@ -441,6 +441,9 @@ def main():
         if args.nodes and args.nodes < 3: # we default below if nothing was specified
             logger.error("Cluster sizes below 3 are not supported")
             parser.exit(1)
+        if args.nodes and args.nodes > 24:
+            logger.error("Cluster sizes above 24 are not supported")
+            parser.exit(1)
         # cluster create options
         options = {
             'size': args.nodes or 3,

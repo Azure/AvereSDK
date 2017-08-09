@@ -1132,9 +1132,10 @@ class Cluster(object):
                 type (str, optional): type of corefiler (default 'cloud')
                 cloud_type (str, optional): cloud type (default 's3')
                 s3_type (str, optional): S3 type (default Service.S3TYPE_NAME)
-                https (str, optional): use HTTPS (default 'yes')
+                https (str, optional): 'yes' or 'no' to use HTTPS (default 'yes')
                 crypto_mode (str, optional): crypto mode (default CBC-AES-256-HMAC-SHA-512)
                 compress_mode (str, optional): compression mode (default LZ4)
+                https_verify_mode (str, optional): DISABLED, OCSP, CRL, or OCSP_CRL
                 remove_on_fail (bool, optional): remove the corefiler if the configuration does not finish
                 existing_data (bool, optional): the bucket has existing data in it (defaults to False)
 
@@ -1166,6 +1167,7 @@ class Cluster(object):
             'bucket': bucketname,
             'cloudCredential': credential,
             'https': options.get('https') or 'yes',
+            'sslVerifyMode': options.get('https_verify_mode') or 'OCSP_CRL',
             'compressMode': options.get('compress_mode') or 'LZ4',
             'cryptoMode': options.get('crypto_mode') or 'CBC-AES-256-HMAC-SHA-512',
             'proxy': proxy or '',

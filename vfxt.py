@@ -114,6 +114,8 @@ def _add_bucket_corefiler(cluster, logger, args):
     bucket_opts = {
         'crypto_mode': 'DISABLED' if args.disable_bucket_encryption else None,
         'compress_mode': 'DISABLED' if args.disable_bucket_compression else None,
+        'https': 'no' if args.disable_bucket_https else None,
+        'https_verify_mode': 'DISABLED' if (args.disable_bucket_https or args.disable_bucket_https_verify) else None,
     }
 
     if not args.bucket:
@@ -250,6 +252,8 @@ def main():
     cluster_opts.add_argument("--bucket-not-empty", help=argparse.SUPPRESS, action='store_true') # Existing bucket has data in it
     cluster_opts.add_argument("--disable-bucket-encryption", help=argparse.SUPPRESS, action='store_true') # Disable the use of encryption for files in the bucket
     cluster_opts.add_argument("--disable-bucket-compression", help=argparse.SUPPRESS, action='store_true') # Disable the use of compression for files in the bucket
+    cluster_opts.add_argument("--disable-bucket-https", help=argparse.SUPPRESS, action='store_true') # Disable the use of HTTPS for bucket communication
+    cluster_opts.add_argument("--disable-bucket-https-verify", help=argparse.SUPPRESS, action='store_true') # Disable HTTPS certificate verification for bucket communication
     cluster_opts.add_argument("--nfs-mount", help="NFS mountpoint to use as the core filer (host:/path)")
     cluster_opts.add_argument("--core-filer", help="Name of the core filer to create")
     cluster_opts.add_argument("--subdir", help="NFS Export subdirectory (if / is the only export)", type=str, default='')

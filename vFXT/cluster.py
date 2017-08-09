@@ -302,7 +302,7 @@ class Cluster(object):
         retries      = int(retries)
         conn_retries = int(conn_retries)
         duration     = int(duration)
-        log.debug("Waiting for healthcheck state {} for duration {}".format(state, duration))
+        log.info("Waiting for healthcheck")
         xmlrpc = self.xmlrpc(conn_retries) #pylint: disable=unused-variable
 
         start_time = int(time.time())

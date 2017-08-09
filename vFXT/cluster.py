@@ -198,6 +198,7 @@ class Cluster(object):
                 skip_cleanup (bool, optional): do not clean up on failure
                 management_address (str, optional): management address for the cluster
                 trace_level (str, optional): trace configuration
+                timezone (str, optional): Set cluster timezone
                 join_instance_address (bool=False): Join cluster using instance rather than management address
                 size (int, optional): size of cluster (node count)
                 root_image (str, optional): root disk image name
@@ -215,6 +216,7 @@ class Cluster(object):
         c.name            = name
         c.proxy           = options.get('proxy_uri', None)
         c.trace_level     = options.get('trace_level', None)
+        c.timezone        = options.get('timezone', None)
         c.join_mgmt       = False if options.get('join_instance_address', False) else True
         c.skip_support_cfg= options.get('skip_support_configuration') or False
 
@@ -1544,6 +1546,12 @@ class Cluster(object):
                 raise vFXTConfigurationException(response)
         except Exception as e:
             log.error("Failed to configure support options: {}".format(e))
+
+        if self.timezone:
+            log.info("Setting timezone to {}".format(self.timezone))
+            response = self._xmlrpc_do(self.xmlrpc().cluster.modify, {'timezone': self.timezone})
+            if response != 'success':
+                raise vFXTConfigurationException(response)
 
         # try and enable HA early if we have support in the AvereOS release for single node
         try:

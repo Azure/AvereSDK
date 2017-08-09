@@ -1560,7 +1560,7 @@ class Service(ServiceBase):
             n = self.create_instance(machine_type=node_opts['machine_type'],
                             name=node_name,
                             boot_disk_image=node_opts['root_image'],
-                            disk_type=node_opts['disk_type'],
+                            disk_type=node_opts.get('disk_type') or None,
                             other_disks=data_disk_disks,
                             metadata=node_meta,
                             **instance_options

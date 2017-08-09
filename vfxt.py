@@ -237,6 +237,7 @@ def main():
     cluster_opts.add_argument('--cluster-proxy-uri', help='Proxy resource for the cluster configuration, example http://user:pass@172.16.16.20:8080/.  NOTE: using the address rather than hostname is preferred in the event DNS is not reachable.', metavar="URL", type=_validate_url)
     cluster_opts.add_argument('--public-address', help=argparse.SUPPRESS, action='store_true')
     cluster_opts.add_argument('--trace-level', help='Trace level for the created cluster', default='', type=str)
+    cluster_opts.add_argument('--timezone', help='Timezone for the created cluster', default=None, type=str)
     cluster_opts.add_argument('--join-instance-address', help='Join nodes using the instance address rather than the management address', action='store_true')
     cluster_opts.add_argument('--join-wait', help='Time (in seconds) to wait for nodes to join', type=int)
     cluster_opts.add_argument('--cluster-address-range-start', help=argparse.SUPPRESS, type=_validate_ip)
@@ -468,6 +469,7 @@ def main():
             'address_range_netmask': args.cluster_address_range_netmask,
             'instance_addresses': args.instance_addresses,
             'trace_level': args.trace_level,
+            'timezone': args.timezone,
             'key_name': args.ssh_key, # aws ssh key
             'join_instance_address': args.join_instance_address,
             'join_wait': args.join_wait or None,

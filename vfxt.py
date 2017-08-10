@@ -144,6 +144,8 @@ def main():
     action_opts.add_argument("--shelve", help=argparse.SUPPRESS, action="store_true")
     action_opts.add_argument("--unshelve", help=argparse.SUPPRESS, action="store_true")
     action_opts.add_argument("--upgrade", help='Upgrade a cluster', action="store_true")
+    action_opts.add_argument("--upgrade-alternate-image", help=argparse.SUPPRESS, action="store_true") # Upgrade the alternate image on a cluster
+    action_opts.add_argument("--activate-alternate-image", help=argparse.SUPPRESS, action="store_true") # Activate the alternate image on a cluster
     action_opts.add_argument("--check", help="Run checks for api access and quotas", action="store_true")
     action_opts.add_argument("--interact", help="Use the Python interpreter", action="store_true")
 
@@ -708,6 +710,29 @@ def main():
         local.update(globals())
         local.update(locals())
         code.interact(local=local, banner=banner)
+
+    elif args.upgrade_alternate_image:
+        if not args.upgrade_url:
+            logger.error("Provide a URL from which to upgrade")
+            parser.exit(1)
+        cluster = _get_cluster(service, logger, args)
+        try:
+            cluster.upgrade_alternate_image(args.upgrade_url)
+        except Exception as e:
+            if args.debug:
+                logger.exception(e)
+            logger.error("Failed to upgrade alternate image: {}".format(e))
+            parser.exit(1)
+
+    elif args.activate_alternate_image:
+        cluster = _get_cluster(service, logger, args)
+        try:
+            cluster.activate_alternate_image(ha=not args.upgrade_non_ha)
+        except Exception as e:
+            if args.debug:
+                logger.exception(e)
+            logger.error("Failed to activate alternate image: {}".format(e))
+            parser.exit(1)
 
     elif args.upgrade:
         if not args.upgrade_url:

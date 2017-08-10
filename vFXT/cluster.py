@@ -609,15 +609,12 @@ class Cluster(object):
             log.debug("Telemetry failed: {}".format(e))
             raise vFXTStatusFailure('Telemetry failed: {}'.format(e))
 
-    def upgrade(self, upgrade_url, retries=None, ha=True):
-        '''Upgrade a cluster from the provided URL
+    def upgrade_alternate_image(self, upgrade_url, retries=None):
+        '''Upgrade the cluster alternate image
 
             Arguments:
                 upgrade_url (str): URL for armada package
                 retries (int, optional): retry count for switching active images
-                ha (bool, optional): do an HA upgrade, True
-
-            Raises: vFXTConnectionFailure
         '''
         retries     = retries or int(500+(500*math.log(len(self.nodes))))
         cluster     = self._xmlrpc_do(self.xmlrpc().cluster.get)
@@ -667,11 +664,22 @@ class Cluster(object):
             if op_retries == 0:
                 raise vFXTConnectionFailure("Timeout waiting for alternate image")
 
+        log.info("Updated alternate image to {}".format(cluster['alternateImage']))
+
+    def activate_alternate_image(self, retries=None, ha=True):
+        '''Activate the alternate image
+
+            Arguments:
+                retries (int, optional): retry count for switching active images
+                ha (bool, optional): do an HA upgrade, True
+        '''
+        retries     = retries or int(500+(500*math.log(len(self.nodes))))
+
         cluster = self._xmlrpc_do(self.xmlrpc().cluster.get)
-        alt_image = cluster['alternateImage']
         if cluster['alternateImage'] == cluster['activeImage']:
             log.info("Skipping upgrade since this version is active")
             return
+        alt_image = cluster['alternateImage']
 
         log.debug("Waiting for alternateImage to settle (FIXME)...")
         self._sleep(15) # time to settle?
@@ -723,7 +731,23 @@ class Cluster(object):
             if op_retries == 0:
                 raise vFXTConnectionFailure("Timeout waiting for active image")
 
-        log.info("Upgrade complete")
+        log.info("Upgrade to {} complete".format(alt_image))
+
+
+    def upgrade(self, upgrade_url, retries=None, ha=True):
+        '''Upgrade a cluster from the provided URL
+
+            Arguments:
+                upgrade_url (str): URL for armada package
+                retries (int, optional): retry count for switching active images
+                ha (bool, optional): do an HA upgrade, True
+
+            Raises: vFXTConnectionFailure
+        '''
+        retries     = retries or int(500+(500*math.log(len(self.nodes))))
+
+        self.upgrade_alternate_image(upgrade_url, retries=retries)
+        self.activate_alternate_image(ha=ha, retries=retries)
 
     def add_nodes(self, count=1, **options):
         '''Add nodes to the cluster

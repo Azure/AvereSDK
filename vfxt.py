@@ -265,6 +265,7 @@ def main():
     cluster_opts.add_argument('--vserver-address-range-start', help=argparse.SUPPRESS, type=_validate_ip)
     cluster_opts.add_argument('--vserver-address-range-end', help=argparse.SUPPRESS, type=_validate_ip)
     cluster_opts.add_argument('--vserver-address-range-netmask', help=argparse.SUPPRESS, type=_validate_ip)
+    cluster_opts.add_argument('--vserver-home-addresses', help=argparse.SUPPRESS, action='store_true') # home the addresses of the vserver across the nodes
 
     args = parser.parse_args()
 
@@ -511,7 +512,8 @@ def main():
                 vserver_opts = {
                     'netmask': args.vserver_address_range_netmask,
                     'start_address': args.vserver_address_range_start,
-                    'end_address': args.vserver_address_range_end
+                    'end_address': args.vserver_address_range_end,
+                    'home_addresses': args.vserver_home_addresses,
                 }
                 cluster.add_vserver(args.vserver, **vserver_opts)
                 if corefiler_name:
@@ -678,6 +680,7 @@ def main():
             'auto_public_address': args.public_address,
             'join_wait': args.join_wait or None,
             'service_account': args.service_account,
+            'home_addresses': args.vserver_home_addresses,
         }
         # prune out unfortunate command line defaults
         options = {k: v for k, v in options.iteritems() if v is not None and v != ''}

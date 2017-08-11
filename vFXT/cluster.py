@@ -1375,6 +1375,8 @@ class Cluster(object):
             raise vFXTConfigurationException("Vserver '{}' exists".format(name))
 
         if not all([netmask, start_address, end_address]):
+            if any([netmask, start_address, end_address]):
+                log.warn("Ignoring address configuration because missing one of {}(start), {}(end), or {}(netmask)".format(start_address, end_address, netmask))
             in_use_addrs        = self.in_use_addresses()
             vserver_ips,netmask = self.service.get_available_addresses(count=size or len(self.nodes), contiguous=True, in_use=in_use_addrs)
             start_address       = vserver_ips[0]

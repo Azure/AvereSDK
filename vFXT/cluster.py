@@ -107,6 +107,7 @@ import re
 import socket
 from xmlrpclib import Fault as xmlrpclib_Fault
 import math
+import itertools
 
 import vFXT.xmlrpcClt
 from vFXT.serviceInstance import ServiceInstance
@@ -762,6 +763,7 @@ class Cluster(object):
                 address_range_start (str, optional): Specify the first of a custom range of addresses to use
                 address_range_end (str, optional): Specify the last of a custom range of addresses to use
                 address_range_netmask (str, optional): Specify the netmask of the custom address range to use
+                vserver_home_addresses (bool, optional): Update address home configuration for all vservers
                 **options: options to pass to the service backend
 
             Raises: vFXTCreateFailure
@@ -856,6 +858,8 @@ class Cluster(object):
             self.enable_ha()
             self.allow_node_join(False)
             self.set_node_naming_policy()
+            if options.get('vserver_home_addresses') or False:
+                self.vserver_home_addresses()
         except (KeyboardInterrupt, Exception) as e:
             log.error(e)
             if options.get('skip_cleanup', False):
@@ -1350,7 +1354,7 @@ class Cluster(object):
         except Exception as e:
             raise vFXTConfigurationException(e)
 
-    def add_vserver(self, name, size=0, netmask=None, start_address=None, end_address=None, retries=ServiceBase.WAIT_FOR_OPERATION):
+    def add_vserver(self, name, size=0, netmask=None, start_address=None, end_address=None, home_addresses=False, retries=ServiceBase.WAIT_FOR_OPERATION):
         '''Add a Vserver
 
             Arguments:
@@ -1400,6 +1404,9 @@ class Cluster(object):
             if vserver_retries == 0:
                 raise vFXTConfigurationException("Timed out waiting for vserver '{}' to show up.".format(name))
             self._sleep()
+
+        if home_addresses:
+            self.vserver_home_addresses(name)
 
     def add_vserver_junction(self, vserver, corefiler, path=None, export='/', subdir=None, retries=ServiceBase.XMLRPC_RETRIES):
         '''Add a Junction to a Vserver
@@ -1750,5 +1757,39 @@ class Cluster(object):
                     log.error("Failed to rename nodes: {}".format(e))
                     break
                 retries -= 1
+
+    def vserver_home_addresses(self, vservers=None):
+        '''Home the addresses of the vserver across the nodes
+
+            Arguments:
+                vservers (list, optional): list of vservers to home (otherwise all vservers)
+        '''
+        xmlrpc = self.xmlrpc()
+        vservers = vservers or xmlrpc.vserver.list()
+        if not isinstance(vservers, list):
+            vservers = [vservers]
+
+        nodes = itertools.cycle(xmlrpc.node.list())
+        for vserver in vservers:
+            home_cfg = xmlrpc.vserver.listClientIPHomes(vserver)
+            # if all addresses are already homed, bail
+            if not [_ for _ in home_cfg if _['home'] is 'None']:
+                log.debug("Refusing to override existing home configuration")
+                return
+
+            old_mappings = {_['ip']:_['current'] for _ in home_cfg}
+            vifs = [Cidr.to_address(_) for _ in sorted([Cidr.from_address(_) for _ in old_mappings.keys()])]
+
+            mappings = {}
+            for vif in vifs:
+                mappings[vif] = nodes.next()
+
+            if not [_ for _ in mappings.keys() if mappings[_] != old_mappings[_]]:
+                log.debug("Address home configuration is up to date for vserver '{}'".format(vserver))
+                continue
+
+            log.debug("Setting up addresses home configuration for vserver '{}': {}".format(vserver, mappings))
+            activity = self._xmlrpc_do(self.xmlrpc().vserver.modifyClientIPHomes, vserver, mappings)
+            self._xmlrpc_wait_for_activity(activity, "Failed to rebalance vserver {} addresses".format(vserver))
 
 

@@ -682,9 +682,17 @@ class Cluster(object):
             return
         alt_image = cluster['alternateImage']
 
+        vservers = self._xmlrpc_do(self.xmlrpc().vserver.list)
+        for vserver in vservers:
+            log.info("Suspending vserver {} on cluster {}".format(vserver, cluster['name']))
+            activity = self._xmlrpc_do(self.xmlrpc().vserver.suspend, vserver)
+            self._xmlrpc_wait_for_activity(activity, "Failed to suspend vserver {}".format(vserver))
+
         log.debug("Waiting for alternateImage to settle (FIXME)...")
         self._sleep(15) # time to settle?
-        # instead we should be able to use self.xmlrpc().cluster.upgradeStatus()['allowActivate']
+        upgrade_status = self._xmlrpc_do(self.xmlrpc().cluster.upgradeStatus)
+        if not upgrade_status.get('allowActivate', False):
+            raise vFXTConfigurationException("Alternate image activation is not allowed at this time")
 
         log.info("Activating alternate image")
         response = self._xmlrpc_do(self.xmlrpc().cluster.activateAltImage, ha)
@@ -731,6 +739,11 @@ class Cluster(object):
             op_retries -= 1
             if op_retries == 0:
                 raise vFXTConnectionFailure("Timeout waiting for active image")
+
+        for vserver in vservers:
+            log.info("Unsuspending vserver {} on cluster {}".format(vserver, cluster['name']))
+            activity = self._xmlrpc_do(self.xmlrpc().vserver.unsuspend, vserver)
+            self._xmlrpc_wait_for_activity(activity, "Failed to unsuspend vserver {}".format(vserver))
 
         log.info("Upgrade to {} complete".format(alt_image))
 

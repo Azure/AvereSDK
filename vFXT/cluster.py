@@ -1525,12 +1525,6 @@ class Cluster(object):
 
             Raises: vFXTConfigurationException
         '''
-        try:
-            if self._xmlrpc_do(self.xmlrpc().cluster.get)['ha'] == 'enabled':
-                return
-        except Exception as e:
-            log.debug("Failed to check HA status: {}".format(e))
-
         log.info("Enabling HA mode")
         try:
             status = self._xmlrpc_do(self.xmlrpc().cluster.enableHA, _xmlrpc_do_retries=retries)
@@ -1538,8 +1532,6 @@ class Cluster(object):
                 raise vFXTConfigurationException(status)
         except Exception as ha_e:
             raise vFXTConfigurationException("Failed to enable HA: {}".format(ha_e))
-        # XXX settle time
-        self._sleep(10)
 
     def rebalance_directory_managers(self, retries=ServiceBase.XMLRPC_RETRIES):
         '''Call rebalanceDirManagers via XMLRPC

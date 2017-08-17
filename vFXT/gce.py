@@ -840,7 +840,7 @@ class Service(ServiceBase):
         log.info("Destroying instance {}".format(self.name(instance)))
         response =  _gce_do(conn.instances().delete, project=self.project_id, zone=zone, instance=instance['name'])
         # we wait because we cannot destroy resources still attached to the instance
-        self._wait_for_operation(response, msg='instance to be destroyed', retries=wait, zone=zone)
+        self._wait_for_operation(response, msg='instance {} to be destroyed'.format(instance['name']), retries=wait, zone=zone)
 
         for d in instance['disks']:
             # skip our root if we want to keep it
@@ -1476,7 +1476,7 @@ class Service(ServiceBase):
         try:
             r = _gce_do(conn.instances().insert, project=self.project_id, zone=zone, body=body)
             wait_for_success = options.get('wait_for_success') or self.WAIT_FOR_SUCCESS
-            self._wait_for_operation(r, msg='instance to be created', retries=wait_for_success, zone=zone)
+            self._wait_for_operation(r, msg='instance {} to be created'.format(name), retries=wait_for_success, zone=zone)
             retries = self.CLOUD_API_RETRIES
             while retries > 0:
                 n = self.get_instance(name)

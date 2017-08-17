@@ -584,6 +584,8 @@ class Cluster(object):
             This is useful when we are polling and want to show what is going
             on with the cluster while we wait.
         '''
+        if not log.isEnabledFor(logging.DEBUG):
+            return
         try:
             conditions = xmlrpc_handle.alert.conditions()
             log.debug("Current conditions: {}".format(conditions))

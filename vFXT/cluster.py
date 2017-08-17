@@ -195,6 +195,7 @@ class Cluster(object):
                 name (str): cluster name (used or all subsequent resource naming)
                 admin_password (str): administration password to assign to the cluster
                 wait_for_state (str, optional): red, yellow, green cluster state (defaults to yellow)
+                wait_for_state_duration (int, optional): number of seconds state must be maintained, defaults to 30
                 proxy_uri (str, optional): URI of proxy resource (e.g. http://user:pass@172.16.16.20:8080)
                 skip_cleanup (bool, optional): do not clean up on failure
                 management_address (str, optional): management address for the cluster

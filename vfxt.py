@@ -199,8 +199,8 @@ def main():
     # optional arguments
     parser.add_argument("-d", "--debug", help="Give verbose feedback", action="store_true")
     parser.add_argument("--skip-cleanup", help="Do not cleanup buckets, volumes, instances, etc on failure", action="store_true")
-    parser.add_argument("--wait-for-state", help="When done configuring the vFXT cluster wait for cluster state red, yellow, or green. The default is yellow.",
-                    choices=['red', 'yellow', 'green'], default="yellow")
+    parser.add_argument("--wait-for-state", help="Wait for cluster state after configuration to settle on red, yellow, or green. The default is yellow.", choices=['red', 'yellow', 'green'], default="yellow")
+    parser.add_argument("--wait-for-state-duration", help="Number of seconds cluster state must remain for success", type=int, default=30)
     parser.add_argument("--poll-time", help=argparse.SUPPRESS, default=1, type=int) # seconds per poll when waiting
     parser.add_argument('--proxy-uri', help='Proxy resource for API calls, example http://user:pass@172.16.16.20:8080/', metavar="URL", type=_validate_url)
     parser.add_argument('--ssh-key', help="SSH key for cluster authentication (path to public key file for GCE, key name for AWS)", type=str, default=None)
@@ -458,6 +458,7 @@ def main():
             'placement_group': args.placement_group,
             'dedicated_tenancy': args.dedicated_tenancy,
             'wait_for_state': args.wait_for_state,
+            'wait_for_state_duration': args.wait_for_state_duration,
             'security_group_ids': args.security_group,
             'network_security_group': args.security_group,
             'config_expiration': args.configuration_expiration,
@@ -568,7 +569,7 @@ def main():
             cluster.mgmt_ip        = args.management_address
             cluster.admin_password = args.admin_password
             if args.wait_for_state:
-                cluster.wait_for_healthcheck(state=args.wait_for_state, conn_retries=20)
+                cluster.wait_for_healthcheck(state=args.wait_for_state, conn_retries=20, duration=args.wait_for_state_duration)
         logger.info("Complete")
 
     elif args.stop:
@@ -656,7 +657,7 @@ def main():
             cluster.mgmt_ip        = args.management_address
             cluster.admin_password = args.admin_password
             if args.wait_for_state:
-                cluster.wait_for_healthcheck(state=args.wait_for_state, conn_retries=20)
+                cluster.wait_for_healthcheck(state=args.wait_for_state, conn_retries=20, duration=args.wait_for_state_duration)
 
         logger.info("Completed unshelving nodes {}".format(node_names))
 
@@ -706,7 +707,7 @@ def main():
             if 'A directory manager rebalance operation is already scheduled' in e:
                 parser.exit(1)
         if args.wait_for_state:
-            cluster.wait_for_healthcheck(state=args.wait_for_state)
+            cluster.wait_for_healthcheck(state=args.wait_for_state, duration=args.wait_for_state_duration)
         logger.info("Complete")
 
     elif args.interact:
@@ -756,7 +757,7 @@ def main():
             logger.error("Failed to upgrade cluster: {}".format(e))
             parser.exit(1)
         if args.wait_for_state:
-            cluster.wait_for_healthcheck(state=args.wait_for_state)
+            cluster.wait_for_healthcheck(state=args.wait_for_state, duration=args.wait_for_state_duration)
 
     elif args.check:
         opts = {

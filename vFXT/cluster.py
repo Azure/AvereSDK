@@ -250,44 +250,28 @@ class Cluster(object):
                 c.destroy(quick_destroy=True)
             raise
 
-        # any service specific instance checks should happen here... the checks
-        # might have to restart the nodes
         try:
+            # any service specific instance checks should happen here... the checks
+            # might have to restart the nodes
             c.wait_for_service_checks()
-        except (KeyboardInterrupt, Exception) as e:
-            log.error('Failed to wait for service checks: {}'.format(e))
-            if not options.get('skip_cleanup', False):
-                c.destroy(quick_destroy=True)
-            else:
-                c.telemetry()
-            raise
 
-        # should get all the nodes joined by now
-        try:
+            xmlrpc = c.xmlrpc()
             retries = int(options.get('join_wait', 500+(500*math.log(len(c.nodes)))))
-            c.wait_for_nodes_to_join(retries=retries)
-        except (KeyboardInterrupt, Exception) as e:
-            log.error('Failed to wait for nodes to join: {}'.format(e))
-            if not options.get('skip_cleanup', False):
-                c.destroy(quick_destroy=True)
-            else:
-                c.telemetry()
-            raise
 
-        try:
+            # should get all the nodes joined by now
+            c.allow_node_join(retries=retries, xmlrpc=xmlrpc)
+            c.wait_for_nodes_to_join(retries=retries, xmlrpc=xmlrpc)
+            c.allow_node_join(enable=False, retries=retries, xmlrpc=xmlrpc)
+
+            c.set_node_naming_policy(xmlrpc=xmlrpc)
+            if len(c.nodes) > 1:
+                c.enable_ha(xmlrpc=xmlrpc)
+            c.verify_license(xmlrpc=xmlrpc)
+
             log.info("Waiting for cluster healthcheck")
             c.wait_for_healthcheck(state=options.get('wait_for_state', 'yellow'),
-                duration=int(options.get('wait_for_state_duration', 30)))
-
-            # disable node join
-            c.allow_node_join(False)
-            # rename nodes
-            c.set_node_naming_policy()
-
-            if len(c.nodes) > 1:
-                c.enable_ha()
+                duration=int(options.get('wait_for_state_duration', 30)), xmlrpc=xmlrpc)
         except (KeyboardInterrupt, Exception) as e:
-            log.error("Cluster failed: {}".format(e))
             if not options.get('skip_cleanup', False):
                 c.destroy(quick_destroy=True)
             else:
@@ -394,7 +378,7 @@ class Cluster(object):
         '''Return cluster configuration for master and slave nodes
 
             Arguments:
-                joining (bool=False): configuration for a joining node
+                joining (bool, optional): configuration for a joining node
                 expiration (int, optional): configuration expiration for a joining node
 
             Raises: vFXTConfigurationException
@@ -492,7 +476,7 @@ class Cluster(object):
         if not addrs:
             raise vFXTConfigurationException("No usable connection address for xmlrpc calls")
 
-        password = password if password else self.admin_password
+        password = password or self.admin_password
         if not password:
             raise vFXTConnectionFailure("Unable to make remote API connection without a password")
 
@@ -604,7 +588,7 @@ class Cluster(object):
         '''Kick off a minimal telemetry reporting
 
             Arguments:
-                nowait (bool=True): wait until complete
+                nowait (bool, optional): wait until complete
 
             Raises vFXTStatusFailure on failure while waiting.
         '''
@@ -877,16 +861,16 @@ class Cluster(object):
 
         # now add the node(s)
         try:
-            self.allow_node_join()
             self.service.add_cluster_nodes(self, count, **options)
             self.wait_for_service_checks()
 
             # book keeping... may have to wait for a node to update image
             wait = int(options.get('join_wait', 500+(500*math.log(count))))
+            self.allow_node_join(retries=wait, xmlrpc=xmlrpc)
             self.wait_for_nodes_to_join(retries=wait)
+            self.allow_node_join(enable=False, retries=wait, xmlrpc=xmlrpc)
             self.refresh()
             self.enable_ha()
-            self.allow_node_join(False)
             self.set_node_naming_policy()
             if options.get('vserver_home_addresses') or False:
                 self.vserver_home_addresses()
@@ -942,7 +926,6 @@ class Cluster(object):
                                 except Exception as e:
                                     log.error(e)
 
-            self.allow_node_join(False)
             raise vFXTCreateFailure(e)
 
     def parallel_call(self, serviceinstances, method, **options):
@@ -1245,20 +1228,32 @@ class Cluster(object):
                 activity = xmlrpc.corefiler.createCloudFiler(corefiler, data)
                 break
             except xmlrpclib_Fault as e:
-                # This cluster is not licensed for cloud core filers.  A FlashCloud license is required.
-                err_msg = 'A FlashCloud license is required'
-                if not (int(e.faultCode) == 100 and err_msg in e.faultString):
+                # These errors are non-fatal:
+                    # This cluster is not licensed for cloud core filers.  A FlashCloud license is required.
+                    # Cannot modify while a group of nodes is joining
+                allowed_errors = ['a group of nodes is joining', 'A FlashCloud license is required']
+                if not any([_ in e.faultString for _ in allowed_errors]):
                     raise
                 log.debug("Waiting for error to clear: {}".format(e))
                 if retries == 0:
                     raise
                 retries -= 1
                 self._sleep()
-
-        retries = self.service.WAIT_FOR_SUCCESS
         self._xmlrpc_wait_for_activity(activity, "Failed to create corefiler {}".format(corefiler), retries=self.service.WAIT_FOR_SUCCESS)
-        if corefiler not in self.xmlrpc().corefiler.list():
-            raise vFXTConfigurationException('Failed to create corefiler {}: Not found'.format(corefiler))
+
+        # we have to wait for the corefiler to show up... may be blocked by other things
+        # going on after corefiler.createCloudFiler completes.
+        retries = self.service.WAIT_FOR_SUCCESS
+        while True:
+            try:
+                if corefiler in xmlrpc.corefiler.list():
+                    break
+            except: pass
+            log.debug("Waiting for corefiler to show up")
+            if retries == 0:
+                raise vFXTConfigurationException('Failed to create corefiler {}: Not found'.format(corefiler))
+            retries -= 1
+            self._sleep()
 
         key = {}
         if options.get('crypto_mode') != 'DISABLED':
@@ -1583,7 +1578,7 @@ class Cluster(object):
         '''
         if not self.mgmt_ip:
             raise vFXTConfigurationException("Cannot configure a cluster without a management address")
-        log.info("Waiting for remote API connectivity to {}".format(self.mgmt_ip))
+        log.info("Waiting for remote API connectivity")
         xmlrpc = self.xmlrpc(retries=60) #pylint: disable=unused-variable
 
         self.set_default_proxy(xmlrpc=xmlrpc)
@@ -1616,12 +1611,15 @@ class Cluster(object):
 
         # try and enable HA early if we have support in the AvereOS release for single node
         try:
-            self.enable_ha()
+            try:
+                self.enable_ha(xmlrpc=xmlrpc)
+            except Exception as e:
+                log.debug("Failed to enable early HA, will retry later: {}".format(e))
+            self.wait_for_healthcheck(state=wait_for_state, duration=1, xmlrpc=xmlrpc)
         except Exception as e:
-            log.debug("Failed to enable early HA, will retry later: {}".format(e))
-        self.verify_license()
-        self.allow_node_join()
-        self.wait_for_healthcheck(state=wait_for_state)
+            log.debug("Failed during final first node configuration: {}".format(e))
+            self.first_node_error = vFXTConfigurationException(e)
+            raise self.first_node_error
 
     def set_default_proxy(self, name=None, xmlrpc=None):
         '''Set the default cluster proxy configuration
@@ -1655,17 +1653,83 @@ class Cluster(object):
         except Exception as e:
             raise vFXTConfigurationException("Unable to configure cluster proxy configuration: {}".format(e))
 
-    def allow_node_join(self, enable=True):
-        '''Enable node join configuration
+    def allow_node_join(self, enable=True, retries=ServiceBase.WAIT_FOR_HEALTH_CHECKS, xmlrpc=None): #pylint: disable=unused-argument
+        '''Enable created nodes to join
 
             Arguments:
                 enable (bool, optional): Allow nodes to join
+                retries (int): number of retries (default 600)
+                xmlrpc (xmlrpcClt, optional): xmlrpc client
         '''
+        log.info("Waiting for nodes to show up and ask to join")
+        xmlrpc = self.xmlrpc() if xmlrpc is None else xmlrpc
+
+        def _compat_allow_node_join(enable, xmlrpc):
+            setting = 'yes' if enable else 'no'
+            log.debug("_compat_allow_node_join setting allowAllNodesToJoin to {}".format(setting))
+            response = self._xmlrpc_do(xmlrpc.cluster.modify, {'allowAllNodesToJoin':setting})
+            if response != 'success':
+                raise vFXTConfigurationException("Failed to update allow node join configuration: {}".format(response))
+
+        if not enable:
+            _compat_allow_node_join(enable, xmlrpc)
+            return
+
+        # we have to accumulate all of the nodes we expect to see in node.listUnconfiguredNodes
+        node_addresses = [_.ip() for _ in self.nodes]
+        node_count = len(node_addresses)
+        joined_count = len(self._xmlrpc_do(xmlrpc.node.list))
+        expected_unjoined_count = node_count - joined_count
+        unjoined = []
+
+        if not expected_unjoined_count:
+            log.debug("Nodes joined on their own")
+            return
+
+        start_time = int(time.time())
+        while True:
+            unjoined_count = 0
+            try:
+                unjoined = [_ for _ in self._xmlrpc_do(xmlrpc.node.listUnconfiguredNodes) if _['address'] in node_addresses]
+                unjoined_count = len(unjoined)
+                if unjoined_count == expected_unjoined_count:
+                    break
+            except Exception as e:
+                log.debug("Failed to check unconfigured node status: {}".format(e))
+
+            try:
+                if len(self._xmlrpc_do(xmlrpc.node.list)) == node_count:
+                    log.debug("Nodes joined on their own")
+                    return
+            except Exception as e:
+                log.debug("Failed to check joined node status: {}".format(e))
+
+            # either we run out of retries or we take too long
+            duration = int(time.time()) - start_time
+            taking_too_long = duration > int(retries * 1.5)
+            if retries == 0 or taking_too_long:
+                diff = expected_unjoined_count - unjoined_count
+                raise vFXTConfigurationException("Timed out waiting for {} node(s) to come up.".format(diff))
+            if retries % 10 == 0:
+                log.debug("Found {}, expected {}".format(unjoined_count, expected_unjoined_count))
+                self._log_conditions(xmlrpc=xmlrpc)
+            retries -= 1
+            self._sleep()
+
+        # once we have them, call node.allowToJoin with our nodes in one group
+        node_names = [_['name'] for _ in unjoined]
+        log.info("Setting allow join for {} nodes".format(expected_unjoined_count))
+        log.debug(','.join(node_names))
+        try:
+            activity = self._xmlrpc_do(xmlrpc.node.allowToJoin, ','.join(node_names), False)
+            self._xmlrpc_wait_for_activity(activity, '"Failed to allow node joins')
+        except xmlrpclib_Fault as e:
+            # older releases cannot accept comma delimited node names
+            if 'Cannot find node' not in e.faultString:
+                raise
+        # try old way
         log.info("Setting node join policy")
-        setting = 'yes' if enable else 'no'
-        response = self._xmlrpc_do(self.xmlrpc().cluster.modify, {'allowAllNodesToJoin':setting})
-        if response != 'success':
-            raise vFXTConfigurationException("Failed to update allow node join configuration: {}".format(response))
+        _compat_allow_node_join(enable, xmlrpc)
 
     def refresh(self):
         '''Refresh instance data of cluster nodes from the backend service'''

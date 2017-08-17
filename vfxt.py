@@ -240,7 +240,7 @@ def main():
     cluster_opts.add_argument('--public-address', help=argparse.SUPPRESS, action='store_true')
     cluster_opts.add_argument('--trace-level', help='Trace level for the created cluster', default='', type=str)
     cluster_opts.add_argument('--timezone', help='Timezone for the created cluster', default='UTC', type=str)
-    cluster_opts.add_argument('--join-instance-address', help='Join nodes using the instance address rather than the management address', action='store_true')
+    cluster_opts.add_argument('--join-instance-address', help=argparse.SUPPRESS, action='store_true') # Now the default, do not error for old invocations
     cluster_opts.add_argument('--join-wait', help='Time (in seconds) to wait for nodes to join', type=int)
     cluster_opts.add_argument('--cluster-address-range-start', help=argparse.SUPPRESS, type=_validate_ip)
     cluster_opts.add_argument('--cluster-address-range-end', help=argparse.SUPPRESS, type=_validate_ip)
@@ -480,7 +480,6 @@ def main():
             'trace_level': args.trace_level,
             'timezone': args.timezone,
             'key_name': args.ssh_key, # aws ssh key
-            'join_instance_address': args.join_instance_address,
             'join_wait': args.join_wait or None,
             'service_account': args.service_account,
             'scopes': args.scopes,

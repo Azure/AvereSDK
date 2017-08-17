@@ -202,7 +202,7 @@ class Cluster(object):
                 management_address (str, optional): management address for the cluster
                 trace_level (str, optional): trace configuration
                 timezone (str, optional): Set cluster timezone
-                join_instance_address (bool=False): Join cluster using instance rather than management address
+                join_instance_address (bool, optional): Join cluster using instance rather than management address (defaults to True)
                 skip_node_renaming (bool optional): Do not automatically configure and enforce node naming convention (defaults to False)
                 size (int, optional): size of cluster (node count)
                 root_image (str, optional): root disk image name
@@ -221,7 +221,7 @@ class Cluster(object):
         c.proxy           = options.get('proxy_uri', None)
         c.trace_level     = options.get('trace_level', None)
         c.timezone        = options.get('timezone', None)
-        c.join_mgmt       = False if options.get('join_instance_address', False) else True
+        c.join_mgmt       = False if options.get('join_instance_address', True) else True
         c.skip_support_cfg= options.get('skip_support_configuration') or False
 
         if c.proxy:
@@ -481,11 +481,13 @@ class Cluster(object):
 
             Raises: vFXTConnectionFailure
         '''
-        if not self.mgmt_ip:
-            raise vFXTConnectionFailure("Unable to make remote API connection without a management address")
-        addrs = [self.mgmt_ip]
+        addrs = []
+        if self.join_mgmt:
+            addrs.append(self.mgmt_ip)
         if self.nodes:
             addrs.append(self.nodes[0].ip())
+        if not addrs:
+            raise vFXTConfigurationException("No usable connection address for xmlrpc calls")
 
         password = password if password else self.admin_password
         if not password:
@@ -497,7 +499,7 @@ class Cluster(object):
                 try:
                     xmlrpc = vFXT.xmlrpcClt.getXmlrpcClient("https://{}/cgi-bin/rpc2.py".format(addr), do_cert_checks=False)
                     xmlrpc.system.login( "admin".encode('base64'), self.admin_password.encode('base64') )
-                    if addr != self.mgmt_ip:
+                    if addr != self.mgmt_ip and self.join_mgmt:
                         log.warn("Connected via instance address {} instead of management address {}".format(addr, self.mgmt_ip))
                         self._log_conditions(xmlrpc)
                     return xmlrpc

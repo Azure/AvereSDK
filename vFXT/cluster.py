@@ -165,6 +165,7 @@ class Cluster(object):
         self.proxy            = options.get('proxy_uri',        None)
         self.join_mgmt        = True
         self.trace_level      = None
+        self.node_rename      = True
 
         if self.proxy:
             self.proxy = validate_proxy(self.proxy) # imported from vFXT.service
@@ -202,6 +203,7 @@ class Cluster(object):
                 trace_level (str, optional): trace configuration
                 timezone (str, optional): Set cluster timezone
                 join_instance_address (bool=False): Join cluster using instance rather than management address
+                skip_node_renaming (bool optional): Do not automatically configure and enforce node naming convention (defaults to False)
                 size (int, optional): size of cluster (node count)
                 root_image (str, optional): root disk image name
                 skip_cleanup (bool, optional): do not clean up on failure
@@ -224,6 +226,8 @@ class Cluster(object):
 
         if c.proxy:
             c.proxy = validate_proxy(c.proxy) # imported from vFXT.service
+        if options.get('skip_node_renaming'):
+            c.node_rename = False
 
         if not name:
             raise vFXTConfigurationException("A cluster name is required")
@@ -1727,6 +1731,9 @@ class Cluster(object):
         '''
         if not self.nodes:
             log.debug("No nodes to rename, skipping")
+            return
+        if not self.node_rename:
+            log.debug("Skipping node naming configuration")
             return
 
         node_ip_map = {_.ip():_.name() for _ in self.nodes}

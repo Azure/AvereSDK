@@ -247,6 +247,7 @@ def main():
     cluster_opts.add_argument('--cluster-address-range-netmask', help=argparse.SUPPRESS, type=_validate_ip)
     cluster_opts.add_argument('--quick-destroy', help="Skip cleanup steps that prevent data loss", action="store_true")
     cluster_opts.add_argument('--skip-support-configuration', help=argparse.SUPPRESS, action="store_true") # Skip initial support configuration
+    cluster_opts.add_argument('--skip-node-renaming', help=argparse.SUPPRESS, action="store_true") # Skip node renaming
 
     # corefiler
     cluster_opts.add_argument("--no-corefiler", help="Skip creating core filer", action='store_true')
@@ -466,6 +467,7 @@ def main():
             'metadata': args.metadata,
             'skip_cleanup': args.skip_cleanup,
             'skip_support_configuration': args.skip_support_configuration,
+            'skip_node_renaming': args.skip_node_renaming,
             'proxy_uri': args.cluster_proxy_uri,
             'disk_encryption': not args.no_disk_encryption,
             'ebs_optimized': None if not args.no_ebs_optimized else not args.no_ebs_optimized, # use machine defaults

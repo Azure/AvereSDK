@@ -222,7 +222,7 @@ class ServiceBase(object):
         raise NotImplementedError()
     def delete_bucket(self, name):
         raise NotImplementedError()
-    def authorize_bucket(self, cluster, name, retries=3):
+    def authorize_bucket(self, cluster, name, retries=3, xmlrpc=None):
         raise NotImplementedError()
 
     # networking

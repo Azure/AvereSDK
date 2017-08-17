@@ -1138,7 +1138,7 @@ class Service(ServiceBase):
         except Exception as e:
             raise vFXTServiceFailure("Failed to delete bucket {}: {}".format(name, e))
 
-    def authorize_bucket(self, cluster, name, retries=ServiceBase.CLOUD_API_RETRIES):
+    def authorize_bucket(self, cluster, name, retries=ServiceBase.CLOUD_API_RETRIES, xmlrpc=None):
         '''Perform any backend work for the bucket, and register a credential
         for it to the cluster
 
@@ -1147,11 +1147,12 @@ class Service(ServiceBase):
             Arguments:
                 cluster (Cluster): cluster object
                 name (str): bucket name
-                retries (int): number of attempts to make
+                retries (int, optional): number of attempts to make
+                xmlrpc (xmlrpcClt, optional): number of attempts to make
 
             Raises: vFXTServiceFailure
         '''
-        xmlrpc = cluster.xmlrpc()
+        xmlrpc = cluster.xmlrpc() if xmlrpc is None else xmlrpc
         # see if we have s3 interop credentials
         if self.s3_access_key and self.s3_secret_access_key:
             log.debug("Found s3 access keys")

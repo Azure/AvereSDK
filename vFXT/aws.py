@@ -972,7 +972,7 @@ class Service(ServiceBase):
                     raise vFXTServiceFailure("Failed to create bucket {}: {}".format(name, e))
                 retries -= 1
 
-    def authorize_bucket(self, cluster, name, retries=ServiceBase.CLOUD_API_RETRIES):
+    def authorize_bucket(self, cluster, name, retries=ServiceBase.CLOUD_API_RETRIES, xmlrpc=None):
         '''Perform any backend work for the bucket, and register a credential
         for it to the cluster
 
@@ -983,6 +983,7 @@ class Service(ServiceBase):
 
             Raises: vFXTServiceFailure
         '''
+        xmlrpc = cluster.xmlrpc() if xmlrpc is None else xmlrpc
         iam         = self.connection(connection_type='iam')
         iamrole     = cluster.iamrole
         policy_name = 'policy_{}'.format(iamrole)
@@ -1018,7 +1019,6 @@ class Service(ServiceBase):
 
         _aws_do(iam.put_role_policy, iamrole, policy_name, json.dumps(policy))
 
-        xmlrpc = cluster.xmlrpc()
         # we cant reuse the existing default creds
         if self.s3_access_key != self.access_key:
             cred = 's3-{}'.format(cluster.name)

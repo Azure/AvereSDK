@@ -295,7 +295,7 @@ class Cluster(object):
 
         return c
 
-    def wait_for_healthcheck(self, state='green', retries=ServiceBase.WAIT_FOR_HEALTH_CHECKS, duration=1, conn_retries=1):
+    def wait_for_healthcheck(self, state='green', retries=ServiceBase.WAIT_FOR_HEALTH_CHECKS, duration=1, conn_retries=1, xmlrpc=None):
         '''Poll for cluster maxConditions
             This requires the cluster to be on and be accessible via RPC
 
@@ -311,7 +311,7 @@ class Cluster(object):
         conn_retries = int(conn_retries)
         duration     = int(duration)
         log.info("Waiting for healthcheck")
-        xmlrpc = self.xmlrpc(conn_retries) #pylint: disable=unused-variable
+        xmlrpc = self.xmlrpc(conn_retries) if xmlrpc is None else xmlrpc
 
         start_time = int(time.time())
         observed = 0 # observed time in the requested state
@@ -323,7 +323,7 @@ class Cluster(object):
         while True:
             alertstats = {}
             try:
-                alertstats = self.xmlrpc().cluster.maxActiveAlertSeverity()
+                alertstats = xmlrpc.cluster.maxActiveAlertSeverity()
             except Exception as e:
                 log.debug("Ignoring cluster.maxActiveAlertSeverity() failure: {}".format(e))
 
@@ -343,7 +343,7 @@ class Cluster(object):
             if retries == 0:
                 alert_codes = []
                 try:
-                    conditions  = self.xmlrpc().alert.conditions()
+                    conditions  = xmlrpc.alert.conditions()
                     alert_codes = [c['name'] for c in conditions if c['severity'] != state]
                 except Exception as e:
                     log.debug("Failed to get alert conditions: {}".format(e))
@@ -448,18 +448,20 @@ class Cluster(object):
 
         return config
 
-    def verify_license(self, wait=LICENSE_TIMEOUT):
+    def verify_license(self, wait=LICENSE_TIMEOUT, xmlrpc=None):
         '''Verify a license has been provisioned for the cluster
 
             Arguments:
                 wait (int): time to wait in seconds for the license provisioning (default 60)
+                xmlrpc (xmlrpcClt, optional): xmlrpc client
 
             Raises: vFXTConfigurationException
         '''
         log.info('Waiting for FlashCloud licensing feature')
+        xmlrpc = self.xmlrpc() if xmlrpc is None else xmlrpc
         while wait > 0:
             try:
-                licenses = self.xmlrpc().cluster.listLicenses()
+                licenses = xmlrpc.cluster.listLicenses()
                 if 'FlashCloud' in licenses['features']:
                     log.info('Feature FlashCloud enabled.')
                     return
@@ -575,21 +577,24 @@ class Cluster(object):
                 retries -= 1
             if tries % 10 == 0 and 'status' in response:
                 log.info(response['status'])
-                self._log_conditions(self.xmlrpc())
+                self._log_conditions(xmlrpc)
             self._sleep()
             tries += 1
 
     @classmethod
-    def _log_conditions(cls, xmlrpc_handle):
+    def _log_conditions(cls, xmlrpc):
         '''Debug log the conditions
 
             This is useful when we are polling and want to show what is going
             on with the cluster while we wait.
+
+            Arguments:
+                xmlrpc (xmlrpcClt): xmlrpc client
         '''
         if not log.isEnabledFor(logging.DEBUG):
             return
         try:
-            conditions = xmlrpc_handle.alert.conditions()
+            conditions = xmlrpc.alert.conditions()
             log.debug("Current conditions: {}".format(conditions))
         except Exception as e:
             log.debug("Failed to get condition list: {}".format(e))
@@ -627,18 +632,19 @@ class Cluster(object):
                 retries (int, optional): retry count for switching active images
         '''
         retries     = retries or int(500+(500*math.log(len(self.nodes))))
-        cluster     = self._xmlrpc_do(self.xmlrpc().cluster.get)
+        xmlrpc      = self.xmlrpc()
+        cluster     = self._xmlrpc_do(xmlrpc.cluster.get)
         alt_image   = cluster['alternateImage']
 
-        upgrade_status = self._xmlrpc_do(self.xmlrpc().cluster.upgradeStatus)
+        upgrade_status = self._xmlrpc_do(xmlrpc.cluster.upgradeStatus)
         if not upgrade_status.get('allowDownload', False):
             raise vFXTConfigurationException("Upgrade downloads are not allowed at this time")
 
         # note any existing activities to skip
-        existing_activities = [a['id'] for a in self._xmlrpc_do(self.xmlrpc().cluster.listActivities)]
+        existing_activities = [a['id'] for a in self._xmlrpc_do(xmlrpc.cluster.listActivities)]
 
         log.info("Fetching alternate image from {}".format(upgrade_url))
-        response = self._xmlrpc_do(self.xmlrpc().cluster.upgrade, upgrade_url)
+        response = self._xmlrpc_do(xmlrpc.cluster.upgrade, upgrade_url)
         if response != 'success':
             raise vFXTConfigurationException("Failed to start upgrade download: {}".format(response))
 
@@ -646,8 +652,8 @@ class Cluster(object):
         while cluster['alternateImage'] == alt_image:
             self._sleep()
             try:
-                cluster    = self._xmlrpc_do(self.xmlrpc().cluster.get)
-                activities = [act for act in self._xmlrpc_do(self.xmlrpc().cluster.listActivities)
+                cluster    = self._xmlrpc_do(xmlrpc.cluster.get)
+                activities = [act for act in self._xmlrpc_do(xmlrpc.cluster.listActivities)
                                 if act['id'] not in existing_activities # skip existing
                                 if act['process'] == 'Cluster upgrade' # look for cluster upgrade or download
                                 or 'software download' in act['process']]
@@ -803,17 +809,18 @@ class Cluster(object):
         self.service._add_cluster_nodes_setup(self, count, **options)
 
         # check to see if we can add nodes with the current licensing information
-        license_data     = self._xmlrpc_do(self.xmlrpc().cluster.listLicenses)
+        xmlrpc           = self.xmlrpc()
+        license_data     = self._xmlrpc_do(xmlrpc.cluster.listLicenses)
         licensed_count   = int(license_data['maxNodes'])
         if (node_count+count) > licensed_count:
             msg = "Cannot expand cluster to {} nodes as the current licensed maximum is {}"
             raise vFXTConfigurationException(msg.format(node_count+count, licensed_count))
 
-        cluster_data    = self._xmlrpc_do(self.xmlrpc().cluster.get)
+        cluster_data    = self._xmlrpc_do(xmlrpc.cluster.get)
         cluster_ips_per_node = int(cluster_data['clusterIPNumPerNode'])
-        vserver_count    = len(self._xmlrpc_do(self.xmlrpc().vserver.list))
-        existing_vserver = self.in_use_addresses('vserver')
-        existing_cluster = self.in_use_addresses('cluster')
+        vserver_count    = len(self._xmlrpc_do(xmlrpc.vserver.list))
+        existing_vserver = self.in_use_addresses('vserver', xmlrpc=xmlrpc)
+        existing_cluster = self.in_use_addresses('cluster', xmlrpc=xmlrpc)
         need_vserver     = ((node_count+count)*vserver_count) - len(existing_vserver)
         need_cluster     = ((node_count+count)*cluster_ips_per_node) - len(existing_cluster)
         need_cluster     = need_cluster if need_cluster > 0 else 0
@@ -825,7 +832,7 @@ class Cluster(object):
         ip_count = need_vserver + need_cluster + need_private
 
         if ip_count > 0: # if we need more, extend ourselves
-            in_use_addrs    = self.in_use_addresses()
+            in_use_addrs    = self.in_use_addresses(xmlrpc=xmlrpc)
 
             custom_ip_config_reqs = ['address_range_start', 'address_range_end', 'address_range_netmask']
             if all([options.get(_) for _ in custom_ip_config_reqs]):
@@ -846,13 +853,13 @@ class Cluster(object):
                 body      = {'firstIP':addresses[0],'netmask':mask,'lastIP':addresses[-1]}
                 log.info("Extending cluster address range by {}".format(need_cluster))
                 log.debug("{}".format(body))
-                activity = self._xmlrpc_do(self.xmlrpc().cluster.addClusterIPs, body)
+                activity = self._xmlrpc_do(xmlrpc.cluster.addClusterIPs, body)
                 self._xmlrpc_wait_for_activity(activity, "Failed to extend cluster addresses")
                 added.append({'cluster':body})
 
             if need_vserver > 0:
-                for vserver in self._xmlrpc_do(self.xmlrpc().vserver.list):
-                    v_len     = len([a for r in self._xmlrpc_do(self.xmlrpc().vserver.get, vserver)[vserver]['clientFacingIPs']
+                for vserver in self._xmlrpc_do(xmlrpc.vserver.list):
+                    v_len     = len([a for r in self._xmlrpc_do(xmlrpc.vserver.get, vserver)[vserver]['clientFacingIPs']
                                 for a in xrange(Cidr.from_address(r['firstIP']), Cidr.from_address(r['lastIP'])+1)])
                     to_add    = (node_count+count) - v_len
                     if to_add < 1:
@@ -863,7 +870,7 @@ class Cluster(object):
                     body      = {'firstIP':addresses[0],'netmask':mask,'lastIP':addresses[-1]}
                     log.info("Extending vserver {} address range by {}".format(vserver, need_vserver))
                     log.debug("{}".format(body))
-                    activity = self._xmlrpc_do(self.xmlrpc().vserver.addClientIPs, vserver, body)
+                    activity = self._xmlrpc_do(xmlrpc.vserver.addClientIPs, vserver, body)
                     self._xmlrpc_wait_for_activity(activity, "Failed to extend vserver {} addresses".format(vserver))
                     added.append({'vserver':body})
 
@@ -1196,12 +1203,13 @@ class Cluster(object):
 
             Raises: vFXTConfigurationException
         '''
-        if corefiler in self._xmlrpc_do(self.xmlrpc().corefiler.list):
+        xmlrpc = self.xmlrpc()
+        if corefiler in self._xmlrpc_do(xmlrpc.corefiler.list):
             raise vFXTConfigurationException("Corefiler {} exists".format(corefiler))
 
         if not credential:
             log.debug("Looking up credential as none was specified")
-            credential = self.service.authorize_bucket(self, bucketname)
+            credential = self.service.authorize_bucket(self, bucketname, xmlrpc=xmlrpc)
             log.debug("Using credential {}".format(credential))
 
         if not master_password:
@@ -1233,7 +1241,7 @@ class Cluster(object):
         retries = self.LICENSE_TIMEOUT
         while True:
             try:
-                activity = self.xmlrpc().corefiler.createCloudFiler(corefiler, data)
+                activity = xmlrpc.corefiler.createCloudFiler(corefiler, data)
                 break
             except xmlrpclib_Fault as e:
                 # This cluster is not licensed for cloud core filers.  A FlashCloud license is required.
@@ -1257,7 +1265,7 @@ class Cluster(object):
             retries = self.service.XMLRPC_RETRIES
             while True:
                 try:
-                    key = self.xmlrpc().corefiler.generateMasterKey(corefiler, master_password)
+                    key = xmlrpc.corefiler.generateMasterKey(corefiler, master_password)
                     if 'keyId' in key and 'recoveryFile' in key:
                         break
                 except Exception as e:
@@ -1268,7 +1276,7 @@ class Cluster(object):
                 self._sleep()
 
             log.info("Activating master key for {}".format(corefiler))
-            response = self._xmlrpc_do(self.xmlrpc().corefiler.activateMasterKey, corefiler, key['keyId'], key['recoveryFile'])
+            response = self._xmlrpc_do(xmlrpc.corefiler.activateMasterKey, corefiler, key['keyId'], key['recoveryFile'])
             if response != 'success':
                 raise vFXTConfigurationException('Failed to activate master key for {}: {}'.format(corefiler, response))
 
@@ -1276,7 +1284,7 @@ class Cluster(object):
         retries = self.service.WAIT_FOR_SUCCESS
         while True:
             try:
-                exports = self._xmlrpc_do(self.xmlrpc().corefiler.listExports, corefiler)
+                exports = self._xmlrpc_do(xmlrpc.corefiler.listExports, corefiler)
                 if '/' in [export['path'] for export in exports[corefiler]]:
                     break
             except Exception as e:
@@ -1290,7 +1298,7 @@ class Cluster(object):
                         log.error("Failed to remove corefiler {}: {}".format(corefiler,e))
                 raise vFXTConfigurationException("Timed out waiting for {} exports".format(corefiler))
             if retries % 10 == 0:
-                self._log_conditions(self.xmlrpc())
+                self._log_conditions(xmlrpc)
             retries -= 1
             self._sleep()
 
@@ -1463,31 +1471,32 @@ class Cluster(object):
             raise vFXTConfigurationException("Failed to add junction to {}: {}".format(vserver, e))
         log.debug("Junctioned vserver {} with corefiler {} (path {}, export {})".format(vserver, corefiler, path, export))
 
-    def wait_for_nodes_to_join(self, retries=ServiceBase.WAIT_FOR_HEALTH_CHECKS):
+    def wait_for_nodes_to_join(self, retries=ServiceBase.WAIT_FOR_HEALTH_CHECKS, xmlrpc=None):
         '''This performs a check that the cluster configuration matches the
             nodes in the object, otherwise it will wait
 
             Arguments:
                 retries (int): number of retries (default 600)
+                xmlrpc (xmlrpcClt, optional): xmlrpc client
 
             Raises: vFXTConfigurationException
         '''
+        xmlrpc = self.xmlrpc() if xmlrpc is None else xmlrpc
         expected = len(self.nodes)
-        if expected > len(self._xmlrpc_do(self.xmlrpc().node.list)):
+        if expected > len(self._xmlrpc_do(xmlrpc.node.list)):
             log.info("Waiting for all nodes to join")
 
             start_time = int(time.time())
             node_addresses = [n.ip() for n in self.nodes]
             while True:
+                found = 1 # have to find one node at least
                 try:
-                    found = len(self._xmlrpc_do(self.xmlrpc().node.list))
+                    found = len(self._xmlrpc_do(xmlrpc.node.list))
+                    if expected == found:
+                        log.debug("Found {}".format(found))
+                        break
                 except Exception as e:
                     log.debug("Error getting node list: {}".format(e))
-                    found = 1 # have to find one node at least
-
-                if expected == found:
-                    log.debug("Found {}".format(found))
-                    break
 
                 try:
                     # if nodes are upgrading, delay the retries..  unjoined node status include:
@@ -1495,7 +1504,7 @@ class Cluster(object):
                     # 'joining: almost done'
                     # 'joining: upgrade the image'
                     # 'joining: switch to the new image'
-                    unjoined_status = [_['status'] for _ in self._xmlrpc_do(self.xmlrpc().node.listUnconfiguredNodes) if _['address'] in node_addresses]
+                    unjoined_status = [_['status'] for _ in self._xmlrpc_do(xmlrpc.node.listUnconfiguredNodes) if _['address'] in node_addresses]
                     if any(['image' in _ for _ in unjoined_status]):
                         log.debug("Waiting for image upgrade to finish: {}".format(unjoined_status))
                         start_time = int(time.time())
@@ -1515,21 +1524,23 @@ class Cluster(object):
                 retries -= 1
                 if retries % 10 == 0:
                     log.debug("Found {}, expected {}".format(found, expected))
-                    self._log_conditions(self.xmlrpc())
+                    self._log_conditions(xmlrpc=xmlrpc)
                 self._sleep()
         log.info("All nodes have joined the cluster.")
 
-    def enable_ha(self, retries=ServiceBase.XMLRPC_RETRIES):
+    def enable_ha(self, retries=ServiceBase.XMLRPC_RETRIES, xmlrpc=None):
         '''Enable HA on the cluster
 
             Arguments:
                 retries (int, optional): number of retries
+                xmlrpc (xmlrpcClt, optional): xmlrpc client
 
             Raises: vFXTConfigurationException
         '''
         log.info("Enabling HA mode")
         try:
-            status = self._xmlrpc_do(self.xmlrpc().cluster.enableHA, _xmlrpc_do_retries=retries)
+            xmlrpc = self.xmlrpc() if xmlrpc is None else xmlrpc
+            status = self._xmlrpc_do(xmlrpc.cluster.enableHA, _xmlrpc_do_retries=retries)
             if status != 'success':
                 raise vFXTConfigurationException(status)
         except Exception as ha_e:
@@ -1574,7 +1585,7 @@ class Cluster(object):
         log.info("Waiting for remote API connectivity to {}".format(self.mgmt_ip))
         xmlrpc = self.xmlrpc(retries=60) #pylint: disable=unused-variable
 
-        self.set_default_proxy()
+        self.set_default_proxy(xmlrpc=xmlrpc)
 
         # minimum, required support config
         support_opts = {'statsMonitor': 'yes', 'generalInfo': 'yes'}
@@ -1588,7 +1599,7 @@ class Cluster(object):
             support_opts['traceLevel'] = self.trace_level
             support_opts['rollingTrace'] = 'yes'
         try:
-            response = self._xmlrpc_do(self.xmlrpc().support.modify, support_opts)
+            response = self._xmlrpc_do(xmlrpc.support.modify, support_opts)
             if response[0] != 'success':
                 raise vFXTConfigurationException(response)
         except Exception as e:
@@ -1596,7 +1607,7 @@ class Cluster(object):
 
         if self.timezone:
             log.info("Setting timezone to {}".format(self.timezone))
-            response = self._xmlrpc_do(self.xmlrpc().cluster.modify, {'timezone': self.timezone})
+            response = self._xmlrpc_do(xmlrpc.cluster.modify, {'timezone': self.timezone})
             if response != 'success':
                 raise vFXTConfigurationException(response)
 
@@ -1609,11 +1620,12 @@ class Cluster(object):
         self.allow_node_join()
         self.wait_for_healthcheck(state=wait_for_state)
 
-    def set_default_proxy(self, name=None):
+    def set_default_proxy(self, name=None, xmlrpc=None):
         '''Set the default cluster proxy configuration
 
             Arguments:
                 name (str, optional): proxy name (defaults to proxy hostname)
+                xmlrpc (xmlrpcClt, optional): xmlrpc client
         '''
         if not self.proxy:
             log.debug("Skipping proxy configuration")
@@ -1622,18 +1634,19 @@ class Cluster(object):
         if not name or not self.proxy.geturl():
             raise vFXTConfigurationException("Unable to create proxy configuration: Bad proxy host")
 
+        xmlrpc = self.xmlrpc() if xmlrpc is None else xmlrpc
         body = {'url': self.proxy.geturl(), 'user': self.proxy.username or '', 'password': self.proxy.password or ''}
-        if name not in self._xmlrpc_do(self.xmlrpc().cluster.listProxyConfigs):
+        if name not in self._xmlrpc_do(xmlrpc.cluster.listProxyConfigs):
             log.info("Setting proxy configuration")
             try:
-                response = self.xmlrpc().cluster.createProxyConfig(name, body)
+                response = self._xmlrpc_do(xmlrpc.cluster.createProxyConfig, name, body)
                 if response != 'success':
                     raise vFXTConfigurationException(response)
             except Exception as e:
                 raise vFXTConfigurationException("Unable to create proxy configuration: {}".format(e))
 
         try:
-            response = self._xmlrpc_do(self.xmlrpc().cluster.modify, {'proxy':name})
+            response = self._xmlrpc_do(xmlrpc.cluster.modify, {'proxy':name})
             if response != 'success':
                 raise vFXTConfigurationException(response)
         except Exception as e:
@@ -1689,20 +1702,22 @@ class Cluster(object):
             return True
         return False
 
-    def in_use_addresses(self, category='all'):
+    def in_use_addresses(self, category='all', xmlrpc=None):
         '''Get in use addresses from the cluster
 
             Arguments:
                 category (str): all (default), mgmt, vserver, cluster
+                xmlrpc (xmlrpcClt, optional): xmlrpc client
         '''
         addresses = set()
+        xmlrpc = self.xmlrpc() if xmlrpc is None else xmlrpc
 
         if category in ['all','mgmt']:
-            addresses.update([self._xmlrpc_do(self.xmlrpc().cluster.get)['mgmtIP']['IP']])
+            addresses.update([self._xmlrpc_do(xmlrpc.cluster.get)['mgmtIP']['IP']])
 
         if category in ['all','vserver']:
-            for vs in self._xmlrpc_do(self.xmlrpc().vserver.list):
-                data = self._xmlrpc_do(self.xmlrpc().vserver.get, vs)
+            for vs in self._xmlrpc_do(xmlrpc.vserver.list):
+                data = self._xmlrpc_do(xmlrpc.vserver.get, vs)
                 for client_range in data[vs]['clientFacingIPs']:
                     first = client_range['firstIP']
                     last  = client_range['lastIP']
@@ -1710,7 +1725,7 @@ class Cluster(object):
                     addresses.update(range_addrs)
 
         if category in ['all','cluster']:
-            data = self._xmlrpc_do(self.xmlrpc().cluster.get)
+            data = self._xmlrpc_do(xmlrpc.cluster.get)
             for cluster_range in data['clusterIPs']:
                 first = cluster_range['firstIP']
                 last  = cluster_range['lastIP']
@@ -1719,11 +1734,14 @@ class Cluster(object):
 
         return list(addresses)
 
-    def set_node_naming_policy(self):
+    def set_node_naming_policy(self, xmlrpc=None):
         '''Rename nodes internally and set the default node prefix
 
             This sets the node names internally to match the service instance
             names.  This also sets the node prefix to be the cluster name.
+
+            Arguments:
+                xmlrpc (xmlrpcClt, optional): xmlrpc client
         '''
         if not self.nodes:
             log.debug("No nodes to rename, skipping")
@@ -1739,9 +1757,9 @@ class Cluster(object):
 
         # first pass, rename new mismatched nodes to their node id
         retries = ServiceBase.XMLRPC_RETRIES
+        xmlrpc = self.xmlrpc() if xmlrpc is None else xmlrpc
         while True:
             try:
-                xmlrpc = self.xmlrpc()
                 node_names = self._xmlrpc_do(xmlrpc.node.list)
                 nodes = [self._xmlrpc_do(xmlrpc.node.get, _).values()[0] for _ in node_names]
                 for node in nodes:
@@ -1761,7 +1779,6 @@ class Cluster(object):
         retries = ServiceBase.XMLRPC_RETRIES
         while True:
             try:
-                xmlrpc = self.xmlrpc()
                 node_names = self._xmlrpc_do(xmlrpc.node.list)
                 nodes = [self._xmlrpc_do(xmlrpc.node.get, _).values()[0] for _ in node_names]
                 for node in nodes:
@@ -1777,11 +1794,12 @@ class Cluster(object):
                     break
                 retries -= 1
 
-    def vserver_home_addresses(self, vservers=None):
+    def vserver_home_addresses(self, vservers=None, xmlrpc=None):
         '''Home the addresses of the vserver across the nodes
 
             Arguments:
                 vservers (list, optional): list of vservers to home (otherwise all vservers)
+                xmlrpc (xmlrpcClt, optional): xmlrpc client
         '''
         xmlrpc = self.xmlrpc()
         vservers = vservers or xmlrpc.vserver.list()
@@ -1808,7 +1826,7 @@ class Cluster(object):
                 continue
 
             log.debug("Setting up addresses home configuration for vserver '{}': {}".format(vserver, mappings))
-            activity = self._xmlrpc_do(self.xmlrpc().vserver.modifyClientIPHomes, vserver, mappings)
+            activity = self._xmlrpc_do(xmlrpc.vserver.modifyClientIPHomes, vserver, mappings)
             self._xmlrpc_wait_for_activity(activity, "Failed to rebalance vserver {} addresses".format(vserver))
 
 

@@ -166,6 +166,7 @@ class Cluster(object):
         self.join_mgmt        = True
         self.trace_level      = None
         self.node_rename      = True
+        self.first_node_error = None
 
         if self.proxy:
             self.proxy = validate_proxy(self.proxy) # imported from vFXT.service
@@ -1601,7 +1602,8 @@ class Cluster(object):
         try:
             response = self._xmlrpc_do(xmlrpc.support.modify, support_opts)
             if response[0] != 'success':
-                raise vFXTConfigurationException(response)
+                self.first_node_error = vFXTConfigurationException(response)
+                raise self.first_node_error
         except Exception as e:
             log.error("Failed to configure support options: {}".format(e))
 
@@ -1609,7 +1611,8 @@ class Cluster(object):
             log.info("Setting timezone to {}".format(self.timezone))
             response = self._xmlrpc_do(xmlrpc.cluster.modify, {'timezone': self.timezone})
             if response != 'success':
-                raise vFXTConfigurationException(response)
+                self.first_node_error = vFXTConfigurationException(response)
+                raise self.first_node_error
 
         # try and enable HA early if we have support in the AvereOS release for single node
         try:

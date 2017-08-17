@@ -1688,11 +1688,18 @@ class Service(ServiceBase):
             n    = self.create_node(name, cfg, node_opts=opts, instance_options=options)
             cluster.nodes.append(ServiceInstance(service=self, instance=n))
 
+            threads = []
             if not options.get('skip_configuration'):
-                cluster.first_node_configuration(wait_for_state=options.get('wait_for_state', 'yellow'))
+                t = threading.Thread(target=cluster.first_node_configuration, args=(options.get('wait_for_state', 'yellow'),))
+                t.start()
+                threads.append(t)
             options.update(opts)
             options['instance_addresses'] = instance_addresses
             self.add_cluster_nodes(cluster, cluster_size - 1, **options)
+            for t in threads:
+                t.join()
+            if cluster.first_node_error:
+                raise cluster.first_node_error
         except vFXTNodeExistsException as e:
             log.error("Failed to create node: {}".format(e))
             raise

@@ -504,7 +504,7 @@ def main():
                     corefiler_name = _add_nfs_corefiler(cluster, logger, args)
                 else:
                     corefiler_name = _add_bucket_corefiler(cluster, logger, args)
-            except Exception as e:
+            except (KeyboardInterrupt, Exception) as e:
                 if args.debug:
                     logger.exception(e)
                 logger.error("Failed to configure core filer: {}".format(e))
@@ -533,7 +533,7 @@ def main():
                         junction_opts['export'] = mount
                         junction_opts['subdir'] = args.subdir
                     cluster.add_vserver_junction(args.vserver, corefiler_name, path=args.junction)
-            except Exception as e:
+            except (KeyboardInterrupt, Exception) as e:
                 if args.debug:
                     logger.exception(e)
                 logger.error("Failed to configure vserver: {}".format(e))

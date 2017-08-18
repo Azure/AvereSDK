@@ -671,6 +671,9 @@ def main():
         if not cluster:
             logger.error("Cluster not found.")
             parser.exit(1)
+        if args.nodes+len(cluster.nodes) > 24:
+            logger.error("Cluster sizes above 24 are not supported")
+            parser.exit(1)
 
         options = {
             'root_image': args.image_id,

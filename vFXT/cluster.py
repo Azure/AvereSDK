@@ -1184,7 +1184,7 @@ class Cluster(object):
                 existing_data (bool, optional): the bucket has existing data in it (defaults to False)
 
             Returns:
-                key (dict): encryption key for the bucket
+                key (dict): encryption key for the bucket if encryption is enabled
 
             Raises: vFXTConfigurationException
         '''
@@ -1242,6 +1242,14 @@ class Cluster(object):
                 self._sleep()
         self._xmlrpc_wait_for_activity(activity, "Failed to create corefiler {}".format(corefiler), retries=self.service.WAIT_FOR_SUCCESS)
 
+        def _cleanup():
+            # try and remove it
+            if options.get('remove_on_fail'):
+                try:
+                    self.remove_corefiler(corefiler)
+                except Exception as e:
+                    log.error("Failed to remove corefiler {}: {}".format(corefiler,e))
+
         # we have to wait for the corefiler to show up... may be blocked by other things
         # going on after corefiler.createCloudFiler completes.
         retries = self.service.WAIT_FOR_SUCCESS
@@ -1252,11 +1260,11 @@ class Cluster(object):
             except: pass
             log.debug("Waiting for corefiler to show up")
             if retries == 0:
+                _cleanup()
                 raise vFXTConfigurationException('Failed to create corefiler {}: Not found'.format(corefiler))
             retries -= 1
             self._sleep()
 
-        key = {}
         if options.get('crypto_mode') != 'DISABLED':
             log.info("Generating master key for {}".format(corefiler))
             retries = self.service.XMLRPC_RETRIES
@@ -1267,45 +1275,23 @@ class Cluster(object):
                         break
                 except Exception as e:
                     log.debug(e)
-                    if retries == 0:
-                        raise vFXTConfigurationException('Failed to generate master key for {}: {}'.format(corefiler, e))
+                if retries == 0:
+                    _cleanup()
+                    raise vFXTConfigurationException('Failed to generate master key for {}: {}'.format(corefiler, e))
                 retries -= 1
                 self._sleep()
 
             log.info("Activating master key for {}".format(corefiler))
             response = self._xmlrpc_do(xmlrpc.corefiler.activateMasterKey, corefiler, key['keyId'], key['recoveryFile'])
             if response != 'success':
+                _cleanup()
                 raise vFXTConfigurationException('Failed to activate master key for {}: {}'.format(corefiler, response))
 
-        log.info("Waiting for corefiler exports to show up")
-        retries = self.service.WAIT_FOR_SUCCESS
-        while True:
-            try:
-                exports = self._xmlrpc_do(xmlrpc.corefiler.listExports, corefiler)
-                if '/' in [export['path'] for export in exports[corefiler]]:
-                    break
-            except Exception as e:
-                log.debug(e)
-            if retries == 0:
-                # try and remove it
-                if options.get('remove_on_fail'):
-                    try:
-                        self.remove_corefiler(corefiler)
-                    except Exception as e:
-                        log.error("Failed to remove corefiler {}: {}".format(corefiler,e))
-                raise vFXTConfigurationException("Timed out waiting for {} exports".format(corefiler))
-            if retries % 10 == 0:
-                self._log_conditions(xmlrpc)
-            retries -= 1
-            self._sleep()
-
-        if options.get('crypto_mode') != 'DISABLED':
             log.info("*** IT IS STRONGLY RECOMMENDED THAT YOU CREATE A NEW CLOUD ENCRYPTION KEY AND SAVE THE")
             log.info("*** KEY FILE (AND PASSWORD) BEFORE USING YOUR NEW CLUSTER.  WITHOUT THESE, IT WILL NOT")
             log.info("*** BE POSSIBLE TO RECOVER YOUR DATA AFTER A FAILURE")
             log.info("Do this at https://{}/avere/fxt/cloudFilerKeySettings.php".format(self.mgmt_ip))
-
-        return key
+            return key
 
     def attach_corefiler(self, corefiler, networkname, **options):
         '''Attach a Corefiler
@@ -1313,7 +1299,6 @@ class Cluster(object):
             Arguments:
                 corefiler (str): name of the corefiler to create
                 networkname (str): network reachable name/address of the filer
-                wait_for_export (str, optional): an export to watch for (defaults any exports)
 
             Raises: vFXTConfigurationException
         '''
@@ -1328,33 +1313,24 @@ class Cluster(object):
         log.info("Creating corefiler {}".format(corefiler))
         activity = self._xmlrpc_do(self.xmlrpc().corefiler.create, corefiler, networkname)
         self._xmlrpc_wait_for_activity(activity, "Failed to create corefiler {}".format(corefiler), retries=self.service.WAIT_FOR_SUCCESS)
-        if corefiler not in self._xmlrpc_do(self.xmlrpc().corefiler.list):
-            raise vFXTConfigurationException('Failed to create corefiler {}'.format(corefiler))
 
-        log.info("Waiting for corefiler exports to show up")
-        retries = self.service.WAIT_FOR_NFS_EXPORTS
-        wait_for_export = options.get('wait_for_export', None)
+        # we have to wait for the corefiler to show up... may be blocked by other things
+        # going on after corefiler.createCloudFiler completes.
+        retries = options.get('retries') or self.service.WAIT_FOR_SUCCESS
+        xmlrpc = self.xmlrpc()
         while True:
             try:
-                exports = self._xmlrpc_do(self.xmlrpc().corefiler.listExports, corefiler)
-                if wait_for_export:
-                    if wait_for_export in [export['path'] for export in exports[corefiler]]:
-                        break
-                else:
-                    if len(exports[corefiler]) > 0:
-                        break
-            except Exception as e:
-                log.debug(e)
-            if retries % 10 == 0:
-                self._log_conditions(self.xmlrpc())
+                if corefiler in xmlrpc.corefiler.list():
+                    break
+            except: pass
+            log.debug("Waiting for corefiler to show up")
             if retries == 0:
-                # try and remove it
-                try:
-                    self.remove_corefiler(corefiler)
-                except Exception as e:
-                    log.error("Failed to remove corefiler {}: {}".format(corefiler,e))
-                raise vFXTConfigurationException("Timed out waiting for {} exports".format(corefiler))
-
+                if options.get('remove_on_fail'):
+                    try:
+                        self.remove_corefiler(corefiler)
+                    except Exception as e:
+                        log.error("Failed to remove corefiler {}: {}".format(corefiler,e))
+                raise vFXTConfigurationException('Failed to create corefiler {}'.format(corefiler))
             retries -= 1
             self._sleep()
 
@@ -1459,6 +1435,23 @@ class Cluster(object):
         advanced = {}
         if subdir:
             advanced['subdir'] = subdir
+
+        log.info("Waiting for corefiler exports to show up")
+        op_retries = self.service.WAIT_FOR_SUCCESS
+        xmlrpc = self.xmlrpc()
+        while True:
+            try:
+                exports = self._xmlrpc_do(xmlrpc.nfs.listExports, vserver, corefiler)
+                if '/' in [_['path'] for _ in exports]:
+                    break
+            except Exception as e:
+                log.debug(e)
+            if op_retries == 0:
+                raise vFXTConfigurationException("Timed out waiting for {} exports".format(corefiler))
+            if op_retries % 10 == 0:
+                self._log_conditions(xmlrpc)
+            op_retries -= 1
+            self._sleep()
 
         log.info("Creating junction to {} for vserver {}".format(corefiler, vserver))
         try:

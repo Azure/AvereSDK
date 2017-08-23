@@ -1662,7 +1662,6 @@ class Cluster(object):
                 retries (int): number of retries (default 600)
                 xmlrpc (xmlrpcClt, optional): xmlrpc client
         '''
-        log.info("Waiting for nodes to show up and ask to join")
         xmlrpc = self.xmlrpc() if xmlrpc is None else xmlrpc
 
         def _compat_allow_node_join(enable, xmlrpc):
@@ -1687,6 +1686,7 @@ class Cluster(object):
             log.debug("Nodes joined on their own")
             return
 
+        log.info("Waiting for nodes to show up and ask to join")
         start_time = int(time.time())
         while True:
             unjoined_count = 0
@@ -1724,6 +1724,7 @@ class Cluster(object):
         try:
             activity = self._xmlrpc_do(xmlrpc.node.allowToJoin, ','.join(node_names), False)
             self._xmlrpc_wait_for_activity(activity, '"Failed to allow node joins')
+            return
         except xmlrpclib_Fault as e:
             # older releases cannot accept comma delimited node names
             if 'Cannot find node' not in e.faultString:

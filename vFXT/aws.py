@@ -1427,6 +1427,7 @@ class Service(ServiceBase):
             threads = []
             if not options.get('skip_configuration'):
                 t = threading.Thread(target=cluster.first_node_configuration, args=(options.get('wait_for_state', 'yellow'),))
+                t.setDaemon(True)
                 t.start()
                 threads.append(t)
             options.update(opts)
@@ -1545,7 +1546,8 @@ class Service(ServiceBase):
             inst_opts = options.copy()
             inst_opts['subnet'] = next(cycle_subnets)
             inst_opts['private_ip_address'] = private_addresses.pop()
-            t  = threading.Thread(target=cb, args=(next_node_num, inst_opts, nodeq, failq,))
+            t = threading.Thread(target=cb, args=(next_node_num, inst_opts, nodeq, failq,))
+            t.setDaemon(True)
             t.start()
             threads.append(t)
 

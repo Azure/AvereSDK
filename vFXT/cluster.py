@@ -954,6 +954,7 @@ class Cluster(object):
 
         for si in serviceinstances:
             t = threading.Thread(target=thread_cb, args=(si.service, si.instance_id, failq,))
+            t.setDaemon(True)
             t.start()
             threads.append(t)
         for t in threads:

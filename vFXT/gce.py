@@ -1259,6 +1259,9 @@ class Service(ServiceBase):
             resp   = _gce_do(conn.routes().list, project=self.project_id, filter=search)
             if resp and 'items' in resp:
                 for route in resp['items']:
+                    # skip if we don't have a next hop instance (dangling route)
+                    if any(['NEXT_HOP_INSTANCE_NOT_FOUND' == _['code'] for _ in route.get('warnings', [])]) or 'nextHopInstance' not in route:
+                        continue
                     addr = route['destRange'].split('/')[0]
                     if c.contains(addr):
                         addresses.add(addr)

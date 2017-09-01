@@ -1679,7 +1679,7 @@ class Cluster(object):
             log.debug("Nodes joined on their own")
             return
 
-        log.info("Waiting for nodes to show up and ask to join")
+        log.info("Waiting for {} nodes to show up and ask to join cluster (currently {} of {})".format(expected_unjoined_count, joined_count, node_count))
         start_time = int(time.time())
         while True:
             unjoined_count = 0
@@ -1720,7 +1720,7 @@ class Cluster(object):
             return
         except xmlrpclib_Fault as e:
             # older releases cannot accept comma delimited node names
-            if 'Cannot find node' not in e.faultString:
+            if not any([_ in e.faultString for _ in ['Cannot find node', 'Cannot join the node']]):
                 raise
         # try old way
         log.info("Setting node join policy")

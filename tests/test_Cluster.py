@@ -99,12 +99,13 @@ class Cluster_test(tests.vFXTTestCase.Base):
             cluster.wait_for_healthcheck(state='red', duration=1)
             self.assertTrue(cluster.is_on())
             self.assertFalse(cluster.is_shelved())
+
+            cluster.telemetry()
         except Exception as e:
             log.error(e)
             raise
         finally:
-            cluster.telemetry()
-            cluster.destroy()
+            cluster.destroy(quick_destroy=True)
 
     def test__init__gce(self):
         if not self.gce['enabled']:
@@ -174,12 +175,13 @@ class Cluster_test(tests.vFXTTestCase.Base):
             cluster.wait_for_healthcheck(state='red', duration=1)
             self.assertTrue(cluster.is_on())
             self.assertFalse(cluster.is_shelved())
+
+            cluster.telemetry()
         except Exception as e:
             log.error(e)
             raise
         finally:
-            cluster.telemetry()
-            cluster.destroy()
+            cluster.destroy(quick_destroy=True)
 
     def test_bad_machine_type_aws(self):
         if not self.aws['enabled']:

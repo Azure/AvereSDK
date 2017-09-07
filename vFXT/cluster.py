@@ -275,7 +275,10 @@ class Cluster(object):
             if not options.get('skip_cleanup', False):
                 c.destroy(quick_destroy=True)
             else:
-                c.telemetry()
+                try:
+                    c.telemetry()
+                except Exception as te:
+                    log.debug(te)
             raise vFXTCreateFailure(e)
 
         return c
@@ -877,7 +880,10 @@ class Cluster(object):
         except (KeyboardInterrupt, Exception) as e:
             log.error(e)
             if options.get('skip_cleanup', False):
-                self.telemetry()
+                try:
+                    self.telemetry()
+                except Exception as te:
+                    log.debug(te)
                 raise vFXTCreateFailure(e)
 
             log.info("Undoing configuration changes for node addition")

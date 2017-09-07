@@ -236,12 +236,8 @@ class Service(ServiceBase):
         self.subnets = [self.subnets] if isinstance(self.subnets, basestring) else self.subnets
         self.security_groups = self.security_groups.split(' ') if isinstance(self.security_groups, basestring) else self.security_groups
 
-        if self.proxy_uri: # parse proxy uri into host and port (and user, password)
+        if self.proxy_uri:
             self.set_proxy(self.proxy_uri)
-
-            proxy_handler = urllib2.ProxyHandler({'http':self.proxy_uri, 'https':self.proxy_uri})
-            opener = urllib2.build_opener(proxy_handler)
-            urllib2.install_opener(opener)
         else:
             self.proxy = None
 

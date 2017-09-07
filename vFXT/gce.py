@@ -76,7 +76,6 @@ import logging
 import time
 import threading
 import Queue
-import urllib2
 import json
 import socket
 import re
@@ -234,12 +233,8 @@ class Service(ServiceBase):
         log.debug("Using googleapiclient version {}".format(googleapiclient.__version__))
         log.debug("Using oauth2client version {}".format(oauth2client.__version__))
 
-        if self.proxy_uri: # parse proxy uri into host and port (and user, password)
+        if self.proxy_uri:
             self.set_proxy(self.proxy_uri)
-
-            proxy_handler = urllib2.ProxyHandler({'http':self.proxy_uri, 'https':self.proxy_uri})
-            opener = urllib2.build_opener(proxy_handler)
-            urllib2.install_opener(opener)
         else:
             self.proxy = None
 

@@ -107,9 +107,17 @@ def load_defaults(service):
         default_url = urlparse.urlparse(service.DEFAULTS_URL)
         if default_url.scheme not in ['http', 'https', 'file']:
             raise Exception("Invalid scheme: {}".format(default_url.scheme))
-        service.defaults = json.load(urllib2.urlopen(service.DEFAULTS_URL, timeout=CONNECTION_TIMEOUT))
+
+        proxy_handler = urllib2.ProxyHandler({})
+        if service.proxy_uri:
+            proxy_handler = urllib2.ProxyHandler({'http':service.proxy_uri, 'https':service.proxy_uri})
+
+        opener = urllib2.build_opener(proxy_handler)
+        req = urllib2.Request(service.DEFAULTS_URL)
+        r = opener.open(req, timeout=CONNECTION_TIMEOUT)
+        service.defaults = json.load(r)
     except Exception as e:
-        logging.getLogger(service.__module__).debug("Failed to load up to date defaults, using offline copy: {}".format(e))
+        logging.getLogger(service.__module__).error("Failed to load up to date defaults, using offline copy: {}".format(e))
         service.defaults = service.OFFLINE_DEFAULTS
 
 class ServiceBase(object):

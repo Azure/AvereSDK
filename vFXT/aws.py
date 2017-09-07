@@ -1190,19 +1190,20 @@ class Service(ServiceBase):
             if instance.update() not in [self.PENDING_STATUS, self.ON_STATUS]:
                 raise
 
+        # tags
+        tags = tags or {}
+        tags['Name'] = name
         try:
-            # tags
-            if not tags:
-                tags = {}
-            if 'Name' not in tags:
-                tags['Name'] = name
             log.debug("Tagging instance {} with {}".format(instance.id, tags))
             _aws_do(conn.create_tags, instance.id, tags)
 
             # tag volumes
+            instance = self.refresh(instance) # refresh to get latest block device mapping
             for vname, vdev in instance.block_device_mapping.iteritems():
-                tagname = "{}-{}".format(tags['Name'], vname[vname.rfind("/")+1:])
-                _aws_do(conn.create_tags, vdev.volume_id, {"Name":tagname})
+                vol_tags = tags.copy()
+                vol_tags['Name'] = "{}-{}".format(tags['Name'], vname[vname.rfind("/")+1:])
+                log.debug("Tagging volume {} with {}".format(vdev.volume_id, vol_tags))
+                _aws_do(conn.create_tags, vdev.volume_id, vol_tags)
         except Exception as e:
             log.exception(e)
             _aws_do(instance.terminate)

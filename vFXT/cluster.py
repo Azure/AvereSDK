@@ -1066,7 +1066,7 @@ class Cluster(object):
             for bucket_name in buckets:
                 log.debug("Deleting bucket {} on cluster {}".format(bucket_name, cluster_name))
                 try:
-                    # TODO will fail as non-empty
+                    # XXX will fail as non-empty
                     self.service.delete_bucket(bucket_name)
                 except Exception as e:
                     log.debug("Ignoring remove bucket failure: {}".format(e))

@@ -1116,7 +1116,7 @@ class Cluster(object):
         # we might be only a collection of nodes... make sure we have mgmt ip,
         # password, etc... if so we wait at least until we have api connectivity
         if self.mgmt_ip and self.admin_password and self.nodes and self.is_on():
-            self.wait_for_healthcheck(state='red', duration=1, conn_retries=20)
+            self.wait_for_healthcheck(state='red', duration=1, conn_retries=ServiceBase.WAIT_FOR_INITIAL_CONNECTION)
 
     def is_on(self):
         '''Returns true if all nodes are on'''
@@ -1579,7 +1579,7 @@ class Cluster(object):
         if not self.mgmt_ip:
             raise vFXTConfigurationException("Cannot configure a cluster without a management address")
         log.info("Waiting for remote API connectivity")
-        xmlrpc = self.xmlrpc(retries=60) #pylint: disable=unused-variable
+        xmlrpc = self.xmlrpc(retries=ServiceBase.WAIT_FOR_INITIAL_CONNECTION) #pylint: disable=unused-variable
 
         self.set_default_proxy(xmlrpc=xmlrpc)
 

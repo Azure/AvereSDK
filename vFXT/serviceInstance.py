@@ -131,6 +131,7 @@ class ServiceInstance(object):
 
     def destroy(self, **options):
         '''Destroy the instance'''
+        self.refresh()
         return self.service.destroy(self.instance, **options)
 
     def is_on(self):

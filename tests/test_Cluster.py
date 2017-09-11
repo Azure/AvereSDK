@@ -106,6 +106,9 @@ class Cluster_test(tests.vFXTTestCase.Base):
             raise
         finally:
             cluster.destroy(quick_destroy=True)
+            cleanups = [service.instance_id(_) for _ in service.find_instances() if name in service.name(_)]
+            if cleanups:
+                Cluster(service, nodes=cleanups).destroy(quick_destroy=True)
 
     def test__init__gce(self):
         if not self.gce['enabled']:
@@ -182,6 +185,9 @@ class Cluster_test(tests.vFXTTestCase.Base):
             raise
         finally:
             cluster.destroy(quick_destroy=True)
+            cleanups = [service.instance_id(_) for _ in service.find_instances() if name in service.name(_)]
+            if cleanups:
+                Cluster(service, nodes=cleanups).destroy(quick_destroy=True)
 
     def test_bad_machine_type_aws(self):
         if not self.aws['enabled']:

@@ -1644,7 +1644,9 @@ class Service(ServiceBase):
             if len(avail) < ip_count:
                 raise vFXTConfigurationException("Not enough addresses provided, require {}".format(ip_count))
         else:
-            avail, mask     = self.get_available_addresses(count=ip_count, contiguous=True)
+            mgmt_requested = options.get('management_address') or None
+            in_use = [mgmt_requested] if mgmt_requested else None
+            avail, mask = self.get_available_addresses(count=ip_count, contiguous=True, in_use=in_use)
 
         cluster.mgmt_ip = options.get('management_address') or avail.pop(0)
         cluster_ips     = avail

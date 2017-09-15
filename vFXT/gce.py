@@ -125,7 +125,7 @@ class Service(ServiceBase):
         'custom-6-40960':   {'data_disk_size':250,'data_disk_type':'pd-ssd','data_disk_count':1,'node_count':3,'root_disk_type':'pd-ssd'},
     }
     MACHINE_TYPES=MACHINE_DEFAULTS.keys()
-    DEFAULTS_URL="http://storage.googleapis.com/avere-dist/vfxtdefaults.json"
+    DEFAULTS_URL="https://storage.googleapis.com/avere-dist/vfxtdefaults.json"
     DEFAULT_SCOPES=['https://www.googleapis.com/auth/compute',
                     'https://www.googleapis.com/auth/devstorage.full_control',
                     'https://www.googleapis.com/auth/userinfo.email']

@@ -157,7 +157,7 @@ class Service(ServiceBase):
                  key_file=None, key_data=None, access_token=None, s3_access_key=None,
                  s3_secret_access_key=None, private_range=None, proxy_uri=None,
                  no_connection_test=False, subnetwork_id=None, on_instance=False,
-                 use_environment_for_auth=False):
+                 use_environment_for_auth=False, skip_load_defaults=False):
         '''Constructor
 
             This performs an initial connection test and downloads the default
@@ -188,6 +188,7 @@ class Service(ServiceBase):
                 proxy_uri (str, optional): URI of proxy resource (e.g. http://user:pass@172.16.16.20:8080)
 
                 no_connection_test (bool, optional): skip connection test
+                skip_load_defaults (bool, optional): do not fetch defaults
         '''
         self.defaults     = {}
         self.client_email = client_email
@@ -247,8 +248,9 @@ class Service(ServiceBase):
                     err = "Invalid subnetwork: {} (available {})".format(self.subnetwork_id, ','.join(subnetwork_names))
                     raise vFXTConfigurationException(err)
 
-        log.debug("Fetching defaults from {}".format(self.DEFAULTS_URL))
-        load_defaults(self)
+        if not skip_load_defaults:
+            log.debug("Fetching defaults from {}".format(self.DEFAULTS_URL))
+            load_defaults(self)
 
     @classmethod
     def get_instance_data(cls, source_address=None):

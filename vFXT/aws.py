@@ -208,7 +208,7 @@ class Service(ServiceBase):
                 proxy_uri (str, optional): URI of proxy resource (e.g. http://user:pass@172.16.16.20:8080)
 
                 no_connection_test (bool, optional): skip connection test
-
+                skip_load_defaults (bool, optional): do not fetch defaults
         '''
         self.defaults             = {}
         self.region               = region
@@ -247,8 +247,9 @@ class Service(ServiceBase):
         if not options.get('no_connection_test', None):
             self.connection_test()
 
-        log.debug("Fetching defaults from {}".format(self.DEFAULTS_URL))
-        load_defaults(self)
+        if not options.get('skip_load_defaults', False):
+            log.debug("Fetching defaults from {}".format(self.DEFAULTS_URL))
+            load_defaults(self)
 
     @classmethod
     def get_instance_data(cls, source_address=None):

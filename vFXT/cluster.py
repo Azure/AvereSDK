@@ -1869,7 +1869,7 @@ class Cluster(object):
                 vservers (list, optional): list of vservers to home (otherwise all vservers)
                 xmlrpc (xmlrpcClt, optional): xmlrpc client
         '''
-        xmlrpc = self.xmlrpc()
+        xmlrpc = self.xmlrpc() if xmlrpc is None else xmlrpc
         vservers = vservers or xmlrpc.vserver.list()
         if not isinstance(vservers, list):
             vservers = [vservers]
@@ -1878,7 +1878,7 @@ class Cluster(object):
         for vserver in vservers:
             home_cfg = xmlrpc.vserver.listClientIPHomes(vserver)
             # if all addresses are already homed, bail
-            if not [_ for _ in home_cfg if _['home'] is 'None']:
+            if [_ for _ in home_cfg if _['home'] != 'None']:
                 log.debug("Refusing to override existing home configuration")
                 return
 

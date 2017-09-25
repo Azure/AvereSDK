@@ -1159,6 +1159,7 @@ class Cluster(object):
                 corefiler (str, optional): name of corefiler or bucketname
                 proxy (str, optional): proxy configuration to use
                 remove_on_fail (bool, optional): remove the corefiler if the configuration does not finish
+                tags (dict, optional): tags with key/value labels to apply to the bucket (if supported)
 
             Returns:
                 key (dict): encryption key for the bucket as returned from attach_bucket

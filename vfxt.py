@@ -117,6 +117,9 @@ def _add_bucket_corefiler(cluster, logger, args):
         'https': 'no' if args.disable_bucket_https else None,
         'https_verify_mode': 'DISABLED' if (args.disable_bucket_https or args.disable_bucket_https_verify) else None,
     }
+    tags = args.aws_tag or args.metadata
+    if tags:
+        bucket_opts['tags'] = tags
 
     if not args.bucket:
         logger.info("Creating corefiler {} with new bucket: {}".format(corefiler, bucketname))

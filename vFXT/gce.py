@@ -1103,6 +1103,7 @@ class Service(ServiceBase):
                 storage_class (str, optional): storage class of MULTI_REGIONAL, REGIONAL,
                     STANDARD, NEARLINE, COLDLINE, and DURABLE_REDUCED_AVAILABILIT
                 region (str, optional): region for the bucket if using REGIONAL (defaults to service default region)
+                tags (dict, optional): tag labels to apply to the bucket
 
             Raises: vFXTServiceFailure
         '''
@@ -1118,6 +1119,16 @@ class Service(ServiceBase):
         if storage_class == 'REGIONAL':
             region = options.get('region') or self._zone_to_region(self.zones[0])
             body['location'] = region
+        if 'tags' in options:
+            labels = options.get('tags')
+            bad_name_re = re.compile('[^a-z_]')
+            filtered_labels = {k:v for k,v in labels.iteritems() if not k.startswith('_') and not re.search(bad_name_re, k)}
+            if len(filtered_labels) != len(labels):
+                l_keys = set(labels.keys())
+                fl_keys = set(filtered_labels.keys())
+                err = "Discarding invalid bucket labels: {}".format(', '.join(l_keys - fl_keys))
+                log.error(err)
+            body['labels'] = filtered_labels
         log.debug("Bucket create request {}".format(body))
         return _gce_do(storage_service.buckets().insert,project=self.project_id, body=body)
 

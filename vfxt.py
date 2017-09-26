@@ -496,7 +496,8 @@ def main():
         except Exception as e:
             if args.debug:
                 logger.exception(e)
-            logger.error("Failed to create cluster: {}".format(e))
+            logger.error(e)
+            logger.error("Failed to create cluster")
             parser.exit(1)
 
         corefiler_name = None
@@ -509,9 +510,10 @@ def main():
             except (KeyboardInterrupt, Exception) as e:
                 if args.debug:
                     logger.exception(e)
-                logger.error("Failed to configure core filer: {}".format(e))
+                logger.error(e)
                 if not args.skip_cleanup:
                     cluster.destroy(quick_destroy=True, remove_buckets=False if args.bucket else True) # will not remove a non-empty bucket
+                logger.error("Failed to configure core filer")
                 parser.exit(1)
 
         if not args.no_vserver:
@@ -538,9 +540,10 @@ def main():
             except (KeyboardInterrupt, Exception) as e:
                 if args.debug:
                     logger.exception(e)
-                logger.error("Failed to configure vserver: {}".format(e))
+                logger.error(e)
                 if not args.skip_cleanup:
                     cluster.destroy(quick_destroy=True, remove_buckets=False if args.bucket else True) # will not remove a non-empty bucket
+                logger.error("Failed to configure vserver")
                 parser.exit(1)
 
         cluster_version = cluster.xmlrpc().cluster.get()['activeImage']

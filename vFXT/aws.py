@@ -156,6 +156,9 @@ class Service(ServiceBase):
                        's3:GetObject',
                        's3:ListMultipartUploadParts',
                        's3:PutObject']
+    IAM_OBJECT_POLICY_WRITE_ONLY=['s3:AbortMultipartUpload',
+                       's3:ListMultipartUploadParts',
+                       's3:PutObject']
     IAM_POLICY=['ec2:AssignPrivateIpAddresses',
                 'ec2:UnassignPrivateIpAddresses',
                 'ec2:DescribeInstance*',
@@ -972,18 +975,20 @@ class Service(ServiceBase):
                     raise vFXTServiceFailure("Failed to create bucket {}: {}".format(name, e))
                 retries -= 1
 
-    def authorize_bucket(self, cluster, name, retries=ServiceBase.CLOUD_API_RETRIES, xmlrpc=None):
+    def authorize_bucket(self, cluster, name, write_only=False, retries=ServiceBase.CLOUD_API_RETRIES, xmlrpc=None):
         '''Perform any backend work for the bucket, and register a credential
         for it to the cluster
 
             Arguments:
                 cluster (Cluster): cluster object
                 name (str): bucket name
+                write_only (bool): this bucket is for write only (default False)
                 retries (int): number of attempts to make
+                xmlrpc (xmlrpcClt, optional): xmlrpc client
 
             Raises: vFXTServiceFailure
         '''
-        xmlrpc = cluster.xmlrpc() if xmlrpc is None else xmlrpc
+        xmlrpc      = cluster.xmlrpc() if xmlrpc is None else xmlrpc
         iam         = self.connection(connection_type='iam')
         iamrole     = cluster.iamrole
         policy_name = 'policy_{}'.format(iamrole)
@@ -1010,7 +1015,7 @@ class Service(ServiceBase):
             'Effect': 'Allow'
         }
         object_policy = {
-            'Action': self.IAM_OBJECT_POLICY,
+            'Action': self.IAM_OBJECT_POLICY_WRITE_ONLY if write_only else self.IAM_OBJECT_POLICY,
             'Resource': ['arn:{}:s3:::{}/*'.format(self.arn, name)],
             'Effect': 'Allow'
         }

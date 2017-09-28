@@ -292,6 +292,7 @@ class Cluster(object):
                 retries (int, optional): number of retries
                 duration (int, optional): number of consecutive seconds condition was observed
                 conn_retries (int, optional): number of connection retries
+                xmlrpc (xmlrpcClt, optional): xmlrpc client
 
             Sleeps Service.POLLTIME between each retry.
         '''

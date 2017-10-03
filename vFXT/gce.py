@@ -1631,7 +1631,6 @@ class Service(ServiceBase):
         '''
         zones = options.get('zones') or self.zones
         zones = [zones] if isinstance(zones, basestring) else zones
-        cycle_zones = cycle(zones)
         # extend our service zones if necessary
         for z in zones:
             if z not in self.zones:
@@ -1668,6 +1667,7 @@ class Service(ServiceBase):
         cluster.mgmt_netmask     = mask
         cluster.cluster_ip_start = cluster_ips[0]
         cluster.cluster_ip_end   = cluster_ips[-1]
+        cluster.zones = [zones[0]] # first node zone
 
         cfg     = cluster.cluster_config(expiration=options.get('config_expiration', None))
         log.debug("Generated cluster config: {}".format(cfg))
@@ -1696,7 +1696,7 @@ class Service(ServiceBase):
                     'data_disk_type': data_disk_type, 'metadata': metadata.copy(),
                     'machine_type': machine_type, 'root_image': root_image,
                     'disk_type': disk_type, 'data_disk_nvme': data_disk_nvme}
-            options['zone'] = next(cycle_zones)
+            options['zone'] = zones[0] # first node zone
             options['private_ip_address'] = instance_addresses.pop()
             n    = self.create_node(name, cfg, node_opts=opts, instance_options=options)
             cluster.nodes.append(ServiceInstance(service=self, instance=n))
@@ -1709,6 +1709,7 @@ class Service(ServiceBase):
                 threads.append(t)
             options.update(opts)
             options['instance_addresses'] = instance_addresses
+            options['zone'] = zones if len(zones) == 1 else zones[1:]
             self.add_cluster_nodes(cluster, cluster_size - 1, **options)
             for t in threads:
                 t.join()
@@ -1738,17 +1739,11 @@ class Service(ServiceBase):
 
             Raises: exceptions from create_node()
         '''
-        zones = options.get('zone') or cluster.zones or self.zones
+        zones = options.get('zone') or []
         zones = [zones] if isinstance(zones, basestring) else zones
-        # make sure to use unused zones first
-        unused_zones = [z for z in self.zones if z not in zones]
-        unused_zones.extend([z for z in zones if z not in unused_zones])
-        cycle_zones = cycle(unused_zones)
-
-        # extend our service zones if necessary
-        for z in zones:
-            if z not in self.zones:
-                self.zones.append(z)
+        # make sure to use unused zones first, but account for our cluster zones
+        zones.extend([z for z in cluster.zones if z not in zones])
+        cycle_zones = cycle(zones)
 
         instance_addresses = options.pop('instance_addresses', [None] * count)
         if len(instance_addresses) != count:

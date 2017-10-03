@@ -1335,7 +1335,6 @@ class Service(ServiceBase):
         # networking
         subnets = options.get('subnet') or self.subnets
         subnets = [subnets] if isinstance(subnets, basestring) else subnets
-        cycle_subnets = cycle(subnets)
 
         # check subnet objects for mapPublicIpOnLaunch
         for subnet_id in subnets:
@@ -1374,16 +1373,12 @@ class Service(ServiceBase):
         # if we are going to span multiple subnets we can not assign the private ip address
         if len(subnets) > 1:
             private_ips = [None]*cluster_size
-        # extend our service subnets if necessary
-        for sn in subnets:
-            if sn not in self.subnets:
-                self.subnets.append(sn)
-        cluster.subnets = subnets
 
         # store for cluster config
         cluster.mgmt_netmask     = mask
         cluster.cluster_ip_start = cluster_ips[0]
         cluster.cluster_ip_end   = cluster_ips[-1]
+        cluster.subnets = [subnets[0]] # first node subnet
 
         # disks
         root_image      = options.get('root_image')      or self._get_default_image()
@@ -1426,7 +1421,7 @@ class Service(ServiceBase):
                     'data_disk_iops':data_disk_iops, 'machine_type':machine_type,
                     'root_image':root_image, 'role':role, 'disk_encryption': disk_encryption}
             inst_opts = options.copy()
-            inst_opts['subnet'] = next(cycle_subnets)
+            inst_opts['subnet'] = subnets[0] # first node subnet
             inst_opts['private_ip_address'] = private_ips.pop(0)
             n    = self.create_node(name, cfg, node_opts=opts, instance_options=inst_opts)
             cluster.nodes.append(ServiceInstance(service=self, instance=n))
@@ -1440,6 +1435,7 @@ class Service(ServiceBase):
                 threads.append(t)
             options.update(opts)
             options['private_addresses'] = private_ips
+            options['subnet'] = subnets if len(subnets) == 1 else subnets[1:]
             self.add_cluster_nodes(cluster, cluster_size - 1, **options)
             for t in threads:
                 t.join()
@@ -1466,12 +1462,7 @@ class Service(ServiceBase):
             log.debug("Cleanup failed: {}".format(e))
 
     def _add_cluster_nodes_setup(self, cluster, count, **options):
-        '''AWS specific customization prior to adding nodes'''
-        # we need to make sure when we add nodes to a cluster we reuse
-        # the subnets of the cluster for all service calls
-        subnets = options.get('subnet') or cluster.subnets or self.subnets
-        subnets = [subnets] if isinstance(subnets, basestring) else subnets
-        self.subnets = subnets
+        pass
 
     def add_cluster_nodes(self, cluster, count, **options):
         '''Add nodes to the cluster (delegates to create_node())
@@ -1485,12 +1476,11 @@ class Service(ServiceBase):
 
             Raises: exceptions from create_node()
         '''
-        subnets = options.get('subnet') or cluster.subnets or self.subnets
+        subnets = options.get('subnet') or []
         subnets = [subnets] if isinstance(subnets, basestring) else subnets
-        # make sure to use unused subnets first
-        unused_subnets = [s for s in self.subnets if s not in subnets]
-        unused_subnets.extend([s for s in subnets if s not in unused_subnets])
-        cycle_subnets = cycle(unused_subnets)
+        # make sure to use unused subnets first, but account for our cluster subnets
+        subnets.extend([s for s in cluster.subnets if s not in subnets])
+        cycle_subnets = cycle(subnets)
 
         # if we are preallocating our private_addresses
         private_addresses = options.pop('private_addresses', [None]*count)
@@ -1499,11 +1489,6 @@ class Service(ServiceBase):
         # but only for non-xaz setups
         if len(subnets) > 1:
             private_addresses = [None]*count
-
-        # extend our service subnets if necessary
-        for sn in subnets:
-            if sn not in self.subnets:
-                self.subnets.append(sn)
 
         instance        = cluster.nodes[0].instance
         role            = self._get_iamrole(cluster.iamrole)

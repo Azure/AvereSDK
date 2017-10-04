@@ -929,7 +929,7 @@ class Service(ServiceBase):
             Arguments:
                 instance: backend instance
         '''
-        return instance['networkInterfaces'][0]['networkIP']
+        return instance['networkInterfaces'][0].get('networkIP')
 
     def fqdn(self, instance): # XXX revisit
         '''Provide the fully qualified domain name of the instance

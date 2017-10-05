@@ -1055,10 +1055,14 @@ class Cluster(object):
                         activity = self._xmlrpc_do(xmlrpc.vserver.removeJunction, vserver, junction['path'])
                         self._xmlrpc_wait_for_activity(activity, "Failed to remove junction {} from vserver {}".format(junction['path'], vserver))
 
-                # remove corefilers to force a flush
                 for corefiler, data in corefilers.items():
                     if 'bucket' in data and data['s3Type'] == self.service.S3TYPE_NAME:
                         buckets.append(data['bucket'])
+                    # try and call corefiler.flush, note this will raise vFXTConfigurationException
+                    # on error... That will bubble up and prevent the rest of the destroy from
+                    # completing
+                    self.flush_corefiler(corefiler)
+                    # otherwise remove corefilers to force a flush
                     log.info("Removing corefiler {} on cluster {}".format(corefiler, cluster_name))
                     self.remove_corefiler(corefiler)
 
@@ -1104,7 +1108,18 @@ class Cluster(object):
                 raise
             log.debug('maint.setShelve not supported in this release')
 
-        # XXX need to flush the cache to the backend prior if shelving (add flush bool opt)
+        try:
+            corefilers = self.xmlrpc().corefiler.list()
+            for corefiler in corefilers:
+                log.debug("Flushing corefiler {}".format(corefiler))
+                self.flush_corefiler(corefiler)
+        except xmlrpclib_Fault as e:
+            if int(e.faultCode) != 108: # Method not supported
+                log.debug("Failed to flush corefilers: {}".format(e))
+                raise vFXTConfigurationException(e)
+        except Exception as e:
+            log.debug("Failed to flush corefilers: {}".format(e))
+            raise
 
         self.stop(clean_stop=options.get('clean_stop', True))
         self.parallel_call(self.nodes, 'shelve', **options)
@@ -1362,6 +1377,29 @@ class Cluster(object):
         except vFXTConfigurationException as e:
             log.debug(e)
             raise
+        except Exception as e:
+            raise vFXTConfigurationException(e)
+
+    def flush_corefiler(self, corefiler):
+        '''Flush a corefiler
+
+            Arguments:
+                corefiler (str): the name of the corefiler
+
+            Raises vFXTConfigurationException
+        '''
+        try:
+            xmlrpc = self.xmlrpc()
+
+            response = self._xmlrpc_do(xmlrpc.system.enableAPI, 'maintenance')
+            if response != 'success':
+                raise Exception("Failed to enable maintenance API")
+
+            activity = self._xmlrpc_do(xmlrpc.corefiler.flush, corefiler)
+            self._xmlrpc_wait_for_activity(activity, "Failed to flush corefiler {}".format(corefiler))
+        except xmlrpclib_Fault as e:
+            if int(e.faultCode) != 108: # Method not supported
+                raise vFXTConfigurationException(e)
         except Exception as e:
             raise vFXTConfigurationException(e)
 

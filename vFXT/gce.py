@@ -372,12 +372,13 @@ class Service(ServiceBase):
         return Service(**kwargs)
 
     @classmethod
-    def on_instance_init(cls, source_address=None, no_connection_test=False, proxy_uri=None):
+    def on_instance_init(cls, source_address=None, no_connection_test=False, proxy_uri=None, **kwargs):
         '''Init a GCE service object from instance metadata
             Arguments:
                 source_address (str, optional): source address for data request
                 no_connection_test (bool, optional): skip connection tests, defaults to False
                 proxy_uri (str, optional): URI of proxy resource
+                skip_load_defaults (bool, optional): do not fetch defaults
 
             This is only meant to be called on instance.  Otherwise will
             raise a vFXTConfigurationException exception.
@@ -448,7 +449,7 @@ class Service(ServiceBase):
             srv = Service(network_id=network_id, client_email=client_email,
                           project_id=project_id, zone=zone_id,
                           access_token=access_token, no_connection_test=no_connection_test,
-                          proxy_uri=proxy_uri, on_instance=True)
+                          proxy_uri=proxy_uri, on_instance=True, skip_load_defaults=kwargs.get('skip_load_defaults'))
             srv.local.instance_data = instance_data
             region      = srv._zone_to_region(zone_id)
             # no subnetwork in metadata... figure out which subnetwork owns our address

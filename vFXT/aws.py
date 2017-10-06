@@ -421,6 +421,7 @@ class Service(ServiceBase):
                 access_key (str, optional): account access key
                 secret_access_key (str, optional): secret access key
                 security_token (str, optional): AWS security token
+                skip_load_defaults (bool, optional): do not fetch defaults
 
             This is only meant to be called on instance.  Otherwise will
             raise a vFXTConfigurationException exception.
@@ -467,7 +468,8 @@ class Service(ServiceBase):
             srv = Service(region=region, access_key=access_key, secret_access_key=secret_key,
                           subnet=subnet_id, security_token=token, arn=arn, iam_host=iam_host,
                           no_connection_test=no_connection_test, proxy_uri=proxy_uri,
-                          security_groups=security_groups, on_instance=True)
+                          security_groups=security_groups, on_instance=True,
+                          skip_load_defaults=options.get('skip_load_defaults'))
             srv.local.instance_data = instance_data
             return srv
         except (vFXTServiceFailure, vFXTServiceConnectionFailure) as e:

@@ -1916,11 +1916,11 @@ class Cluster(object):
 
         nodes = itertools.cycle(sorted(xmlrpc.node.list()))
         for vserver in vservers:
-            home_cfg = xmlrpc.vserver.listClientIPHomes(vserver)
+            home_cfg = self._xmlrpc_do(xmlrpc.vserver.listClientIPHomes, vserver)
             # if all addresses are already homed, bail
             if [_ for _ in home_cfg if _['home'] != 'None']:
                 log.debug("Refusing to override existing home configuration")
-                return
+                continue
 
             # get the address ranges from our vserver
             vserver_data = xmlrpc.vserver.get(vserver)[vserver]
@@ -1932,10 +1932,17 @@ class Cluster(object):
             # build mapping table
             mappings = {vif:nodes.next() for vif in vifs}
 
+            # early on we may be getting back a truncated list of addresses, retry for a few
+            retries = self.service.XMLRPC_RETRIES
             old_mappings = {_['ip']:_['current'] for _ in home_cfg}
-            log.debug("vserver_home_addresses old mappings: {}".format(old_mappings))
-            log.debug("vserver_home_addresses wanted mappings: {}".format(mappings))
-            log.debug("vserver_home_addresses difference: {}".format([_ for _ in mappings.keys() if mappings[_] != old_mappings.get(_)]))
+            while len(old_mappings) != len(mappings):
+                log.debug("waiting for vserver configuration to finalize")
+                self._sleep()
+                home_cfg = self._xmlrpc_do(xmlrpc.vserver.listClientIPHomes, vserver)
+                old_mappings = {_['ip']:_['current'] for _ in home_cfg}
+                if retries == 0:
+                    break
+
             if not [_ for _ in mappings.keys() if mappings[_] != old_mappings.get(_)]:
                 log.debug("Address home configuration is up to date for vserver '{}'".format(vserver))
                 continue
@@ -1943,5 +1950,4 @@ class Cluster(object):
             log.debug("Setting up addresses home configuration for vserver '{}': {}".format(vserver, mappings))
             activity = self._xmlrpc_do(xmlrpc.vserver.modifyClientIPHomes, vserver, mappings)
             self._xmlrpc_wait_for_activity(activity, "Failed to rebalance vserver {} addresses".format(vserver))
-
 

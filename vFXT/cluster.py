@@ -1914,7 +1914,7 @@ class Cluster(object):
         if not isinstance(vservers, list):
             vservers = [vservers]
 
-        nodes = itertools.cycle(xmlrpc.node.list())
+        nodes = itertools.cycle(sorted(xmlrpc.node.list()))
         for vserver in vservers:
             home_cfg = xmlrpc.vserver.listClientIPHomes(vserver)
             # if all addresses are already homed, bail
@@ -1922,14 +1922,21 @@ class Cluster(object):
                 log.debug("Refusing to override existing home configuration")
                 return
 
+            # get the address ranges from our vserver
+            vserver_data = xmlrpc.vserver.get(vserver)[vserver]
+            vifs = set()
+            for address_range in vserver_data['clientFacingIPs']:
+                vifs.update(Cidr.expand_address_range(address_range['firstIP'], address_range['lastIP']))
+            # sort numerically
+            vifs = [Cidr.to_address(_) for _ in sorted([Cidr.from_address(_) for _ in vifs])]
+            # build mapping table
+            mappings = {vif:nodes.next() for vif in vifs}
+
             old_mappings = {_['ip']:_['current'] for _ in home_cfg}
-            vifs = [Cidr.to_address(_) for _ in sorted([Cidr.from_address(_) for _ in old_mappings.keys()])]
-
-            mappings = {}
-            for vif in vifs:
-                mappings[vif] = nodes.next()
-
-            if not [_ for _ in mappings.keys() if mappings[_] != old_mappings[_]]:
+            log.debug("vserver_home_addresses old mappings: {}".format(old_mappings))
+            log.debug("vserver_home_addresses wanted mappings: {}".format(mappings))
+            log.debug("vserver_home_addresses difference: {}".format([_ for _ in mappings.keys() if mappings[_] != old_mappings.get(_)]))
+            if not [_ for _ in mappings.keys() if mappings[_] != old_mappings.get(_)]:
                 log.debug("Address home configuration is up to date for vserver '{}'".format(vserver))
                 continue
 

@@ -80,6 +80,7 @@ import json
 import socket
 import re
 import os
+import uuid
 import filecmp
 from itertools import cycle
 
@@ -1487,7 +1488,8 @@ class Service(ServiceBase):
         log.debug("create_instance request body: {}".format(body))
 
         try:
-            r = _gce_do(conn.instances().insert, project=self.project_id, zone=zone, body=body)
+            request_id = str(uuid.uuid4())
+            r = _gce_do(conn.instances().insert, project=self.project_id, zone=zone, requestId=request_id, body=body)
             wait_for_success = options.get('wait_for_success') or self.WAIT_FOR_SUCCESS
             self._wait_for_operation(r, msg='instance {} to be created'.format(name), retries=wait_for_success, zone=zone)
             retries = self.CLOUD_API_RETRIES

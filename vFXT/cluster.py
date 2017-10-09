@@ -1039,7 +1039,7 @@ class Cluster(object):
                 **options: passed to ServiceInstance.destroy()
         '''
         buckets = []
-        if not options.pop('quick_destroy', False) and self.is_on():
+        if not options.pop('quick_destroy', False) and self.is_on() and self.admin_password:
             xmlrpc = self.xmlrpc()
             cluster_name = self.name or 'unknown'
 

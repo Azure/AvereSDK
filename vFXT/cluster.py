@@ -686,11 +686,12 @@ class Cluster(object):
             return
         alt_image = cluster['alternateImage']
 
-        vservers = self._xmlrpc_do(self.xmlrpc().vserver.list)
-        for vserver in vservers:
-            log.info("Suspending vserver {} on cluster {}".format(vserver, cluster['name']))
-            activity = self._xmlrpc_do(self.xmlrpc().vserver.suspend, vserver)
-            self._xmlrpc_wait_for_activity(activity, "Failed to suspend vserver {}".format(vserver))
+        if not ha: # if not HA, at least suspend the vservers
+            vservers = self._xmlrpc_do(self.xmlrpc().vserver.list)
+            for vserver in vservers:
+                log.info("Suspending vserver {} on cluster {}".format(vserver, cluster['name']))
+                activity = self._xmlrpc_do(self.xmlrpc().vserver.suspend, vserver)
+                self._xmlrpc_wait_for_activity(activity, "Failed to suspend vserver {}".format(vserver))
 
         log.debug("Waiting for alternateImage to settle (FIXME)...")
         self._sleep(15) # time to settle?
@@ -744,10 +745,12 @@ class Cluster(object):
             if op_retries == 0:
                 raise vFXTConnectionFailure("Timeout waiting for active image")
 
-        for vserver in vservers:
-            log.info("Unsuspending vserver {} on cluster {}".format(vserver, cluster['name']))
-            activity = self._xmlrpc_do(self.xmlrpc().vserver.unsuspend, vserver)
-            self._xmlrpc_wait_for_activity(activity, "Failed to unsuspend vserver {}".format(vserver))
+        if not ha: # if not HA, we suspended the vservers.... undo here
+            vservers = self._xmlrpc_do(self.xmlrpc().vserver.list)
+            for vserver in vservers:
+                log.info("Unsuspending vserver {} on cluster {}".format(vserver, cluster['name']))
+                activity = self._xmlrpc_do(self.xmlrpc().vserver.unsuspend, vserver)
+                self._xmlrpc_wait_for_activity(activity, "Failed to unsuspend vserver {}".format(vserver))
 
         log.info("Upgrade to {} complete".format(alt_image))
 

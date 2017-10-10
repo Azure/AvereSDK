@@ -1134,7 +1134,7 @@ class Cluster(object):
         # we might be only a collection of nodes... make sure we have mgmt ip,
         # password, etc... if so we wait at least until we have api connectivity
         if self.mgmt_ip and self.admin_password and self.nodes and self.is_on():
-            self.wait_for_healthcheck(state='red', duration=1, conn_retries=ServiceBase.WAIT_FOR_INITIAL_CONNECTION)
+            self.wait_for_healthcheck(state='red', duration=1, conn_retries=ServiceBase.WAIT_FOR_SUCCESS)
 
     def is_on(self):
         '''Returns true if all nodes are on'''

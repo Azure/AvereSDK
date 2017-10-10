@@ -675,11 +675,9 @@ class Cluster(object):
         '''Activate the alternate image
 
             Arguments:
-                retries (int, optional): retry count for switching active images
+                retries (int, optional): retry count for switching active images, default is no retries
                 ha (bool, optional): do an HA upgrade, True
         '''
-        retries     = retries or int(500+(500*math.log(len(self.nodes))))
-
         cluster = self._xmlrpc_do(self.xmlrpc().cluster.get)
         if cluster['alternateImage'] == cluster['activeImage']:
             log.info("Skipping upgrade since this version is active")
@@ -705,7 +703,8 @@ class Cluster(object):
 
         existing_activities = [a['id'] for a in self._xmlrpc_do(self.xmlrpc().cluster.listActivities)]
         log.debug("existing activities prior to upgrade: {}".format(existing_activities))
-        op_retries = retries
+
+        tries = 0
         while cluster['activeImage'] != alt_image:
             self._sleep()
             try:
@@ -725,11 +724,12 @@ class Cluster(object):
                                 or 'software activate' in act['process']]
                 if 'failed' in [a['state'] for a in activities]:
                     raise vFXTConfigurationException("Failed to activate alternate image")
-                if op_retries % 10 == 0:
+                if tries % 10 == 0:
                     log.info('Waiting for active image to switch to {}'.format(alt_image))
                     activity_status = ', '.join([act['status'] for act in activities])
                     if activity_status:
                         log.debug('Current activities: {}'.format(activity_status))
+                tries += 1
             except vFXTConfigurationException as e:
                 log.debug(e)
                 raise
@@ -741,9 +741,10 @@ class Cluster(object):
                     signal.alarm(0)
                     signal.signal(signal.SIGALRM, signal.SIG_DFL)
 
-            op_retries -= 1
-            if op_retries == 0:
-                raise vFXTConnectionFailure("Timeout waiting for active image")
+            if retries != None:
+                retries -= 1
+                if retries == 0:
+                    raise vFXTConnectionFailure("Timeout waiting for active image")
 
         if not ha: # if not HA, we suspended the vservers.... undo here
             vservers = self._xmlrpc_do(self.xmlrpc().vserver.list)
@@ -765,8 +766,6 @@ class Cluster(object):
 
             Raises: vFXTConnectionFailure
         '''
-        retries     = retries or int(500+(500*math.log(len(self.nodes))))
-
         self.upgrade_alternate_image(upgrade_url, retries=retries)
         self.activate_alternate_image(ha=ha, retries=retries)
 

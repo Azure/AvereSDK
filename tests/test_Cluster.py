@@ -40,6 +40,60 @@ class Cluster_test(tests.vFXTTestCase.Base):
         cluster = Cluster(service=aws)
         self.assertIsInstance(cluster, Cluster)
 
+    def _run_cluster_steps(self, cluster):
+        service = cluster.service
+
+        self.assertIsInstance(cluster, Cluster)
+        self.assertTrue(cluster.is_on())
+        self.assertTrue(len(cluster.nodes) == 3)
+
+        self.assertTrue(cluster.xmlrpc().cluster.get())
+
+        # verify we can load the cluster and get the same info back
+        loaded = Cluster.load(service, mgmt_ip=cluster.mgmt_ip, admin_password=cluster.admin_password)
+        self.assertTrue(len(loaded.nodes) == len(cluster.nodes))
+        loaded_export  = loaded.export()
+        cluster_export = cluster.export()
+        loaded_export['nodes'].sort() # may be out of order
+        cluster_export['nodes'].sort() # may be out of order
+        self.assertDictEqual(cluster_export, loaded_export)
+
+        initted = Cluster(service, **loaded_export)
+        initted_export = initted.export()
+        initted_export['nodes'].sort() # may be out of order
+        self.assertDictEqual(cluster_export, initted_export)
+
+        # add vserver, corefiler
+        cluster.add_vserver('vserver')
+        cluster.wait_for_healthcheck(state='green', duration=10)
+        self.assertTrue(cluster.xmlrpc().vserver.get('vserver'))
+        cluster.make_test_bucket(cluster.name)
+        self.assertTrue(cluster.name in cluster.xmlrpc().corefiler.list())
+        cluster.add_vserver_junction('vserver', cluster.name)
+
+        self.assertTrue(cluster.in_use_addresses())
+        self.assertTrue(cluster.in_use_addresses('mgmt'))
+        self.assertTrue(cluster.in_use_addresses('vserver'))
+        self.assertTrue(cluster.in_use_addresses('cluster'))
+
+        node_count = len(cluster.nodes)
+        cluster.add_nodes(2)
+        cluster.rebalance_directory_managers()
+        new_node_count = len(cluster.nodes)
+        self.assertTrue(new_node_count > node_count)
+        self.assertTrue(new_node_count == len(cluster.xmlrpc().node.list()))
+
+        cluster.shelve()
+        self.assertTrue(cluster.is_off())
+        self.assertTrue(cluster.is_shelved())
+
+        cluster.unshelve()
+        cluster.wait_for_healthcheck(state='red', duration=1)
+        self.assertTrue(cluster.is_on())
+        self.assertFalse(cluster.is_shelved())
+
+        cluster.telemetry()
+
     def test_create_aws(self):
         if not self.create_clusters:
             self.skipTest("skipping full cluster create tests for AWS")
@@ -50,57 +104,8 @@ class Cluster_test(tests.vFXTTestCase.Base):
         name = 'vfxtpy-unittest-{}'.format(int(time.time()))
         cluster = Cluster.create(service, self.aws['instance_type'], name, 'adminpass', root_image=self.aws['vfxt_image'], wait_for_state='yellow', tags={'vfxtpy-unittest':'auto'})
 
-        self.assertIsInstance(cluster, Cluster)
-        self.assertTrue(cluster.is_on())
-        self.assertTrue(len(cluster.nodes) == 3)
-
-        self.assertTrue(cluster.xmlrpc().cluster.get())
-
         try:
-            # verify we can load the cluster and get the same info back
-            loaded = Cluster.load(service, mgmt_ip=cluster.mgmt_ip, admin_password=cluster.admin_password)
-            self.assertTrue(len(loaded.nodes) == len(cluster.nodes))
-            loaded_export  = loaded.export()
-            cluster_export = cluster.export()
-            loaded_export['nodes'].sort() # may be out of order
-            cluster_export['nodes'].sort() # may be out of order
-            self.assertDictEqual(cluster_export, loaded_export)
-
-            initted = Cluster(service, **loaded_export)
-            initted_export = initted.export()
-            initted_export['nodes'].sort() # may be out of order
-            self.assertDictEqual(cluster_export, initted_export)
-
-            # add vserver, corefiler
-            cluster.add_vserver('vserver')
-            cluster.wait_for_healthcheck(state='green', duration=10)
-            self.assertTrue(cluster.xmlrpc().vserver.get('vserver'))
-            cluster.make_test_bucket(name, 's3')
-            self.assertTrue('s3' in cluster.xmlrpc().corefiler.list())
-            cluster.add_vserver_junction('vserver', 's3')
-
-            self.assertTrue(cluster.in_use_addresses())
-            self.assertTrue(cluster.in_use_addresses('mgmt'))
-            self.assertTrue(cluster.in_use_addresses('vserver'))
-            self.assertTrue(cluster.in_use_addresses('cluster'))
-
-            node_count = len(cluster.nodes)
-            cluster.add_nodes(2)
-            cluster.rebalance_directory_managers()
-            new_node_count = len(cluster.nodes)
-            self.assertTrue(new_node_count > node_count)
-            self.assertTrue(new_node_count == len(cluster.xmlrpc().node.list()))
-
-            cluster.shelve()
-            self.assertTrue(cluster.is_off())
-            self.assertTrue(cluster.is_shelved())
-
-            cluster.unshelve()
-            cluster.wait_for_healthcheck(state='red', duration=1)
-            self.assertTrue(cluster.is_on())
-            self.assertFalse(cluster.is_shelved())
-
-            cluster.telemetry()
+            self._run_cluster_steps(cluster)
         except Exception as e:
             log.error(e)
             raise
@@ -129,57 +134,8 @@ class Cluster_test(tests.vFXTTestCase.Base):
         name = 'vfxtpy-unittest-{}'.format(int(time.time()))
         cluster = Cluster.create(service, self.gce['instance_type'], name, 'adminpass', root_image=self.gce['vfxt_image'], size=3, wait_for_state='yellow', tags=['unittest'], metadata={'vfxtpy-unittest':'auto'})
 
-        self.assertIsInstance(cluster, Cluster)
-        self.assertTrue(cluster.is_on())
-        self.assertTrue(len(cluster.nodes) == 3)
-
-        self.assertTrue(cluster.xmlrpc().cluster.get())
-
         try:
-            # verify we can load the cluster and get the same info back
-            loaded = Cluster.load(service, mgmt_ip=cluster.mgmt_ip, admin_password=cluster.admin_password)
-            self.assertTrue(len(loaded.nodes) == len(cluster.nodes))
-            loaded_export  = loaded.export()
-            cluster_export = cluster.export()
-            loaded_export['nodes'].sort() # may be out of order
-            cluster_export['nodes'].sort() # may be out of order
-            self.assertDictEqual(cluster_export, loaded_export)
-
-            initted = Cluster(service, **loaded_export)
-            initted_export = initted.export()
-            initted_export['nodes'].sort() # may be out of order
-            self.assertDictEqual(cluster_export, initted_export)
-
-            # add vserver, corefiler
-            cluster.add_vserver('vserver')
-            cluster.wait_for_healthcheck(state='green', duration=10)
-            self.assertTrue(cluster.xmlrpc().vserver.get('vserver'))
-            cluster.make_test_bucket(name, 'gcs')
-            self.assertTrue('gcs' in cluster.xmlrpc().corefiler.list())
-            cluster.add_vserver_junction('vserver', 'gcs')
-
-            self.assertTrue(cluster.in_use_addresses())
-            self.assertTrue(cluster.in_use_addresses('mgmt'))
-            self.assertTrue(cluster.in_use_addresses('vserver'))
-            self.assertTrue(cluster.in_use_addresses('cluster'))
-
-            node_count = len(cluster.nodes)
-            cluster.add_nodes(2)
-            cluster.rebalance_directory_managers()
-            new_node_count = len(cluster.nodes)
-            self.assertTrue(new_node_count > node_count)
-            self.assertTrue(new_node_count == len(cluster.xmlrpc().node.list()))
-
-            cluster.shelve()
-            self.assertTrue(cluster.is_off())
-            self.assertTrue(cluster.is_shelved())
-
-            cluster.unshelve()
-            cluster.wait_for_healthcheck(state='red', duration=1)
-            self.assertTrue(cluster.is_on())
-            self.assertFalse(cluster.is_shelved())
-
-            cluster.telemetry()
+            self._run_cluster_steps(cluster)
         except Exception as e:
             log.error(e)
             raise

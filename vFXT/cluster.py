@@ -551,6 +551,7 @@ class Cluster(object):
             response = {}
             try:
                 response = xmlrpc.cluster.getActivity(activity)
+                log.debug(response)
             except Exception as e:
                 log.exception("Failed to get activity {}: {}".format(activity, e))
                 xmlrpc = self.xmlrpc()

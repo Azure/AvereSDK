@@ -3,7 +3,7 @@ from setuptools import setup
 
 version = {}
 with open("vFXT/version.py") as f:
-    exec(f.read(), version)
+    exec(f.read(), version) #pylint: disable=exec-used
 
 setup(name='vFXT',
     version=version['__version__'],

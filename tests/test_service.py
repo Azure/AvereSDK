@@ -63,7 +63,7 @@ class service_test(tests.vFXTTestCase.Base):
         finally:
             try:
                 os.unlink(name)
-            except: pass
+            except Exception: pass
 
 
 if __name__ == '__main__':

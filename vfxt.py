@@ -16,6 +16,7 @@
 import os
 import argparse
 import logging
+import urlparse
 import getpass
 import code
 import uuid
@@ -37,7 +38,6 @@ def _validate_ip(addr):
         raise argparse.ArgumentTypeError("malformed IP address: {}".format(addr))
 
 def _validate_url(url):
-    import urlparse
     parsed = urlparse.urlparse(url)
     if parsed.hostname:
         return url

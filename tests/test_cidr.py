@@ -13,10 +13,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import tests.vFXTTestCase
 import logging
-from vFXT.cidr import Cidr
 import unittest
+import tests.vFXTTestCase
+from vFXT.cidr import Cidr
 
 logging.basicConfig()
 

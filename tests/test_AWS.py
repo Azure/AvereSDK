@@ -18,7 +18,10 @@ import time
 import uuid
 import logging
 
-import boto.ec2, boto.s3, boto.vpc, boto.iam
+import boto.ec2
+import boto.s3
+import boto.vpc
+import boto.iam
 
 import vFXT.service
 
@@ -291,7 +294,7 @@ class AWS_test(tests.vFXTTestCase.Base):
 
     def test_check(self):
         service = self.mk_aws_service()
-        self.assertTrue(service.check() == None)
+        self.assertTrue(service.check() is None)
 
 
 if __name__ == '__main__':

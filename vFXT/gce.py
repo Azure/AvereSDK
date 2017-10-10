@@ -71,7 +71,10 @@ serializeme = gce.export()
 newgce = vFXT.gce.Service(**serializeme)
 '''
 
+import httplib
 import httplib2
+import httplib2.socks
+import ssl
 import logging
 import time
 import threading
@@ -272,8 +275,6 @@ class Service(ServiceBase):
 
             https://cloud.google.com/compute/docs/metadata
         '''
-        import httplib
-
         if source_address:
             source_address = (source_address, 0)
         connection_host = cls.GCE_INSTANCE_HOST
@@ -390,9 +391,6 @@ class Service(ServiceBase):
         if source_address:
             Service.CONTROL_ADDR = source_address
 
-            import httplib
-            import ssl
-            import httplib2.socks
             class HTTPSConnectionFromSource(httplib2.HTTPSConnectionWithTimeout):
                 """
                 An override of httplib2's HTTPSConnectionWithTimeout that forces
@@ -1270,7 +1268,7 @@ class Service(ServiceBase):
             if resp and 'items' in resp:
                 for route in resp['items']:
                     # skip if we don't have a next hop instance (dangling route)
-                    if any(['NEXT_HOP_INSTANCE_NOT_FOUND' == _['code'] for _ in route.get('warnings', [])]) or 'nextHopInstance' not in route:
+                    if any([_['code'] == 'NEXT_HOP_INSTANCE_NOT_FOUND' for _ in route.get('warnings', [])]) or 'nextHopInstance' not in route:
                         continue
                     addr = route['destRange'].split('/')[0]
                     if c.contains(addr):
@@ -2447,5 +2445,3 @@ def _gce_do(f, retries=ServiceBase.CLOUD_API_RETRIES, **options):
         if retries == 0:
             raise vFXTServiceTimeout('{} failed, exhausted retries: {}'.format(f.func_name, e))
         time.sleep(Service.POLLTIME)
-
-

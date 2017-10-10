@@ -84,10 +84,10 @@ class GCE_test(tests.vFXTTestCase.Base):
         service = self.mk_gce_service()
         import json
         key_data = json.load(open(self.gce['key_file']))
-        del(key_data['client_email'])
+        del key_data['client_email']
         self.assertRaises(vFXT.service.vFXTConfigurationException, Service, key_data=key_data, zone=service.zones[0], network_id=service.network_id)
         key_data = json.load(open(self.gce['key_file']))
-        del(key_data['project_id'])
+        del key_data['project_id']
         self.assertRaises(vFXT.service.vFXTConfigurationException, Service, key_data=key_data, zone=service.zones[0], network_id=service.network_id)
 
     def test_init__with_incomplete(self):
@@ -307,7 +307,7 @@ class GCE_test(tests.vFXTTestCase.Base):
         finally:
             try:
                 os.unlink(name)
-            except: pass
+            except Exception: pass
 
     def test_move_route(self):
         from vFXT.serviceInstance import ServiceInstance
@@ -378,7 +378,7 @@ class GCE_test(tests.vFXTTestCase.Base):
 
     def test_check(self):
         service = self.mk_gce_service()
-        self.assertTrue(service.check() == None)
+        self.assertTrue(service.check() is None)
 
 
 if __name__ == '__main__':

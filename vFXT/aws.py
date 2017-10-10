@@ -82,7 +82,13 @@ import urllib2
 import filecmp
 from itertools import cycle
 
-import boto, boto.ec2, boto.vpc, boto.s3, boto.s3.connection, boto.iam, boto.utils
+import boto
+import boto.ec2
+import boto.vpc
+import boto.s3
+import boto.s3.connection
+import boto.iam
+import boto.utils
 logging.getLogger('boto').setLevel(logging.CRITICAL)
 
 from vFXT.cidr import Cidr
@@ -304,7 +310,7 @@ class Service(ServiceBase):
                 value = resp.read()
                 try:
                     value = json.loads(value)
-                except:
+                except Exception:
                     if str(value).find('\n') > -1: # make a list of multi-values
                         value = str(value).split('\n')
                 data[attr] = value
@@ -333,7 +339,7 @@ class Service(ServiceBase):
                     r = conn.getresponse().read()
                     try:
                         r = json.loads(r)
-                    except:
+                    except Exception:
                         if str(r).find('\n') > -1:
                             r = str(r).split('\n')
                     attr_data[attr] = r
@@ -356,7 +362,7 @@ class Service(ServiceBase):
                 try:
                     r = json.loads(resp.read())
                     data['arn'] = r['InstanceProfileArn'].split(':')[1]
-                except: pass
+                except Exception: pass
 
             data['region']      = data['document']['region']
             data['hostname']    = data['hostname'].split(' ')[0]
@@ -486,7 +492,7 @@ class Service(ServiceBase):
 
         # fail as fast as possible... boto does not make it easy
         boto_config = boto.config
-        boto_config.has_section('Boto') or boto_config.add_section('Boto')
+        boto_config.has_section('Boto') or boto_config.add_section('Boto') #pylint: disable=expression-not-assigned
         exiting_timeout = boto_config.get('Boto', 'http_socket_timeout')
         exiting_retries = boto_config.get('Boto', 'num_retries')
         try:
@@ -587,7 +593,7 @@ class Service(ServiceBase):
             if (int(time.mktime(time.strptime(cred_expiration, "%Y-%m-%dT%H:%M:%SZ")))-120) < int(time.time()):
                 log.debug("Access token expired, forcing refresh")
                 self.local.connections = {}
-        except: pass
+        except Exception: pass
 
         access_key           = self.access_key
         secret_access_key    = self.secret_access_key
@@ -618,7 +624,7 @@ class Service(ServiceBase):
 
             log.debug("Creating new {} object".format(connection_type))
             err_fmt = 'Unable to create connection to {}: {}'
-            if connection_type is 'ec2':
+            if connection_type == 'ec2':
                 newconn = boto.ec2.connect_to_region(self.region,
                             aws_access_key_id=access_key,
                             aws_secret_access_key=secret_access_key,
@@ -626,7 +632,7 @@ class Service(ServiceBase):
                             security_token=security_token, **proxy_settings)
                 if not newconn:
                     raise vFXTServiceConnectionFailure(err_fmt.format('region', self.region))
-            elif connection_type is 's3':
+            elif connection_type == 's3':
                 newconn = boto.s3.connect_to_region(self.region,
                              aws_access_key_id=s3_access_key,
                              aws_secret_access_key=s3_secret_access_key,
@@ -634,7 +640,7 @@ class Service(ServiceBase):
                              security_token=security_token, **proxy_settings)
                 if not newconn:
                     raise vFXTServiceConnectionFailure(err_fmt.format('region', self.region))
-            elif connection_type is 'iam':
+            elif connection_type == 'iam':
                 newconn = boto.iam.connection.IAMConnection(
                             aws_access_key_id=access_key,
                             aws_secret_access_key=secret_access_key,
@@ -643,7 +649,7 @@ class Service(ServiceBase):
                             security_token=security_token, **proxy_settings)
                 if not newconn:
                     raise vFXTServiceConnectionFailure(err_fmt.format('IAM host', self.iam_host))
-            elif connection_type is 'vpc':
+            elif connection_type == 'vpc':
                 newconn = boto.vpc.connect_to_region(self.region,
                             aws_access_key_id=access_key,
                             aws_secret_access_key=secret_access_key,
@@ -725,7 +731,7 @@ class Service(ServiceBase):
                 message = 'unknown'
                 try:
                     message = instance.state_reason['message']
-                except: pass
+                except Exception: pass
                 raise vFXTServiceTimeout("Timed out waiting for {} on {} ({})".format(status, instance.id, message))
 
     def wait_for_service_checks(self, instance, retries=ServiceBase.WAIT_FOR_SERVICE_CHECKS):
@@ -922,7 +928,7 @@ class Service(ServiceBase):
         '''
         try:
             return socket.gethostbyaddr(instance.private_ip_address)[0]
-        except:
+        except Exception:
             return instance.private_dns_name
 
     # storage/buckets
@@ -1668,7 +1674,7 @@ class Service(ServiceBase):
                 _aws_do(conn.detach_volume, nrv.id, instance.id)
                 self.wait_for_status(nrv, "available", retries=self.WAIT_FOR_SUCCESS)
                 _aws_do(nrv.delete)
-            except:
+            except Exception:
                 detach_failed.append(nrv.id)
 
         if detach_failed:
@@ -1713,7 +1719,7 @@ class Service(ServiceBase):
             vol_count, vol_size, vol_type = attrs[0:3]
             log.debug("Split {}, {}, {} from {}".format(
                 vol_count, vol_size, vol_type, instance.tags['shelved']))
-        except:
+        except Exception:
             log.error("{} does not have data in the shelved tag".format(instance.id))
             return
 
@@ -2120,7 +2126,7 @@ class Service(ServiceBase):
                         log.debug("Added routed address {} to {}".format(addr.address, rt_id))
                         continue
                     except Exception as e:
-                        if not 'RouteAlreadyExists' in str(e):
+                        if 'RouteAlreadyExists' not in str(e):
                             raise
                     _aws_do(conn.replace_route, rt_id, '{}/32'.format(addr.address), instance_id=instance.id)
                     log.debug("Replaced routed address {} in {}".format(addr.address, rt_id))
@@ -2395,5 +2401,3 @@ def _aws_do(function, *args, **kwargs):
 
             # give up after our max retry count
             if errors > Service.BOTO_503_RETRIES: raise
-
-

@@ -202,5 +202,3 @@ class Cidr(object):
         for offset in xrange(0, stop-start+1):
             r.append(cls.to_address(start + offset))
         return r
-
-

@@ -167,6 +167,8 @@ class Cluster(object):
         self.trace_level      = None
         self.node_rename      = True
         self.first_node_error = None
+        self.timezone         = None
+        self.skip_support_cfg = False
 
         if self.proxy:
             self.proxy = validate_proxy(self.proxy) # imported from vFXT.service
@@ -1282,7 +1284,7 @@ class Cluster(object):
             try:
                 if corefiler in xmlrpc.corefiler.list():
                     break
-            except: pass
+            except Exception: pass
             log.debug("Waiting for corefiler to show up")
             if retries == 0:
                 _cleanup()
@@ -1347,7 +1349,7 @@ class Cluster(object):
             try:
                 if corefiler in xmlrpc.corefiler.list():
                     break
-            except: pass
+            except Exception: pass
             log.debug("Waiting for corefiler to show up")
             if retries == 0:
                 if options.get('remove_on_fail'):
@@ -1640,7 +1642,7 @@ class Cluster(object):
             response = self._xmlrpc_do(xmlrpc.support.modify, support_opts)
             if response[0] != 'success':
                 self.first_node_error = vFXTConfigurationException(response)
-                raise self.first_node_error
+                raise self.first_node_error #pylint: disable=raising-bad-type
         except Exception as e:
             log.error("Failed to configure support options: {}".format(e))
 
@@ -1649,7 +1651,7 @@ class Cluster(object):
             response = self._xmlrpc_do(xmlrpc.cluster.modify, {'timezone': self.timezone})
             if response != 'success':
                 self.first_node_error = vFXTConfigurationException(response)
-                raise self.first_node_error
+                raise self.first_node_error #pylint: disable=raising-bad-type
 
         # try and enable HA early if we have support in the AvereOS release for single node
         try:
@@ -1661,7 +1663,7 @@ class Cluster(object):
         except Exception as e:
             log.debug("Failed during final first node configuration: {}".format(e))
             self.first_node_error = vFXTConfigurationException(e)
-            raise self.first_node_error
+            raise self.first_node_error #pylint: disable=raising-bad-type
 
     def set_default_proxy(self, name=None, xmlrpc=None):
         '''Set the default cluster proxy configuration
@@ -1955,4 +1957,3 @@ class Cluster(object):
             log.debug("Setting up addresses home configuration for vserver '{}': {}".format(vserver, mappings))
             activity = self._xmlrpc_do(xmlrpc.vserver.modifyClientIPHomes, vserver, mappings)
             self._xmlrpc_wait_for_activity(activity, "Failed to rebalance vserver {} addresses".format(vserver))
-

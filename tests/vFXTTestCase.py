@@ -83,5 +83,3 @@ class Base(unittest.TestCase):
         key_file        = self.gce['key_file']
         private_range   = self.gce['private_range']
         return GCE(client_email=client_email, key_file=key_file, zone=zone_id, project_id=project_id, network_id=network_id, private_range=private_range, subnetwork_id=subnetwork_id)
-
-

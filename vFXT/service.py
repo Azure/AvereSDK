@@ -44,7 +44,7 @@ class ShelveErrors(dict):
         if s:
             try:
                 self.update( dict([e.split(':') for e in s.split(';')]) )
-            except:
+            except Exception:
                 pass
     def __str__(self): # return k:v;k:v format
         return ";".join(["{}:{}".format(k, v) for k, v in self.iteritems()])
@@ -93,7 +93,7 @@ def gethostbyname(host, timeout=DNS_TIMEOUT):
             addr = dns.inet.inet_pton(dns.inet.af_for_address(host), host)
             if addr:
                 return host
-        except: pass
+        except Exception: pass
 
         try:
             return r.query(host)[0].to_text()
@@ -260,7 +260,7 @@ class ServiceBase(object):
 
             Returns: bool
         '''
-        if (self.BUCKET_NAME_RE.match(name) and not self.TOO_LONG_DNS_NAME_COMP_RE.search(name)):
+        if self.BUCKET_NAME_RE.match(name) and not self.TOO_LONG_DNS_NAME_COMP_RE.search(name):
             return True
         return False
 
@@ -344,5 +344,3 @@ class ServiceBase(object):
                 gethostbyname(host, timeout)
         except socket.gaierror as e:
             raise vFXTConfigurationException("Failed to establish connection to service: {}".format(e))
-
-

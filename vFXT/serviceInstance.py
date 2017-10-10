@@ -221,5 +221,3 @@ class ServiceInstance(object):
         self.refresh()
         self.service.remove_instance_address(self.instance, address)
         self.refresh()
-
-

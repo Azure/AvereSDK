@@ -125,7 +125,7 @@ class CookieAuthXMLRPCTransport(xmlrpclib.SafeTransport):
             raise
 
         #discard any response data and raise exception
-        if (response.getheader("content-length", 0)):
+        if response.getheader("content-length", 0):
             response.read()
         raise xmlrpclib.ProtocolError(host + handler,
                                       response.status, response.reason,
@@ -141,9 +141,7 @@ def getXmlrpcClient(server_uri, verbose=False, do_cert_checks=True):
 
 
 def main():
-    import xmlrpcClt
     import code
-    import sys
 
     mgmt_ip  = None
     username = None
@@ -152,11 +150,11 @@ def main():
         mgmt_ip  = sys.argv[1]
         username = sys.argv[2]
         password = sys.argv[3]
-    except:
+    except Exception:
         print "Arguments required: [mgmt ip] [username] [password]"
         return
 
-    s = xmlrpcClt.getXmlrpcClient("http://{0}/cgi-bin/rpc2.py".format(mgmt_ip), do_cert_checks=False)
+    s = getXmlrpcClient("http://{0}/cgi-bin/rpc2.py".format(mgmt_ip), do_cert_checks=False)
     res = s.system.login(username.encode('base64'), password.encode('base64'))
     if res != 'success':
         raise Exception(res)

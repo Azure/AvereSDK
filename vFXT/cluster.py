@@ -1934,8 +1934,10 @@ class Cluster(object):
             # build mapping table
             mappings = {vif:nodes.next() for vif in vifs}
 
-            # early on we may be getting back a truncated list of addresses, retry for a few
-            retries = self.service.XMLRPC_RETRIES
+            # early on we may be getting back a truncated list of addresses that indicates
+            # the configuration rebalancing is not yet complete, retry until we have
+            # what we expect.
+            retries = self.service.WAIT_FOR_OPERATION
             old_mappings = {_['ip']:_['current'] for _ in home_cfg}
             while len(old_mappings) != len(mappings):
                 log.debug("waiting for vserver configuration to finalize")
@@ -1944,6 +1946,7 @@ class Cluster(object):
                 old_mappings = {_['ip']:_['current'] for _ in home_cfg}
                 if retries == 0:
                     break
+                retries -= 1
 
             if not [_ for _ in mappings.keys() if mappings[_] != old_mappings.get(_)]:
                 log.debug("Address home configuration is up to date for vserver '{}'".format(vserver))

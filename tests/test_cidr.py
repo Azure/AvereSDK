@@ -24,19 +24,19 @@ class cidr_test(tests.vFXTTestCase.Base):
 
     def test__init__(self):
         c = Cidr('10.1.1.0/24')
-        self.assertIsInstance(c,Cidr)
+        self.assertIsInstance(c, Cidr)
 
         c = Cidr('10.1.1.0', '255.255.255.0')
-        self.assertIsInstance(c,Cidr)
+        self.assertIsInstance(c, Cidr)
 
         self.assertRaises(ValueError, Cidr, ('10.1.1.0/240'))
         self.assertRaises(ValueError, Cidr, ('10.1.1.0'))
         self.assertRaises(ValueError, Cidr, ('10.1.1.0/bad'))
         self.assertRaises(ValueError, Cidr, ('10.1.1.0/'))
-        self.assertRaises(ValueError, Cidr, ('10.1.1.0','bad'))
-        self.assertRaises(ValueError, Cidr, ('10.1.1.0','1024.1024.1024.0'))
-        self.assertRaises(ValueError, Cidr, ('10.1.1.0','-255.-255.-255.0'))
-        self.assertRaises(ValueError, Cidr, ('10.1.1.0','-1'))
+        self.assertRaises(ValueError, Cidr, ('10.1.1.0', 'bad'))
+        self.assertRaises(ValueError, Cidr, ('10.1.1.0', '1024.1024.1024.0'))
+        self.assertRaises(ValueError, Cidr, ('10.1.1.0', '-255.-255.-255.0'))
+        self.assertRaises(ValueError, Cidr, ('10.1.1.0', '-1'))
         self.assertRaises(ValueError, Cidr, (''))
 
     def test_start(self):
@@ -119,15 +119,15 @@ class cidr_test(tests.vFXTTestCase.Base):
         self.assertTrue(Cidr.to_prefix(Cidr.from_address('255.255.255.255')) == 32)
 
     def test_expand_address_range(self):
-        self.assertTrue(cmp(Cidr.expand_address_range('10.1.1.1','10.1.1.3'), ['10.1.1.1','10.1.1.2','10.1.1.3']) == 0)
-        self.assertFalse(cmp(Cidr.expand_address_range('10.1.1.1','10.1.1.7'), ['10.1.1.1','10.1.1.2','10.1.1.3']) == 0)
-        self.assertRaises(ValueError, Cidr.expand_address_range, '10.1.1.1','bad')
-        self.assertTrue(cmp(Cidr.expand_address_range('10.1.1.1','10.1.0.3'), []) == 0)
+        self.assertTrue(cmp(Cidr.expand_address_range('10.1.1.1', '10.1.1.3'), ['10.1.1.1', '10.1.1.2', '10.1.1.3']) == 0)
+        self.assertFalse(cmp(Cidr.expand_address_range('10.1.1.1', '10.1.1.7'), ['10.1.1.1', '10.1.1.2', '10.1.1.3']) == 0)
+        self.assertRaises(ValueError, Cidr.expand_address_range, '10.1.1.1', 'bad')
+        self.assertTrue(cmp(Cidr.expand_address_range('10.1.1.1', '10.1.0.3'), []) == 0)
 
     def test_available(self):
         c = Cidr('10.1.1.200/28')
         self.assertTrue(len(c.addresses_list()) == 16)
-        used = ['10.1.1.196','10.1.1.200']
+        used = ['10.1.1.196', '10.1.1.200']
         self.assertTrue(cmp(c.available(used=used), ['10.1.1.197']) == 0)
         self.assertTrue(cmp(c.available(count=1, used=used), ['10.1.1.197']) == 0)
         self.assertTrue(cmp(c.available(count=5, used=used), ['10.1.1.201', '10.1.1.202', '10.1.1.203', '10.1.1.204', '10.1.1.205']) == 0)

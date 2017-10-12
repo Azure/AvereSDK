@@ -114,58 +114,58 @@ s3_region_locations = {
 
 class Service(ServiceBase):
     '''AWS Service backend'''
-    ON_STATUS="running"
-    OFF_STATUS="stopped"
-    PENDING_STATUS='pending'
-    DESTROY_STATUS="terminated"
-    NTP_SERVERS=['0.amazon.pool.ntp.org', '1.amazon.pool.ntp.org', '2.amazon.pool.ntp.org']
-    DNS_SERVERS=[]
-    MACHINE_DEFAULTS={
-        "t2.micro":     {"data_disk_count":1, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":False, "node_count":3},
-        "t2.small":     {"data_disk_count":1, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":False, "node_count":3},
-        "t2.large":     {"data_disk_count":1, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":False, "node_count":3},
-        "m1.small":     {"data_disk_count":1, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":False, "node_count":3},
-        "c3.xlarge":    {"data_disk_count":8, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":True, "node_count":3},
-        "c3.2xlarge":   {"data_disk_count":10, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":True, "node_count":3},
-        "c3.4xlarge":   {"data_disk_count":10, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":True, "node_count":3},
-        "c3.8xlarge":   {"data_disk_count":10, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":False, "node_count":3},
-        "c4.xlarge":    {"data_disk_count":8, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":True, "node_count":3},
-        "c4.2xlarge":   {"data_disk_count":10, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":True, "node_count":3},
-        "c4.4xlarge":   {"data_disk_count":10, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":True, "node_count":3},
-        "c4.8xlarge":   {"data_disk_count":10, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":True, "node_count":3},
-        "r3.xlarge":    {"data_disk_count":8, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":True, "node_count":3},
-        "r3.2xlarge":   {"data_disk_count":10, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":True, "node_count":3},
-        "r3.4xlarge":   {"data_disk_count":10, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":True, "node_count":3},
-        "r3.8xlarge":   {"data_disk_count":10, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":False, "node_count":3},
-        "r4.2xlarge":   {"data_disk_count":10, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":True, "node_count":3},
-        "r4.4xlarge":   {"data_disk_count":10, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":True, "node_count":3},
-        "r4.8xlarge":   {"data_disk_count":10, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":True, "node_count":3},
-        "r4.16xlarge":   {"data_disk_count":10, "data_disk_size":"200", 'data_disk_type':'gp2', "ebsoptimized":False, "node_count":3},
+    ON_STATUS = "running"
+    OFF_STATUS = "stopped"
+    PENDING_STATUS = 'pending'
+    DESTROY_STATUS = "terminated"
+    NTP_SERVERS = ['0.amazon.pool.ntp.org', '1.amazon.pool.ntp.org', '2.amazon.pool.ntp.org']
+    DNS_SERVERS = []
+    MACHINE_DEFAULTS = {
+        "t2.micro":     {"data_disk_count": 1, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": False, "node_count": 3},
+        "t2.small":     {"data_disk_count": 1, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": False, "node_count": 3},
+        "t2.large":     {"data_disk_count": 1, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": False, "node_count": 3},
+        "m1.small":     {"data_disk_count": 1, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": False, "node_count": 3},
+        "c3.xlarge":    {"data_disk_count": 8, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "c3.2xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "c3.4xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "c3.8xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": False, "node_count": 3},
+        "c4.xlarge":    {"data_disk_count": 8, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "c4.2xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "c4.4xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "c4.8xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "r3.xlarge":    {"data_disk_count": 8, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "r3.2xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "r3.4xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "r3.8xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": False, "node_count": 3},
+        "r4.2xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "r4.4xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "r4.8xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "r4.16xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": False, "node_count": 3},
     }
-    MACHINE_TYPES=MACHINE_DEFAULTS.keys()
-    DEFAULTS_URL="http://avere-dist.s3-website-us-west-2.amazonaws.com/vfxtdefaults.json"
-    S3TYPE_NAME='AMAZON'
-    COREFILER_CRED_TYPE='s3'
-    INSTANCENAME_RE=re.compile(r'[a-zA-Z0-9\ \t\+\-=\._:\/@]+$')
-    ARN="aws"
-    IAM_HOST='iam.amazonaws.com'
-    AWS_INSTANCE_HOST='169.254.169.254'
-    S3URL_RE=re.compile(r's3://(?P<bucket>[^\/]*)/(?P<path>.*)$')
-    IAM_BUCKET_POLICY=['s3:GetLifecycleConfiguration',
+    MACHINE_TYPES = MACHINE_DEFAULTS.keys()
+    DEFAULTS_URL = "http://avere-dist.s3-website-us-west-2.amazonaws.com/vfxtdefaults.json"
+    S3TYPE_NAME = 'AMAZON'
+    COREFILER_CRED_TYPE = 's3'
+    INSTANCENAME_RE = re.compile(r'[a-zA-Z0-9\ \t\+\-=\._:\/@]+$')
+    ARN = "aws"
+    IAM_HOST = 'iam.amazonaws.com'
+    AWS_INSTANCE_HOST = '169.254.169.254'
+    S3URL_RE = re.compile(r's3://(?P<bucket>[^\/]*)/(?P<path>.*)$')
+    IAM_BUCKET_POLICY = ['s3:GetLifecycleConfiguration',
                        's3:GetBucketLocation',
                        's3:ListBucket',
                        's3:ListBucketMultipartUploads',
                        's3:ListBucketVersions',
                        's3:PutLifecycleConfiguration']
-    IAM_OBJECT_POLICY=['s3:AbortMultipartUpload',
+    IAM_OBJECT_POLICY = ['s3:AbortMultipartUpload',
                        's3:DeleteObject',
                        's3:GetObject',
                        's3:ListMultipartUploadParts',
                        's3:PutObject']
-    IAM_OBJECT_POLICY_WRITE_ONLY=['s3:AbortMultipartUpload',
+    IAM_OBJECT_POLICY_WRITE_ONLY = ['s3:AbortMultipartUpload',
                        's3:ListMultipartUploadParts',
                        's3:PutObject']
-    IAM_POLICY=['ec2:AssignPrivateIpAddresses',
+    IAM_POLICY = ['ec2:AssignPrivateIpAddresses',
                 'ec2:UnassignPrivateIpAddresses',
                 'ec2:DescribeInstance*',
                 'ec2:DescribeRouteTables',
@@ -174,10 +174,10 @@ class Service(ServiceBase):
                 'ec2:CreateRoute',
                 'ec2:DeleteRoute']
     ENDPOINT_TEST_HOSTS = ['s3.amazonaws.com']
-    BOTO_503_RETRIES=10
-    CREATE_INSTANCE_IAM_PROPAGATION_RETRIES=60
-    ALLOCATE_PRIVATE_ADDRESSES=True
-    OFFLINE_DEFAULTS={
+    BOTO_503_RETRIES = 10
+    CREATE_INSTANCE_IAM_PROPAGATION_RETRIES = 60
+    ALLOCATE_PRIVATE_ADDRESSES = True
+    OFFLINE_DEFAULTS = {
         'version': '1',
         'clustermanager': {
             'instanceTypes': [ 'r3.2xlarge', 'r3.8xlarge' ],
@@ -326,7 +326,7 @@ class Service(ServiceBase):
             if resp.status == 200:
                 data['user-data'] = resp.read()
 
-            data['network'] = {'interfaces':{'macs':{}}}
+            data['network'] = {'interfaces': {'macs': {}}}
             conn.request('GET', '/latest/meta-data/network/interfaces/macs/')
             macs = []
             resp = conn.getresponse()
@@ -350,7 +350,7 @@ class Service(ServiceBase):
             resp = conn.getresponse()
             if resp.status == 200:
                 creds = resp.read().split('\n')
-            data['iam'] = {'security-credentials':{}}
+            data['iam'] = {'security-credentials': {}}
             for cred in creds:
                 conn.request('GET', '/latest/meta-data/iam/security-credentials/{}'.format(cred))
                 data['iam']['security-credentials'][cred] = json.loads(conn.getresponse().read())
@@ -366,7 +366,7 @@ class Service(ServiceBase):
 
             data['region']      = data['document']['region']
             data['hostname']    = data['hostname'].split(' ')[0]
-            data['machine_type']= data['instance-type']
+            data['machine_type'] = data['instance-type']
             data['account_id']  = data['document'].get('accountId', 'unknown')
             data['service_id']  = data['instance-id']
             data['ssh_keys']    = data['openssh-key'] if data['openssh-key'] else []
@@ -397,9 +397,9 @@ class Service(ServiceBase):
         cred_path = os.path.join(os.path.expanduser('~'), '.aws', 'credentials')
         cred_config.load_from_path(cred_path)
 
-        access_key = os.environ.get('AWS_ACCESS_KEY_ID')     or cred_config.get(profile, 'aws_access_key_id')
+        access_key = os.environ.get('AWS_ACCESS_KEY_ID') or cred_config.get(profile, 'aws_access_key_id')
         secret_key = os.environ.get('AWS_SECRET_ACCESS_KEY') or cred_config.get(profile, 'aws_secret_access_key')
-        token      = os.environ.get('AWS_SECURITY_TOKEN')    or cred_config.get(profile, 'aws_session_token')
+        token      = os.environ.get('AWS_SECURITY_TOKEN') or cred_config.get(profile, 'aws_session_token')
 
         if not all([access_key, secret_key]):
             raise vFXTConfigurationException("Unable to read local credentials.  Try 'aws configure help'")
@@ -502,7 +502,7 @@ class Service(ServiceBase):
             boto_config.set('Boto', 'http_socket_timeout', str(CONNECTION_TIMEOUT))
             boto_config.set('Boto', 'num_retries', '0')
             conn = self.connection()
-            conn.get_all_reservations(filters={'tag:invalid_tag':'. .'}) # invalid name for filter
+            conn.get_all_reservations(filters={'tag:invalid_tag': '. .'}) # invalid name for filter
         except Exception as e:
             log.debug(e)
             raise vFXTServiceConnectionFailure("Failed to establish connection to service: {}".format(e))
@@ -537,7 +537,7 @@ class Service(ServiceBase):
                 raise vFXTServiceFailure("Failed to lookup max instance quota")
             max_count = int(max_instances[0].attribute_values[0])
             instance_count = len([i for r in conn.get_all_reservations() for i in r.instances]) + (instances or 0)
-            if (instance_count+0.0)/max_count > percentage:
+            if (instance_count + 0.0) / max_count > percentage:
                 log.warn("QUOTA ALERT: Using {} of {} instances".format(instance_count, max_count))
             else:
                 log.debug("Using {} of {} instances".format(instance_count, max_count))
@@ -547,7 +547,7 @@ class Service(ServiceBase):
         log.info("Performing API tests")
         try:
             # ec2:DescribeInstance*
-            conn.get_all_reservations(filters={'tag:invalid_tag':'. .'}) # invalid name for filter
+            conn.get_all_reservations(filters={'tag:invalid_tag': '. .'}) # invalid name for filter
             # ec2:DescribeRouteTables
             self._get_route_tables()
             # ec2:DescribeSubnets
@@ -557,7 +557,7 @@ class Service(ServiceBase):
 
         log.info("Performing IAM create/delete policy test")
         import uuid
-        role_name = 'avere_iam_check_{}'.format(str(uuid.uuid4()).lower().replace('-','')[0:63])
+        role_name = 'avere_iam_check_{}'.format(str(uuid.uuid4()).lower().replace('-', '')[0:63])
         role = None
         try:
             role = self._create_iamrole(role_name)
@@ -570,7 +570,7 @@ class Service(ServiceBase):
                 log.error("Failed to delete IAM role {}: {}".format(role_name, e))
 
         log.info("Performing S3 create/delete bucket test")
-        bucket_name = str(uuid.uuid4()).lower().replace('-','')[0:63]
+        bucket_name = str(uuid.uuid4()).lower().replace('-', '')[0:63]
         bucket = None
         try:
             bucket = self.create_bucket(bucket_name)
@@ -590,7 +590,7 @@ class Service(ServiceBase):
         '''
         try:
             cred_expiration = self.local.instance_data['iam']['security-credentials'].values()[0]['Expiration']
-            if (int(time.mktime(time.strptime(cred_expiration, "%Y-%m-%dT%H:%M:%SZ")))-120) < int(time.time()):
+            if (int(time.mktime(time.strptime(cred_expiration, "%Y-%m-%dT%H:%M:%SZ"))) - 120) < int(time.time()):
                 log.debug("Access token expired, forcing refresh")
                 self.local.connections = {}
         except Exception: pass
@@ -601,7 +601,7 @@ class Service(ServiceBase):
         s3_access_key        = self.s3_access_key
         s3_secret_access_key = self.s3_secret_access_key
 
-        if not hasattr(self.local,'connections'):
+        if not hasattr(self.local, 'connections'):
             self.local.connections = {}
         if not self.local.connections.get(connection_type, False):
             # if we are on instance, get most up to date
@@ -618,7 +618,7 @@ class Service(ServiceBase):
 
             proxy_settings = {}
             proxy_settings['proxy']      = self.proxy.hostname if self.proxy else None
-            proxy_settings['proxy_port'] = self.proxy.port     if self.proxy else None
+            proxy_settings['proxy_port'] = self.proxy.port if self.proxy else None
             proxy_settings['proxy_user'] = self.proxy.username if self.proxy else None
             proxy_settings['proxy_pass'] = self.proxy.password if self.proxy else None
 
@@ -828,7 +828,7 @@ class Service(ServiceBase):
 
         # clean up any routes
         vpc = self.connection(connection_type='vpc')
-        routes = [{'route_table_id':rt.id, 'destination_cidr_block':r.destination_cidr_block}
+        routes = [{'route_table_id': rt.id, 'destination_cidr_block': r.destination_cidr_block}
                     for rt in _aws_do(vpc.get_all_route_tables)
                     for r in rt.routes
                     if r.instance_id == instance.id]
@@ -958,15 +958,15 @@ class Service(ServiceBase):
         tagset = boto.s3.tagging.TagSet()
         tags = options.get('tags', {})
         if tags:
-            for k,v in tags.iteritems():
-                tagset.add_tag(k,v)
+            for k, v in tags.iteritems():
+                tagset.add_tag(k, v)
             tagset.add_tag('Name', name)
             btags.add_tag_set(tagset)
 
 
         s3_region = s3_region_locations[self.region] if self.region in s3_region_locations else self.region
 
-        retries=ServiceBase.CLOUD_API_RETRIES
+        retries = ServiceBase.CLOUD_API_RETRIES
         while True:
             try:
                 b = _aws_do_non_idempotent(s3.create_bucket, name, location=s3_region)
@@ -1045,8 +1045,8 @@ class Service(ServiceBase):
             while True:
                 try:
                     r = xmlrpc.corefiler.createCredential(cred, self.COREFILER_CRED_TYPE, {
-                        'accessKey':self.s3_access_key,
-                        'privateKey':self.s3_secret_access_key,
+                        'accessKey': self.s3_access_key,
+                        'privateKey': self.s3_secret_access_key,
                     })
                     if r != 'success':
                         raise Exception(r)
@@ -1125,13 +1125,13 @@ class Service(ServiceBase):
         # fill in with blank disks if necessary
         base = ord('b')
         for idx in xrange(4):
-            dev_name = "/dev/sd{:c}".format(base+idx)
+            dev_name = "/dev/sd{:c}".format(base + idx)
             if dev_name not in bdm:
                 dev      = boto.ec2.blockdevicemapping.BlockDeviceType(no_device=True)
                 bdm[dev_name] = dev
 
         # general instance settings
-        user_data       = options.get('user_data','')
+        user_data       = options.get('user_data', '')
         placement_group = options.get('placement_group', None)
         subnet_id       = options.get('subnet') or self.subnets[0]
         ip_address      = options.get('private_ip_address', None)
@@ -1214,7 +1214,7 @@ class Service(ServiceBase):
             instance = self.refresh(instance) # refresh to get latest block device mapping
             for vname, vdev in instance.block_device_mapping.iteritems():
                 vol_tags = tags.copy()
-                vol_tags['Name'] = "{}-{}".format(tags['Name'], vname[vname.rfind("/")+1:])
+                vol_tags['Name'] = "{}-{}".format(tags['Name'], vname[vname.rfind("/") + 1:])
                 log.debug("Tagging volume {} with {}".format(vdev.volume_id, vol_tags))
                 _aws_do(conn.create_tags, vdev.volume_id, vol_tags)
         except Exception as e:
@@ -1273,7 +1273,7 @@ class Service(ServiceBase):
             base = ord('b')
             for idx in xrange(4): # ignore data_disk_size for ephemeral
                 name     = 'ephemeral{}'.format(idx)
-                dev_name = "/dev/sd{:c}".format(base+idx)
+                dev_name = "/dev/sd{:c}".format(base + idx)
                 dev      = boto.ec2.blockdevicemapping.BlockDeviceType(ephemeral_name=name)
                 bdm[dev_name] = dev
         else:
@@ -1287,7 +1287,7 @@ class Service(ServiceBase):
                     'encrypted':             node_opts.get('disk_encryption', True)
                 }
                 dev       = boto.ec2.blockdevicemapping.BlockDeviceType(**opts)
-                name      = "/dev/sd{:c}".format(base+idx)
+                name      = "/dev/sd{:c}".format(base + idx)
                 bdm[name] = dev
 
         log.info("Creating node {}".format(node_name))
@@ -1353,7 +1353,7 @@ class Service(ServiceBase):
         route_tables = set()
         vpcconn = self.connection('vpc')
         for subnet_id in subnets:
-            subnet_route_tables = _aws_do(vpcconn.get_all_route_tables, filters={'association.subnet-id':subnet_id})
+            subnet_route_tables = _aws_do(vpcconn.get_all_route_tables, filters={'association.subnet-id': subnet_id})
             if not subnet_route_tables:
                 route_tables.add('main') # main is the default route table
             else:
@@ -1380,7 +1380,7 @@ class Service(ServiceBase):
 
         # if we are going to span multiple subnets we can not assign the private ip address
         if len(subnets) > 1:
-            private_ips = [None]*cluster_size
+            private_ips = [None] * cluster_size
 
         # store for cluster config
         cluster.mgmt_netmask     = mask
@@ -1389,11 +1389,11 @@ class Service(ServiceBase):
         cluster.subnets = [subnets[0]] # first node subnet
 
         # disks
-        root_image      = options.get('root_image')      or self._get_default_image()
-        data_disk_size  = options.get('data_disk_size')  or machine_defs['data_disk_size']
+        root_image      = options.get('root_image') or self._get_default_image()
+        data_disk_size  = options.get('data_disk_size') or machine_defs['data_disk_size']
         data_disk_count = options.get('data_disk_count') or machine_defs['data_disk_count']
-        data_disk_type  = options.get('data_disk_type')  or machine_defs['data_disk_type']
-        data_disk_iops  = options.get('data_disk_iops')  or machine_defs.get('data_disk_iops', 250)
+        data_disk_type  = options.get('data_disk_type') or machine_defs['data_disk_type']
+        data_disk_iops  = options.get('data_disk_iops') or machine_defs.get('data_disk_iops', 250)
         if data_disk_type != 'io1':
             data_disk_iops = None
         disk_encryption = options.pop('disk_encryption', True)
@@ -1424,10 +1424,10 @@ class Service(ServiceBase):
 
         try:
             name = '{}-{}'.format(cluster.name, 1)
-            opts = {'data_disk_type':data_disk_type, 'data_disk_count':data_disk_count,
-                    'tags': tags.copy(), 'data_disk_size':data_disk_size,
-                    'data_disk_iops':data_disk_iops, 'machine_type':machine_type,
-                    'root_image':root_image, 'role':role, 'disk_encryption': disk_encryption}
+            opts = {'data_disk_type': data_disk_type, 'data_disk_count': data_disk_count,
+                    'tags': tags.copy(), 'data_disk_size': data_disk_size,
+                    'data_disk_iops': data_disk_iops, 'machine_type': machine_type,
+                    'root_image': root_image, 'role': role, 'disk_encryption': disk_encryption}
             inst_opts = options.copy()
             inst_opts['subnet'] = subnets[0] # first node subnet
             inst_opts['private_ip_address'] = private_ips.pop(0)
@@ -1491,12 +1491,12 @@ class Service(ServiceBase):
         cycle_subnets = cycle(subnets)
 
         # if we are preallocating our private_addresses
-        private_addresses = options.pop('private_addresses', [None]*count)
+        private_addresses = options.pop('private_addresses', [None] * count)
         if len(private_addresses) != count:
             raise vFXTConfigurationException("Not enough private addresses were provided")
         # but only for non-xaz setups
         if len(subnets) > 1:
-            private_addresses = [None]*count
+            private_addresses = [None] * count
 
         instance        = cluster.nodes[0].instance
         role            = self._get_iamrole(cluster.iamrole)
@@ -1505,7 +1505,7 @@ class Service(ServiceBase):
         if not options.get('security_group_ids'):
             options['security_group_ids'] = security_groups
         # overrides
-        opts = {'tags': instance.tags, 'data_disk_iops':None, 'machine_type':cluster.machine_type, 'root_image':instance.image_id, 'role':role}
+        opts = {'tags': instance.tags, 'data_disk_iops': None, 'machine_type': cluster.machine_type, 'root_image': instance.image_id, 'role': role}
         overrides = ['tags', 'machine_type', 'root_image', 'data_disk_size', 'data_disk_type', 'data_disk_count']
         for o in overrides:
             if o in options:
@@ -1542,7 +1542,7 @@ class Service(ServiceBase):
             except Exception as e:
                 failq.put("Failed to create node: {}".format(e))
 
-        for node_num in xrange(max_node_num, max_node_num+count):
+        for node_num in xrange(max_node_num, max_node_num + count):
             next_node_num = node_num + 1
             inst_opts = options.copy()
             inst_opts['subnet'] = next(cycle_subnets)
@@ -1592,7 +1592,7 @@ class Service(ServiceBase):
                         for n in [xmlrpc.node.get(name)[name]]
                         if 'primaryClusterIP' in n])
 
-        expr = {"private_ip_address":list(node_ips)}
+        expr = {"private_ip_address": list(node_ips)}
         instances = [i for r in _aws_do(conn.get_all_reservations, filters=expr) for i in r.instances]
 
         # we should always find the private addresses in the cluster IP list
@@ -1812,7 +1812,7 @@ class Service(ServiceBase):
             else: # lots of subnets, determine a private range outside vpc XXX review
                 # this requires permission to view vpc
                 vpc_cidr   = Cidr(self._subnet_to_vpc().cidr_block)
-                addr_range = '{}/{}'.format(Cidr.to_address(vpc_cidr.end()+1),vpc_cidr.bits)
+                addr_range = '{}/{}'.format(Cidr.to_address(vpc_cidr.end() + 1), vpc_cidr.bits)
                 netmask = '255.255.255.255'
         else:
             netmask = '255.255.255.255'
@@ -1847,7 +1847,7 @@ class Service(ServiceBase):
             dns  = opts['domain-name-servers']
             if dns and dns[0] == 'AmazonProvidedDNS':
                 vpc_cidr = self._subnet_to_vpc(subnet_id).cidr_block
-                default_addr = Cidr.to_address(Cidr(vpc_cidr).start()+2)
+                default_addr = Cidr.to_address(Cidr(vpc_cidr).start() + 2)
                 dns = [default_addr]
             return dns
         except Exception as e:
@@ -1879,7 +1879,7 @@ class Service(ServiceBase):
         subnet_id = subnet_id or self.subnets[0]
         subnet    = self._get_subnet(subnet_id)
         c         = Cidr(subnet.cidr_block)
-        return    c.to_address(c.start() | 1)
+        return c.to_address(c.start() | 1)
 
     def export(self):
         '''Export the service object in an easy to serialize format
@@ -1887,9 +1887,9 @@ class Service(ServiceBase):
                 {}: serializable dictionary
         '''
         export = {
-            'region':self.region,
-            'access_key':self.access_key,
-            'secret_access_key':self.secret_access_key,
+            'region': self.region,
+            'access_key': self.access_key,
+            'secret_access_key': self.secret_access_key,
         }
         if self.s3_access_key != self.access_key:
             export['s3_access_key'] = self.s3_access_key
@@ -1927,7 +1927,7 @@ class Service(ServiceBase):
         subnet_id = subnet_id or self.subnets[0]
         subnet    = self._get_subnet(subnet_id)
         vpc       = _aws_do(subnet.connection.get_all_vpcs, vpc_ids=[subnet.vpc_id])[0]
-        return    vpc
+        return vpc
 
     def _get_dhcp_options(self, subnet_id=None):
         '''Get DHCP options
@@ -1942,7 +1942,7 @@ class Service(ServiceBase):
         conn      = vpc.connection
         optid     = vpc.dhcp_options_id
         r         = _aws_do(conn.get_all_dhcp_options, dhcp_options_ids=[optid])
-        return    r[0].options
+        return r[0].options
 
     def _get_subnet(self, subnet_id=None):
         '''Get subnet object by ID
@@ -2179,11 +2179,11 @@ class Service(ServiceBase):
             is not included with 'all'.
         '''
         addresses = set()
-        if category in ['all','instance']:
+        if category in ['all', 'instance']:
             private_addrs = [addr.private_ip_address for iface in instance.interfaces for addr in iface.private_ip_addresses]
             addresses.update(set(private_addrs))
 
-        if category in ['all','routes']:
+        if category in ['all', 'routes']:
             vpcconn     = self.connection(connection_type='vpc')
             route_addrs = [r.destination_cidr_block.split('/')[0]
                             for rt in _aws_do(vpcconn.get_all_route_tables)
@@ -2230,7 +2230,7 @@ class Service(ServiceBase):
         vpcconn = self.connection(connection_type='vpc')
         try:
             return [a.route_table_id
-                for rt in _aws_do(vpcconn.get_all_route_tables, filters={'vpc-id':vpc_id})
+                for rt in _aws_do(vpcconn.get_all_route_tables, filters={'vpc-id': vpc_id})
                 for a in rt.associations
                 if a.main or a.subnet_id in subnet_ids]
         except Exception as e:
@@ -2304,7 +2304,7 @@ class Service(ServiceBase):
             log.debug(e)
             log.debug("Failed to get image {} by id, trying by name".format(name))
             try:
-                image = _aws_do(conn.get_all_images, filters={'name':name})[0].id
+                image = _aws_do(conn.get_all_images, filters={'name': name})[0].id
             except Exception as e:
                 log.debug(e)
                 raise vFXTServiceFailure("Failed to find installation image {}".format(name))
@@ -2325,7 +2325,7 @@ class Service(ServiceBase):
                 tuple (disk count, size per disk)
         '''
         count = 10 if cache_size >= 1000 else 1
-        return tuple([count, int(cache_size/count)])
+        return tuple([count, int(cache_size / count)])
 
     def _get_all_subnets(self):
         '''Return a list of subnets for the current configuration

@@ -25,7 +25,7 @@ def _setup_https_sock(h, verbose):
         h.set_debuglevel(1)
     h.connect()
     h.sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)    # disable Nagle algorithm and send small requests immediately
-    h.sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE,1) # check for dead servers
+    h.sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1) # check for dead servers
     h.sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPINTVL, 15) # probe every 15 seconds
     h.sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPCNT, 8)    # up to 8 attempts == 120 seconds
 

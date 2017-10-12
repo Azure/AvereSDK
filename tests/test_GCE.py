@@ -109,13 +109,13 @@ class GCE_test(tests.vFXTTestCase.Base):
 
     def test_connection_garbage_auth(self):
         # garbage auth
-        self.assertRaises(vFXT.service.vFXTConfigurationException, Service,client_email='garbage', key_file='tests/fake_key.p12', zone='', project_id='', network_id='')
+        self.assertRaises(vFXT.service.vFXTConfigurationException, Service, client_email='garbage', key_file='tests/fake_key.p12', zone='', project_id='', network_id='')
 
     def test_connection_bad_project(self):
         self.skipTest("This test does not work with json key file... it always provides the correct project id")
         service = self.mk_gce_service()
-        r = 'a{}a'.format(str(uuid.uuid4()).lower().replace('-','')[0:55])
-        self.assertRaises(vFXT.service.vFXTServiceConnectionFailure, Service,client_email=service.client_email, key_file=service.key_file, zone=service.zones[0], project_id=r, network_id=service.network_id)
+        r = 'a{}a'.format(str(uuid.uuid4()).lower().replace('-', '')[0:55])
+        self.assertRaises(vFXT.service.vFXTServiceConnectionFailure, Service, client_email=service.client_email, key_file=service.key_file, zone=service.zones[0], project_id=r, network_id=service.network_id)
 
     # this doesn't raise with the new simplified connection test
     #def test_connection_bad_zone(self):
@@ -174,7 +174,7 @@ class GCE_test(tests.vFXTTestCase.Base):
         from vFXT.serviceInstance import ServiceInstance
         service = self.mk_gce_service()
         name = 'vfxtpy-unittest-{}'.format(int(time.time()))
-        instance = ServiceInstance.create(service, self.gce['instance_type'], name, self.gce['image'], metadata={'purpose':'test'}, tags=['avere-dev'])
+        instance = ServiceInstance.create(service, self.gce['instance_type'], name, self.gce['image'], metadata={'purpose': 'test'}, tags=['avere-dev'])
         self.assertTrue('avere-dev' in instance.instance['tags']['items'])
         self.assertTrue(service._get_metadata(instance.instance, 'purpose') == 'test')
 
@@ -272,13 +272,13 @@ class GCE_test(tests.vFXTTestCase.Base):
 
     def test_create_delete_bucket(self):
         service = self.mk_gce_service()
-        name = '{}'.format(str(uuid.uuid4()).lower().replace('-','')[0:55])
+        name = '{}'.format(str(uuid.uuid4()).lower().replace('-', '')[0:55])
         service.create_bucket(name)
         service.delete_bucket(name)
 
     def test_create_bucket_storage_classes(self):
         service = self.mk_gce_service()
-        name = '{}'.format(str(uuid.uuid4()).lower().replace('-','')[0:55])
+        name = '{}'.format(str(uuid.uuid4()).lower().replace('-', '')[0:55])
         for storage_class in service.STORAGE_CLASSES:
             b = service.create_bucket(name, storage_class=storage_class)
             try:
@@ -315,8 +315,8 @@ class GCE_test(tests.vFXTTestCase.Base):
         i1 = None
         i2 = None
         try:
-            i1 = ServiceInstance.create(service, self.gce['instance_type'], 'vfxttest-dup-route-1', self.gce['image'], metadata={'purpose':'test'}, tags=['avere-dev'])
-            i2 = ServiceInstance.create(service, self.gce['instance_type'], 'vfxttest-dup-route-2', self.gce['image'], metadata={'purpose':'test'}, tags=['avere-dev'])
+            i1 = ServiceInstance.create(service, self.gce['instance_type'], 'vfxttest-dup-route-1', self.gce['image'], metadata={'purpose': 'test'}, tags=['avere-dev'])
+            i2 = ServiceInstance.create(service, self.gce['instance_type'], 'vfxttest-dup-route-2', self.gce['image'], metadata={'purpose': 'test'}, tags=['avere-dev'])
 
             addrs, mask = service.get_available_addresses(count=2, addr_range='172.16.16.0/24') #pylint: disable=unused-variable
             addr = addrs[0]
@@ -331,11 +331,11 @@ class GCE_test(tests.vFXTTestCase.Base):
             # add a different kind of route
             addr = addrs[1]
             route_body = {
-                'name': 'reservation-{}'.format(addr.replace('.','-')),
+                'name': 'reservation-{}'.format(addr.replace('.', '-')),
                 'network': service._get_network()['selfLink'],
                 'nextHopIp': service.get_default_router(),
                 'priority': 900,
-                'destRange':'{}/32'.format(addr)
+                'destRange': '{}/32'.format(addr)
             }
             op = vFXT.gce._gce_do(service.connection().routes().insert, project=service.project_id, body=route_body) #pylint: disable=unused-variable
             # Just do it... we will fix it up later# service._wait_for_operation(op, msg='route to be reserved', op_type='globalOperations')
@@ -352,19 +352,19 @@ class GCE_test(tests.vFXTTestCase.Base):
 
     def test_cache_to_disk_config(self):
         service = self.mk_gce_service()
-        self.assertTrue(service._cache_to_disk_config(250) == (1,250))
-        self.assertTrue(service._cache_to_disk_config(500) == (1,500))
-        self.assertTrue(service._cache_to_disk_config(1000) == (1,1000))
-        self.assertTrue(service._cache_to_disk_config(1500) == (1,1500))
-        self.assertTrue(service._cache_to_disk_config(4000) == (1,4000))
-        self.assertTrue(service._cache_to_disk_config(8000) == (1,8000))
-        self.assertTrue(service._cache_to_disk_config(250, disk_type='local-ssd') == (1,375))
-        self.assertTrue(service._cache_to_disk_config(500, disk_type='local-ssd') == (2,375))
-        self.assertTrue(service._cache_to_disk_config(1000, disk_type='local-ssd') == (3,375))
-        self.assertTrue(service._cache_to_disk_config(1500, disk_type='local-ssd') == (4,375))
-        self.assertTrue(service._cache_to_disk_config(2000, disk_type='local-ssd') == (6,375))
-        self.assertTrue(service._cache_to_disk_config(2500, disk_type='local-ssd') == (7,375))
-        self.assertTrue(service._cache_to_disk_config(3000, disk_type='local-ssd') == (8,375))
+        self.assertTrue(service._cache_to_disk_config(250) == (1, 250))
+        self.assertTrue(service._cache_to_disk_config(500) == (1, 500))
+        self.assertTrue(service._cache_to_disk_config(1000) == (1, 1000))
+        self.assertTrue(service._cache_to_disk_config(1500) == (1, 1500))
+        self.assertTrue(service._cache_to_disk_config(4000) == (1, 4000))
+        self.assertTrue(service._cache_to_disk_config(8000) == (1, 8000))
+        self.assertTrue(service._cache_to_disk_config(250, disk_type='local-ssd') == (1, 375))
+        self.assertTrue(service._cache_to_disk_config(500, disk_type='local-ssd') == (2, 375))
+        self.assertTrue(service._cache_to_disk_config(1000, disk_type='local-ssd') == (3, 375))
+        self.assertTrue(service._cache_to_disk_config(1500, disk_type='local-ssd') == (4, 375))
+        self.assertTrue(service._cache_to_disk_config(2000, disk_type='local-ssd') == (6, 375))
+        self.assertTrue(service._cache_to_disk_config(2500, disk_type='local-ssd') == (7, 375))
+        self.assertTrue(service._cache_to_disk_config(3000, disk_type='local-ssd') == (8, 375))
         self.assertRaises(vFXT.service.vFXTConfigurationException, service._cache_to_disk_config, 3001, disk_type='local-ssd')
 
     def test_zone_names(self):

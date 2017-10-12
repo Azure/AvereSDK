@@ -32,7 +32,7 @@ def _validate_ip(addr):
     if len(octets) != 4:
         raise argparse.ArgumentTypeError("malformed IP address: {}".format(addr))
     try:
-        if  all([v <= 255 and v >= 0 for v in [int(n) for n in octets]]):
+        if all([v <= 255 and v >= 0 for v in [int(n) for n in octets]]):
             return addr
     except:
         raise argparse.ArgumentTypeError("malformed IP address: {}".format(addr))
@@ -676,7 +676,7 @@ def main():
         if not cluster:
             logger.error("Cluster not found.")
             parser.exit(1)
-        if args.nodes+len(cluster.nodes) > 24:
+        if args.nodes + len(cluster.nodes) > 24:
             logger.error("Cluster sizes above 24 are not supported")
             parser.exit(1)
 

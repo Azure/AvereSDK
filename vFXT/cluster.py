@@ -123,8 +123,8 @@ class Cluster(object):
         operations through it or the XMLRPC client.
 
     '''
-    CONFIGURATION_EXPIRATION=7200
-    LICENSE_TIMEOUT=120
+    CONFIGURATION_EXPIRATION = 7200
+    LICENSE_TIMEOUT = 120
 
     def __init__(self, service, **options):
         '''Constructor
@@ -175,7 +175,7 @@ class Cluster(object):
 
         # we may be passed a list of instance IDs for offline clusters that we
         # can't query
-        if self.service and self.nodes and all([not isinstance(i,ServiceInstance) for i in self.nodes]):
+        if self.service and self.nodes and all([not isinstance(i, ServiceInstance) for i in self.nodes]):
             instances = []
             for node_id in self.nodes:
                 log.debug("Loading node {}".format(node_id))
@@ -225,7 +225,7 @@ class Cluster(object):
         c.trace_level     = options.get('trace_level', None)
         c.timezone        = options.get('timezone', None)
         c.join_mgmt       = False if options.get('join_instance_address', True) else True
-        c.skip_support_cfg= options.get('skip_support_configuration') or False
+        c.skip_support_cfg = options.get('skip_support_configuration') or False
 
         if c.proxy:
             c.proxy = validate_proxy(c.proxy) # imported from vFXT.service
@@ -258,7 +258,7 @@ class Cluster(object):
             c.wait_for_service_checks()
 
             xmlrpc = c.xmlrpc()
-            retries = int(options.get('join_wait', 500+(500*math.log(len(c.nodes)))))
+            retries = int(options.get('join_wait', 500 + (500 * math.log(len(c.nodes)))))
 
             # should get all the nodes joined by now
             c.allow_node_join(retries=retries, xmlrpc=xmlrpc)
@@ -389,7 +389,7 @@ class Cluster(object):
 
             Raises: vFXTConfigurationException
         '''
-        expiry = str(int(time.time()+(expiration or self.CONFIGURATION_EXPIRATION)))
+        expiry = str(int(time.time() + (expiration or self.CONFIGURATION_EXPIRATION)))
 
         if joining:
             mgmt_ip = (self.nodes[0].ip() if self.nodes and not self.join_mgmt else self.mgmt_ip)
@@ -399,7 +399,7 @@ class Cluster(object):
         ntp_servs   = self.service.get_ntp_servers()
         router      = self.service.get_default_router()
 
-        if not all([self.mgmt_ip, self.mgmt_netmask,self.cluster_ip_start, self.cluster_ip_end]):
+        if not all([self.mgmt_ip, self.mgmt_netmask, self.cluster_ip_start, self.cluster_ip_end]):
             raise vFXTConfigurationException("Management IP/Mask and the cluster IP range is required")
 
         # generate config
@@ -428,14 +428,14 @@ class Cluster(object):
         dns_count = len(dns_servs)
         for idx in range(3):
             v = dns_servs[idx] if idx < dns_count else ''
-            config += 'server{}={}\n'.format(idx+1, v)
+            config += 'server{}={}\n'.format(idx + 1, v)
         config += 'domain=\n'
 
         config += '\n[ntp]\n'
         ntp_count = len(ntp_servs)
         for idx in range(3):
             v = ntp_servs[idx] if idx < ntp_count else ''
-            config += 'server{}={}\n'.format(idx+1, v)
+            config += 'server{}={}\n'.format(idx + 1, v)
 
         return config
 
@@ -623,7 +623,7 @@ class Cluster(object):
                 upgrade_url (str): URL for armada package
                 retries (int, optional): retry count for switching active images
         '''
-        retries     = retries or int(500+(500*math.log(len(self.nodes))))
+        retries     = retries or int(500 + (500 * math.log(len(self.nodes))))
         xmlrpc      = self.xmlrpc()
         cluster     = self._xmlrpc_do(xmlrpc.cluster.get)
         alt_image   = cluster['alternateImage']
@@ -806,17 +806,17 @@ class Cluster(object):
         xmlrpc           = self.xmlrpc()
         license_data     = self._xmlrpc_do(xmlrpc.cluster.listLicenses)
         licensed_count   = int(license_data['maxNodes'])
-        if (node_count+count) > licensed_count:
+        if (node_count + count) > licensed_count:
             msg = "Cannot expand cluster to {} nodes as the current licensed maximum is {}"
-            raise vFXTConfigurationException(msg.format(node_count+count, licensed_count))
+            raise vFXTConfigurationException(msg.format(node_count + count, licensed_count))
 
         cluster_data    = self._xmlrpc_do(xmlrpc.cluster.get)
         cluster_ips_per_node = int(cluster_data['clusterIPNumPerNode'])
         vserver_count    = len(self._xmlrpc_do(xmlrpc.vserver.list))
         existing_vserver = self.in_use_addresses('vserver', xmlrpc=xmlrpc)
         existing_cluster = self.in_use_addresses('cluster', xmlrpc=xmlrpc)
-        need_vserver     = ((node_count+count)*vserver_count) - len(existing_vserver)
-        need_cluster     = ((node_count+count)*cluster_ips_per_node) - len(existing_cluster)
+        need_vserver     = ((node_count + count) * vserver_count) - len(existing_vserver)
+        need_cluster     = ((node_count + count) * cluster_ips_per_node) - len(existing_cluster)
         need_cluster     = need_cluster if need_cluster > 0 else 0
         need_vserver     = need_vserver if need_vserver > 0 else 0
         need_private     = count if self.service.ALLOCATE_PRIVATE_ADDRESSES else 0
@@ -844,29 +844,29 @@ class Cluster(object):
             if need_cluster > 0:
                 addresses = avail_ips[0:need_cluster]
                 del avail_ips[0:need_cluster]
-                body      = {'firstIP':addresses[0],'netmask':mask,'lastIP':addresses[-1]}
+                body      = {'firstIP': addresses[0], 'netmask': mask, 'lastIP': addresses[-1]}
                 log.info("Extending cluster address range by {}".format(need_cluster))
                 log.debug("{}".format(body))
                 activity = self._xmlrpc_do(xmlrpc.cluster.addClusterIPs, body)
                 self._xmlrpc_wait_for_activity(activity, "Failed to extend cluster addresses")
-                added.append({'cluster':body})
+                added.append({'cluster': body})
 
             if need_vserver > 0:
                 for vserver in self._xmlrpc_do(xmlrpc.vserver.list):
                     v_len     = len([a for r in self._xmlrpc_do(xmlrpc.vserver.get, vserver)[vserver]['clientFacingIPs']
-                                for a in xrange(Cidr.from_address(r['firstIP']), Cidr.from_address(r['lastIP'])+1)])
-                    to_add    = (node_count+count) - v_len
+                                for a in xrange(Cidr.from_address(r['firstIP']), Cidr.from_address(r['lastIP']) + 1)])
+                    to_add    = (node_count + count) - v_len
                     if to_add < 1:
                         continue
 
                     addresses = avail_ips[0:to_add]
                     del avail_ips[0:to_add]
-                    body      = {'firstIP':addresses[0],'netmask':mask,'lastIP':addresses[-1]}
+                    body      = {'firstIP': addresses[0], 'netmask': mask, 'lastIP': addresses[-1]}
                     log.info("Extending vserver {} address range by {}".format(vserver, need_vserver))
                     log.debug("{}".format(body))
                     activity = self._xmlrpc_do(xmlrpc.vserver.addClientIPs, vserver, body)
                     self._xmlrpc_wait_for_activity(activity, "Failed to extend vserver {} addresses".format(vserver))
-                    added.append({'vserver':body})
+                    added.append({'vserver': body})
 
         # now add the node(s)
         try:
@@ -874,7 +874,7 @@ class Cluster(object):
             self.wait_for_service_checks()
 
             # book keeping... may have to wait for a node to update image
-            wait = int(options.get('join_wait', 500+(500*math.log(count))))
+            wait = int(options.get('join_wait', 500 + (500 * math.log(count))))
             self.allow_node_join(retries=wait, xmlrpc=xmlrpc)
             self.wait_for_nodes_to_join(retries=wait)
             self.allow_node_join(enable=False, retries=wait, xmlrpc=xmlrpc)
@@ -900,7 +900,7 @@ class Cluster(object):
             self.service.load_cluster_information(self)
             joined_nodes = [n.id() for n in self.nodes]
             # find the difference
-            unjoined = list(set(expected_nodes)^set(joined_nodes))
+            unjoined = list(set(expected_nodes) ^ set(joined_nodes))
             unjoined_nodes = [ServiceInstance(self.service, i) for i in unjoined]
             # exclude those in the middle of joining
             joining_node_addresses = [_['address'] for _ in self._xmlrpc_do(self.xmlrpc().node.listUnconfiguredNodes) if 'joining' in _['status']]
@@ -961,8 +961,8 @@ class Cluster(object):
                 instance = ServiceInstance(service=service, instance_id=instance_id)
                 instance.__getattribute__(method)(**options)
             except Exception as e:
-                log.error("Failed to {} {}: {}".format(method, instance_id,e))
-                q.put(("Failed to {} instance {}".format(method, instance_id),e))
+                log.error("Failed to {} {}: {}".format(method, instance_id, e))
+                q.put(("Failed to {} instance {}".format(method, instance_id), e))
 
         for si in serviceinstances:
             t = threading.Thread(target=thread_cb, args=(si.service, si.instance_id, failq,))
@@ -1048,7 +1048,7 @@ class Cluster(object):
             xmlrpc = self.xmlrpc()
             cluster_name = self.name or 'unknown'
 
-            corefilers = {k:v for _ in self._xmlrpc_do(xmlrpc.corefiler.list) for k,v in self._xmlrpc_do(xmlrpc.corefiler.get, _).items()}
+            corefilers = {k: v for _ in self._xmlrpc_do(xmlrpc.corefiler.list) for k, v in self._xmlrpc_do(xmlrpc.corefiler.get, _).items()}
             if corefilers:
                 # remove all junctions
                 for vserver in self._xmlrpc_do(xmlrpc.vserver.list):
@@ -1185,7 +1185,7 @@ class Cluster(object):
             Returns:
                 key (dict): encryption key for the bucket as returned from attach_bucket
         '''
-        bucketname      = bucketname or "{}-{}".format(self.name, str(uuid.uuid4()).lower().replace('-',''))[0:63]
+        bucketname      = bucketname or "{}-{}".format(self.name, str(uuid.uuid4()).lower().replace('-', ''))[0:63]
         corefiler       = corefiler or bucketname
         self.service.create_bucket(bucketname, **options)
         log.info("Created bucket {} ".format(bucketname))
@@ -1276,7 +1276,7 @@ class Cluster(object):
                 try:
                     self.remove_corefiler(corefiler)
                 except Exception as e:
-                    log.error("Failed to remove corefiler {}: {}".format(corefiler,e))
+                    log.error("Failed to remove corefiler {}: {}".format(corefiler, e))
 
         # we have to wait for the corefiler to show up... may be blocked by other things
         # going on after corefiler.createCloudFiler completes.
@@ -1357,7 +1357,7 @@ class Cluster(object):
                     try:
                         self.remove_corefiler(corefiler)
                     except Exception as e:
-                        log.error("Failed to remove corefiler {}: {}".format(corefiler,e))
+                        log.error("Failed to remove corefiler {}: {}".format(corefiler, e))
                 raise vFXTConfigurationException('Failed to create corefiler {}'.format(corefiler))
             retries -= 1
             self._sleep()
@@ -1432,7 +1432,7 @@ class Cluster(object):
             if any([netmask, start_address, end_address]):
                 log.warn("Ignoring address configuration because missing one of {}(start), {}(end), or {}(netmask)".format(start_address, end_address, netmask))
             in_use_addrs        = self.in_use_addresses()
-            vserver_ips,netmask = self.service.get_available_addresses(count=size or len(self.nodes), contiguous=True, in_use=in_use_addrs)
+            vserver_ips, netmask = self.service.get_available_addresses(count=size or len(self.nodes), contiguous=True, in_use=in_use_addrs)
             start_address       = vserver_ips[0]
             end_address         = vserver_ips[-1]
         else:
@@ -1442,7 +1442,7 @@ class Cluster(object):
                 log.warn("Adding vserver address range without enough addresses for all nodes")
 
         log.info("Creating vserver {} ({}-{}/{})".format(name, start_address, end_address, netmask))
-        activity = self._xmlrpc_do(self.xmlrpc().vserver.create, name, {'firstIP': start_address, 'lastIP': end_address, 'netmask':netmask})
+        activity = self._xmlrpc_do(self.xmlrpc().vserver.create, name, {'firstIP': start_address, 'lastIP': end_address, 'netmask': netmask})
         self._xmlrpc_wait_for_activity(activity, "Failed to create vserver {}".format(name), retries=retries)
 
         # wait for vserver to become available
@@ -1692,7 +1692,7 @@ class Cluster(object):
                 raise vFXTConfigurationException("Unable to create proxy configuration: {}".format(e))
 
         try:
-            response = self._xmlrpc_do(xmlrpc.cluster.modify, {'proxy':name})
+            response = self._xmlrpc_do(xmlrpc.cluster.modify, {'proxy': name})
             if response != 'success':
                 raise vFXTConfigurationException(response)
         except Exception as e:
@@ -1711,7 +1711,7 @@ class Cluster(object):
         def _compat_allow_node_join(enable, xmlrpc):
             setting = 'yes' if enable else 'no'
             log.debug("_compat_allow_node_join setting allowAllNodesToJoin to {}".format(setting))
-            response = self._xmlrpc_do(xmlrpc.cluster.modify, {'allowAllNodesToJoin':setting})
+            response = self._xmlrpc_do(xmlrpc.cluster.modify, {'allowAllNodesToJoin': setting})
             if response != 'success':
                 raise vFXTConfigurationException("Failed to update allow node join configuration: {}".format(response))
 
@@ -1792,10 +1792,10 @@ class Cluster(object):
     def export(self):
         '''Export the cluster object in an easy to serialize format'''
         return {
-            'name':self.name,
-            'mgmt_ip':self.mgmt_ip,
-            'admin_password':self.admin_password,
-            'nodes':[n.instance_id for n in self.nodes]
+            'name': self.name,
+            'mgmt_ip': self.mgmt_ip,
+            'admin_password': self.admin_password,
+            'nodes': [n.instance_id for n in self.nodes]
         }
 
     def _sleep(self, duration=None):
@@ -1825,10 +1825,10 @@ class Cluster(object):
         addresses = set()
         xmlrpc = self.xmlrpc() if xmlrpc is None else xmlrpc
 
-        if category in ['all','mgmt']:
+        if category in ['all', 'mgmt']:
             addresses.update([self._xmlrpc_do(xmlrpc.cluster.get)['mgmtIP']['IP']])
 
-        if category in ['all','vserver']:
+        if category in ['all', 'vserver']:
             for vs in self._xmlrpc_do(xmlrpc.vserver.list):
                 data = self._xmlrpc_do(xmlrpc.vserver.get, vs)
                 for client_range in data[vs]['clientFacingIPs']:
@@ -1837,7 +1837,7 @@ class Cluster(object):
                     range_addrs = Cidr.expand_address_range(first, last)
                     addresses.update(range_addrs)
 
-        if category in ['all','cluster']:
+        if category in ['all', 'cluster']:
             data = self._xmlrpc_do(xmlrpc.cluster.get)
             for cluster_range in data['clusterIPs']:
                 first = cluster_range['firstIP']
@@ -1863,7 +1863,7 @@ class Cluster(object):
             log.debug("Skipping node naming configuration")
             return
 
-        node_ip_map = {_.ip():_.name() for _ in self.nodes}
+        node_ip_map = {_.ip(): _.name() for _ in self.nodes}
 
         # rename nodes with cluster prefix
         log.info("Setting node naming policy")
@@ -1935,9 +1935,9 @@ class Cluster(object):
             # sort numerically
             vifs = [Cidr.to_address(_) for _ in sorted([Cidr.from_address(_) for _ in vifs])]
             # build mapping table
-            mappings = {vif:nodes.next() for vif in vifs}
+            mappings = {vif: nodes.next() for vif in vifs}
 
-            old_mappings = {_['ip']:_['current'] for _ in home_cfg}
+            old_mappings = {_['ip']: _['current'] for _ in home_cfg}
             if not [_ for _ in mappings.keys() if mappings[_] != old_mappings.get(_)]:
                 log.debug("Address home configuration is up to date for vserver '{}'".format(vserver))
                 continue

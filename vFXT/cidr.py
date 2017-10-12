@@ -74,12 +74,12 @@ class Cidr(object):
         ''' start of cidr block
             Returns: int
         '''
-        return self.addr & ~(((1L<<(32-self.bits))-1))
+        return self.addr & ~(((1L << (32 - self.bits)) - 1))
     def end(self):
         ''' end of cidr block
             Returns: int
         '''
-        return self.addr | (((1L<<(32-self.bits))-1))
+        return self.addr | (((1L << (32 - self.bits)) - 1))
     def start_address(self):
         ''' start address of cidr block
             Returns: str
@@ -97,7 +97,7 @@ class Cidr(object):
         '''
         start = self.start()
         end   = self.end()
-        for i in xrange(start, end+1):
+        for i in xrange(start, end + 1):
             yield i
     def range_list(self):
         '''Returns list from range'''
@@ -136,8 +136,8 @@ class Cidr(object):
         used = set(used or [])
         # reserved addresses
         if honor_reserves:
-            for offset in range(0,4):
-                used.add(self.to_address(self.start()+offset))
+            for offset in range(0, 4):
+                used.add(self.to_address(self.start() + offset))
             used.add(self.to_address(self.end()))
 
         r = []
@@ -199,6 +199,6 @@ class Cidr(object):
         r = []
         start = cls.from_address(first)
         stop  = cls.from_address(last)
-        for offset in xrange(0, stop-start+1):
+        for offset in xrange(0, stop - start + 1):
             r.append(cls.to_address(start + offset))
         return r

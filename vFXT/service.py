@@ -34,9 +34,9 @@ class vFXTStatusFailure(Exception): pass
 class vFXTConnectionFailure(Exception): pass
 class vFXTNodeExistsException(Exception): pass
 
-CONNECTION_TIMEOUT=10
-MAX_ERRORTIME=30
-DNS_TIMEOUT=5.0
+CONNECTION_TIMEOUT = 10
+MAX_ERRORTIME = 30
+DNS_TIMEOUT = 5.0
 
 class ShelveErrors(dict):
     '''simple dict class with __str__ suitable for an instance tag'''
@@ -110,7 +110,7 @@ def load_defaults(service):
 
         proxy_handler = urllib2.ProxyHandler({})
         if service.proxy_uri:
-            proxy_handler = urllib2.ProxyHandler({'http':service.proxy_uri, 'https':service.proxy_uri})
+            proxy_handler = urllib2.ProxyHandler({'http': service.proxy_uri, 'https': service.proxy_uri})
 
         opener = urllib2.build_opener(proxy_handler)
         req = urllib2.Request(service.DEFAULTS_URL)
@@ -124,23 +124,23 @@ class ServiceBase(object):
     '''Basic service interface'''
     BUCKET_NAME_RE = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9\._-]{1,253}[a-zA-Z0-9]$')
     TOO_LONG_DNS_NAME_COMP_RE = re.compile(r'[-_a-z0-9]{64}')
-    POLLTIME=1
-    WAIT_FOR_SUCCESS=300
-    WAIT_FOR_DESTROY=600
-    WAIT_FOR_START=WAIT_FOR_SUCCESS
-    WAIT_FOR_RESTART=WAIT_FOR_SUCCESS
-    WAIT_FOR_STOP=600
-    WAIT_FOR_STATUS=120
-    WAIT_FOR_OPERATION=60
-    WAIT_FOR_INITIAL_CONNECTION=60
-    WAIT_FOR_SERVICE_CHECKS=600
-    WAIT_FOR_HEALTH_CHECKS=600
-    WAIT_FOR_NFS_EXPORTS=600
-    EXTENDED_XMLRPC_RETRIES=120
-    XMLRPC_RETRIES=5
-    CLOUD_API_RETRIES=3
-    ENDPOINT_TEST_HOSTS=[]
-    ALLOCATE_PRIVATE_ADDRESSES=False
+    POLLTIME = 1
+    WAIT_FOR_SUCCESS = 300
+    WAIT_FOR_DESTROY = 600
+    WAIT_FOR_START = WAIT_FOR_SUCCESS
+    WAIT_FOR_RESTART = WAIT_FOR_SUCCESS
+    WAIT_FOR_STOP = 600
+    WAIT_FOR_STATUS = 120
+    WAIT_FOR_OPERATION = 60
+    WAIT_FOR_INITIAL_CONNECTION = 60
+    WAIT_FOR_SERVICE_CHECKS = 600
+    WAIT_FOR_HEALTH_CHECKS = 600
+    WAIT_FOR_NFS_EXPORTS = 600
+    EXTENDED_XMLRPC_RETRIES = 120
+    XMLRPC_RETRIES = 5
+    CLOUD_API_RETRIES = 3
+    ENDPOINT_TEST_HOSTS = []
+    ALLOCATE_PRIVATE_ADDRESSES = False
 
     def __init__(self, **args):
         self.__dict__ = args
@@ -274,7 +274,7 @@ class ServiceBase(object):
             return False
         return True
 
-    def url_fetch(self, url, filename, chunksize=1024*1024):
+    def url_fetch(self, url, filename, chunksize=1024 * 1024):
         '''Retrieve the object from the URL, writing it to the passed in file location
 
             Arguments:

@@ -109,7 +109,7 @@ class AWS_test(tests.vFXTTestCase.Base):
         from vFXT.serviceInstance import ServiceInstance
         service = self.mk_aws_service()
         name = 'vfxtpy-unittest-{}'.format(int(time.time()))
-        instance = ServiceInstance.create(service, self.aws['instance_type'], name, self.aws['ami'], subnet=self.aws['subnet'], tags={'Name':name})
+        instance = ServiceInstance.create(service, self.aws['instance_type'], name, self.aws['ami'], subnet=self.aws['subnet'], tags={'Name': name})
         self.assertTrue(instance.instance.tags['Name'] == name)
 
         try:
@@ -234,7 +234,7 @@ class AWS_test(tests.vFXTTestCase.Base):
 
     def test_create_delete_bucket(self):
         service = self.mk_aws_service()
-        name = '{}'.format(str(uuid.uuid4()).lower().replace('-','')[0:55])
+        name = '{}'.format(str(uuid.uuid4()).lower().replace('-', '')[0:55])
         service.create_bucket(name)
         service.delete_bucket(name)
 
@@ -281,12 +281,12 @@ class AWS_test(tests.vFXTTestCase.Base):
 
     def test_cache_to_disk_config(self):
         service = self.mk_aws_service()
-        self.assertTrue(service._cache_to_disk_config(250) == (1,250))
-        self.assertTrue(service._cache_to_disk_config(500) == (1,500))
-        self.assertTrue(service._cache_to_disk_config(1000) == (10,100))
-        self.assertTrue(service._cache_to_disk_config(1500) == (10,150))
-        self.assertTrue(service._cache_to_disk_config(4000) == (10,400))
-        self.assertTrue(service._cache_to_disk_config(8000) == (10,800))
+        self.assertTrue(service._cache_to_disk_config(250) == (1, 250))
+        self.assertTrue(service._cache_to_disk_config(500) == (1, 500))
+        self.assertTrue(service._cache_to_disk_config(1000) == (10, 100))
+        self.assertTrue(service._cache_to_disk_config(1500) == (10, 150))
+        self.assertTrue(service._cache_to_disk_config(4000) == (10, 400))
+        self.assertTrue(service._cache_to_disk_config(8000) == (10, 800))
 
     def test__get_all_subnets(self):
         service = self.mk_aws_service()

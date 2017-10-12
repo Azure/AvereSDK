@@ -41,7 +41,7 @@ class ServiceInstance_test(tests.vFXTTestCase.Base):
         self.assertTrue(si.is_on())
         self.assertFalse(si.is_off())
         self.assertFalse(si.refresh())
-        self.assertTrue(len(si.in_use_addresses())>0)
+        self.assertTrue(len(si.in_use_addresses()) > 0)
         self.assertTrue(ServiceInstance(aws, instance=si.instance))
         self.assertRaises(Exception, ServiceInstance, aws, str(uuid.uuid4()))
 
@@ -61,7 +61,7 @@ class ServiceInstance_test(tests.vFXTTestCase.Base):
         self.assertTrue(si.is_on())
         self.assertFalse(si.is_off())
         self.assertFalse(si.refresh())
-        self.assertTrue(len(si.in_use_addresses())>0)
+        self.assertTrue(len(si.in_use_addresses()) > 0)
         self.assertTrue(ServiceInstance(gce, instance=si.instance))
         self.assertRaises(vFXT.service.vFXTConfigurationException, ServiceInstance, gce, str(uuid.uuid4()))
 
@@ -70,7 +70,7 @@ class ServiceInstance_test(tests.vFXTTestCase.Base):
             self.skipTest("skipping test for AWS")
 
         aws = self.mk_aws_service()
-        self.assertRaises(vFXT.service.vFXTConfigurationException, ServiceInstance,aws, instance=None)
+        self.assertRaises(vFXT.service.vFXTConfigurationException, ServiceInstance, aws, instance=None)
 
     def test_bad_instance_gce(self):
         if not self.gce['enabled']:

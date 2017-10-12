@@ -1937,24 +1937,20 @@ class Cluster(object):
             # build mapping table
             mappings = {vif:nodes.next() for vif in vifs}
 
-            # early on we may be getting back a truncated list of addresses that indicates
-            # the configuration rebalancing is not yet complete, retry until we have
-            # what we expect.
-            retries = self.service.WAIT_FOR_OPERATION
             old_mappings = {_['ip']:_['current'] for _ in home_cfg}
-            while len(old_mappings) != len(mappings):
-                log.debug("waiting for vserver configuration to finalize")
-                self._sleep()
-                home_cfg = self._xmlrpc_do(xmlrpc.vserver.listClientIPHomes, vserver)
-                old_mappings = {_['ip']:_['current'] for _ in home_cfg}
-                if retries == 0:
-                    break
-                retries -= 1
-
             if not [_ for _ in mappings.keys() if mappings[_] != old_mappings.get(_)]:
                 log.debug("Address home configuration is up to date for vserver '{}'".format(vserver))
                 continue
 
             log.debug("Setting up addresses home configuration for vserver '{}': {}".format(vserver, mappings))
-            activity = self._xmlrpc_do(xmlrpc.vserver.modifyClientIPHomes, vserver, mappings)
-            self._xmlrpc_wait_for_activity(activity, "Failed to rebalance vserver {} addresses".format(vserver))
+            retries = self.service.EXTENDED_XMLRPC_RETRIES
+            while True:
+                try:
+                    activity = self._xmlrpc_do(xmlrpc.vserver.modifyClientIPHomes, vserver, mappings)
+                    self._xmlrpc_wait_for_activity(activity, "Failed to rebalance vserver {} addresses".format(vserver))
+                    break
+                except Exception as e:
+                    log.debug(e)
+                    if retries == 0:
+                        raise
+                retries -= 1

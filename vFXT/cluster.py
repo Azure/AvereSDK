@@ -1464,7 +1464,7 @@ class Cluster(object):
         if home_addresses:
             self.vserver_home_addresses(name)
 
-    def add_vserver_junction(self, vserver, corefiler, path=None, export='/', subdir=None, retries=ServiceBase.XMLRPC_RETRIES):
+    def add_vserver_junction(self, vserver, corefiler, path=None, export='/', subdir=None, retries=ServiceBase.EXTENDED_XMLRPC_RETRIES):
         '''Add a Junction to a Vserver
 
             Arguments:

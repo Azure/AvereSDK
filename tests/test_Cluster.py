@@ -102,7 +102,7 @@ class Cluster_test(tests.vFXTTestCase.Base):
 
         service = self.mk_aws_service()
         name = 'vfxtpy-unittest-{}'.format(int(time.time()))
-        cluster = Cluster.create(service, self.aws['instance_type'], name, 'adminpass', root_image=self.aws['vfxt_image'], wait_for_state='yellow', tags={'vfxtpy-unittest':'auto'})
+        cluster = Cluster.create(service, self.aws['instance_type'], name, 'adminpass', root_image=self.aws['vfxt_image'], wait_for_state='yellow', tags={'vfxtpy-unittest': 'auto'})
 
         try:
             self._run_cluster_steps(cluster)
@@ -132,7 +132,7 @@ class Cluster_test(tests.vFXTTestCase.Base):
 
         service = self.mk_gce_service()
         name = 'vfxtpy-unittest-{}'.format(int(time.time()))
-        cluster = Cluster.create(service, self.gce['instance_type'], name, 'adminpass', root_image=self.gce['vfxt_image'], size=3, wait_for_state='yellow', tags=['unittest'], metadata={'vfxtpy-unittest':'auto'})
+        cluster = Cluster.create(service, self.gce['instance_type'], name, 'adminpass', root_image=self.gce['vfxt_image'], size=3, wait_for_state='yellow', tags=['unittest'], metadata={'vfxtpy-unittest': 'auto'})
 
         try:
             self._run_cluster_steps(cluster)

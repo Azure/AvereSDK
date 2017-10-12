@@ -1504,7 +1504,7 @@ class Cluster(object):
             op_retries -= 1
             self._sleep()
 
-        log.info("Creating junction to {} for vserver {}".format(corefiler, vserver))
+        log.info("Creating junction {} to {} for vserver {}".format(path, corefiler, vserver))
         try:
             activity = self._xmlrpc_do(self.xmlrpc().vserver.addJunction, vserver, path, corefiler, export, advanced, _xmlrpc_do_retries=retries)
             self._xmlrpc_wait_for_activity(activity, "Failed to add junction to {}".format(vserver))

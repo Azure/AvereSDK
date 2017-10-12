@@ -536,7 +536,7 @@ def main():
                         junction_opts['path'] = args.junction or '/{}'.format(mount.split(os.sep)[-1])
                         junction_opts['export'] = mount
                         junction_opts['subdir'] = args.subdir
-                    cluster.add_vserver_junction(args.vserver, corefiler_name, path=args.junction)
+                    cluster.add_vserver_junction(args.vserver, corefiler_name, **junction_opts)
             except (KeyboardInterrupt, Exception) as e:
                 if args.debug:
                     logger.exception(e)

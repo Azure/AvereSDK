@@ -150,6 +150,7 @@ def main():
     action_opts.add_argument("--upgrade-alternate-image", help=argparse.SUPPRESS, action="store_true") # Upgrade the alternate image on a cluster
     action_opts.add_argument("--activate-alternate-image", help=argparse.SUPPRESS, action="store_true") # Activate the alternate image on a cluster
     action_opts.add_argument("--check", help="Run checks for api access and quotas", action="store_true")
+    action_opts.add_argument("--telemetry", help="Kick off support upload for a cluster", action="store_true")
     action_opts.add_argument("--interact", help="Use the Python interpreter", action="store_true")
 
     # service arguments
@@ -778,6 +779,22 @@ def main():
             'data_disk_count': args.data_disk_count
         }
         service.check(**opts)
+    elif args.telemetry:
+        if not all([args.management_address, args.admin_password]):
+            logger.error("Arguments management-address and admin-password are required")
+            parser.exit(1)
+        cluster = _get_cluster(service, logger, args)
+        if not cluster or not cluster.nodes:
+            logger.error("Cluster not found.")
+            parser.exit(1)
+        try:
+            cluster.telemetry(nowait=False)
+            logger.info("Complete")
+        except Exception as e:
+            if args.debug:
+                logger.exception(e)
+            logger.error("Failed to kick off telemetry: {}".format(e))
+            parser.exit(1)
     else:
         parser.print_help()
         parser.exit(1)

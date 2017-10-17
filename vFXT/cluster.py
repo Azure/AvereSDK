@@ -591,11 +591,12 @@ class Cluster(object):
         except Exception as e:
             log.debug("Failed to get condition list: {}".format(e))
 
-    def telemetry(self, nowait=True):
+    def telemetry(self, nowait=True, retries=ServiceBase.WAIT_FOR_TELEMETRY):
         '''Kick off a minimal telemetry reporting
 
             Arguments:
                 nowait (bool, optional): wait until complete
+                retries (int, optional): number of retries to wait (if nowait is disabled)
 
             Raises vFXTStatusFailure on failure while waiting.
         '''
@@ -608,9 +609,17 @@ class Cluster(object):
                 return
             if response != 'success':
                 while True:
-                    is_done = xmlrpc.support.taskIsDone(response) # returns bool
-                    if is_done:
-                        break
+                    try:
+                        is_done = xmlrpc.support.taskIsDone(response) # returns bool
+                        if is_done:
+                            break
+                    except Exception as e:
+                        log.debug("Error while checking for telemetry status: {}".format(e))
+                    if retries % 10 == 0:
+                        log.debug('Waiting for {} to complete'.format(response))
+                    retries -= 1
+                    if retries == 0:
+                        raise vFXTConfigurationException("Time out waiting for telemetry upload to finish")
                     self._sleep()
         except Exception as e:
             log.debug("Telemetry failed: {}".format(e))

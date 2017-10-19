@@ -194,7 +194,8 @@ def main():
     gce_opts.add_argument("--key-file", help="OATH2 service account P12/JSON key file", default=None)
     gce_opts.add_argument("--local-ssd", help="Use local-ssd disks for cache (WARNING: RISKS DATA LOSS)", action="store_true")
     gce_opts.add_argument("--metadata", help="Key:Value metadata pairs", action='append')
-    gce_opts.add_argument("--gce-tag", help="GCE instance tag", action='append', default=None)
+    gce_opts.add_argument("--labels", help="GCE Key:Value labels", action='append')
+    gce_opts.add_argument("--gce-tag", help="GCE network tag", action='append', default=None)
     gce_opts.add_argument("--service-account", help="GCE service account to use for the cluster (or default)", type=str, default=None)
     gce_opts.add_argument("--scopes", nargs='+', help="GCE scopes to use for the cluster", type=_validate_url, default=None)
     gce_opts.add_argument("--instance-addresses", nargs='+', help="GCE instance addresses to use", type=_validate_ip, default=None)
@@ -407,6 +408,10 @@ def main():
             args.metadata = {n.split(':')[0]: (n.split(':')[1] or '') for n in args.metadata if len(n.split(':')) > 1}
         else:
             args.metadata = {}
+        if args.labels:
+            args.labels = {n.split(':')[0]: (n.split(':')[1] or '') for n in args.labels if len(n.split(':')) > 1}
+        else:
+            args.labels = {}
 
         if args.storage_class:
             if not args.storage_class in Service.STORAGE_CLASSES:
@@ -469,6 +474,7 @@ def main():
             'network_security_group': args.security_group,
             'config_expiration': args.configuration_expiration,
             'tags': args.aws_tag or args.gce_tag,
+            'labels': args.labels,
             'metadata': args.metadata,
             'skip_cleanup': args.skip_cleanup,
             'skip_support_configuration': args.skip_support_configuration,

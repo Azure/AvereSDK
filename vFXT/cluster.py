@@ -1746,6 +1746,7 @@ class Cluster(object):
 
         log.info("Waiting for {} nodes to show up and ask to join cluster (currently {} of {})".format(expected_unjoined_count, joined_count, node_count))
         start_time = int(time.time())
+        op_retries = retries
         while True:
             unjoined_count = 0
             try:
@@ -1766,13 +1767,13 @@ class Cluster(object):
             # either we run out of retries or we take too long
             duration = int(time.time()) - start_time
             taking_too_long = duration > int(retries * 1.5)
-            if retries == 0 or taking_too_long:
+            if op_retries == 0 or taking_too_long:
                 diff = expected_unjoined_count - unjoined_count
                 raise vFXTConfigurationException("Timed out waiting for {} node(s) to come up.".format(diff))
-            if retries % 10 == 0:
+            if op_retries % 10 == 0:
                 log.debug("Found {}, expected {}".format(unjoined_count, expected_unjoined_count))
                 self._log_conditions(xmlrpc=xmlrpc)
-            retries -= 1
+            op_retries -= 1
             self._sleep()
 
         # once we have them, call node.allowToJoin with our nodes in one group
@@ -1781,7 +1782,7 @@ class Cluster(object):
         log.debug(','.join(node_names))
         try:
             activity = self._xmlrpc_do(xmlrpc.node.allowToJoin, ','.join(node_names), False)
-            self._xmlrpc_wait_for_activity(activity, '"Failed to allow node joins')
+            self._xmlrpc_wait_for_activity(activity, '"Failed to allow multiple node joins', retries=retries)
             return
         except xmlrpclib_Fault as e:
             # older releases cannot accept comma delimited node names

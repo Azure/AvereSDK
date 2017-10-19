@@ -169,6 +169,7 @@ class Cluster(object):
         self.first_node_error = None
         self.timezone         = None
         self.skip_support_cfg = False
+        self.core_uploads     = False
 
         if self.proxy:
             self.proxy = validate_proxy(self.proxy) # imported from vFXT.service
@@ -211,6 +212,7 @@ class Cluster(object):
                 root_image (str, optional): root disk image name
                 skip_cleanup (bool, optional): do not clean up on failure
                 skip_support_configuration (bool, optional): do not setup initial support configuration
+                enable_core_uploads (bool, optional): Enable automatic core uploads
                 address_range_start (str, optional): The first of a custom range of addresses to use for the cluster
                 address_range_end (str, optional): The last of a custom range of addresses to use for the cluster
                 address_range_netmask (str, optional): cluster address range netmask
@@ -226,6 +228,7 @@ class Cluster(object):
         c.timezone        = options.get('timezone', None)
         c.join_mgmt       = False if options.get('join_instance_address', True) else True
         c.skip_support_cfg = options.get('skip_support_configuration') or False
+        c.core_uploads    = options.get('enable_core_uploads') or False
 
         if c.proxy:
             c.proxy = validate_proxy(c.proxy) # imported from vFXT.service
@@ -1648,6 +1651,8 @@ class Cluster(object):
             log.info("Setting trace {}".format(self.trace_level))
             support_opts['traceLevel'] = self.trace_level
             support_opts['rollingTrace'] = 'yes'
+        if self.core_uploads:
+            support_opts['crashInfo'] = 'full'
         try:
             response = self._xmlrpc_do(xmlrpc.support.modify, support_opts)
             if response[0] != 'success':

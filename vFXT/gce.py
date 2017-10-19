@@ -1363,7 +1363,8 @@ class Service(ServiceBase):
                 metadata (dict, optional): metadata tags to apply to instance
                 disk_type (str, optional): type of disk to use for root disk
                 root_size (int, optional): root disk size in GB
-                tags ([], optional): list of GCE tags to apply to the instance
+                tags ([], optional): list of GCE network tags to apply to the instance
+                labels ({}, optional): dictionary of GCE labels to apply to the instance
                 zone (str, optional): create in custom zone
                 auto_public_address (bool, optional): auto assign a public address (defaults to False)
                 private_ip_address (str, optional): primary private IP address
@@ -1473,10 +1474,13 @@ class Service(ServiceBase):
         }]
         body['canIpForward'] = True
         body['tags'] = {'items': []}
+        body['labels'] = {}
         body['metadata'] = {'items': []}
 
         if 'tags' in options:
             body['tags']['items'].extend(options['tags'])
+        if 'labels' in options:
+            body['labels'] = options['labels'].copy()
 
         if metadata:
             # google wants a list of this dict :-/

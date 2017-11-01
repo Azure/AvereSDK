@@ -732,11 +732,15 @@ def main():
 
     elif args.interact:
         from vFXT.serviceInstance import ServiceInstance # handy import #pylint: disable=unused-variable
-        banner = "\n--- Service object available as 'service' ---\n"
-        local = {}
-        local.update(globals())
+        local = globals()
         local.update(locals())
-        code.interact(local=local, banner=banner)
+        banner = "\n--- Service object available as 'service' ---\n"
+        try:
+            from IPython import start_ipython
+            print banner
+            start_ipython(argv=['--classic', '--no-banner'], user_ns=local)
+        except:
+            code.interact(local=local, banner=banner)
 
     elif args.upgrade_alternate_image:
         if not args.upgrade_url:

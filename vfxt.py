@@ -68,20 +68,21 @@ def _get_cluster(service, logger, args):
     cluster = None
     try:
         if not all([args.management_address, args.admin_password]):
-            raise vFXTConnectionFailure("No connection information")
+            raise vFXTConnectionFailure("No management address or admin password, unable to connect to the cluster")
         logger.info("Loading cluster information from {}".format(args.management_address))
         if args.instances:
             logger.info("If this cluster is offline, the instance list will be used instead")
         cluster = Cluster.load(service, mgmt_ip=args.management_address, admin_password=args.admin_password)
     except vFXTConnectionFailure as load_exception:
+        logger.error(load_exception)
         if not args.instances and not args.mine:
             logger.info("Unable to connect to cluster.  It may be offline")
             return None
 
         try:
-            if not args.user:
-                args.user = getpass.getuser()
             if not args.instances and args.mine:
+                if not args.user:
+                    args.user = getpass.getuser()
                 args.instances = service._get_user_shelveable(service, args.user)
             if not args.instances:
                 logger.error("No usable instances")

@@ -1445,14 +1445,16 @@ class Service(ServiceBase):
             options['private_addresses'] = private_ips
             options['subnet'] = subnets if len(subnets) == 1 else subnets[1:]
             self.add_cluster_nodes(cluster, cluster_size - 1, **options)
-            for t in threads:
-                t.join()
+            # do a timeout join to handle KeyboardInterrupts
+            while all([_.is_alive() for _ in threads]):
+                for t in threads:
+                    t.join(10)
             if cluster.first_node_error:
                 raise cluster.first_node_error
         except vFXTNodeExistsException as e:
             log.error("Failed to create node: {}".format(e))
             raise
-        except Exception as e:
+        except (KeyboardInterrupt, Exception) as e:
             log.error("Failed to create node: {}".format(e))
             if not options.get('skip_cleanup', False):
                 cluster.destroy(quick_destroy=True)

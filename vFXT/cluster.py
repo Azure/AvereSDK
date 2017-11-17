@@ -594,26 +594,29 @@ class Cluster(object):
         except Exception as e:
             log.debug("Failed to get condition list: {}".format(e))
 
-    def telemetry(self, nowait=True, retries=ServiceBase.WAIT_FOR_TELEMETRY):
+    def telemetry(self, wait=True, retries=ServiceBase.WAIT_FOR_TELEMETRY, mode='gsimin'):
         '''Kick off a minimal telemetry reporting
 
             Arguments:
-                nowait (bool, optional): wait until complete
-                retries (int, optional): number of retries to wait (if nowait is disabled)
+                wait (bool, optional): wait until complete
+                retries (int, optional): number of retries to wait (if wait is disabled)
+                mode (str, optional): telemetry mode (valid from support.listNormalModes)
 
             Raises vFXTStatusFailure on failure while waiting.
         '''
+        if mode not in self.xmlrpc().support.listNormalModes()[0]:
+            raise vFXTConfigurationException("Invalid support mode {}".format(mode))
+
         try:
-            xmlrpc = self.xmlrpc()
-            log.info("Kicking off minimal telemetry reporting.")
-            response = xmlrpc.support.executeNormalMode('cluster', 'gsimin')
-            log.debug('gsimin response {}'.format(response))
-            if nowait:
+            log.info("Kicking off {} telemetry reporting.".format(mode))
+            response = self.xmlrpc().support.executeNormalMode('cluster', mode)
+            log.debug('{} response {}'.format(mode, response))
+            if not wait:
                 return
             if response != 'success':
                 while True:
                     try:
-                        is_done = xmlrpc.support.taskIsDone(response) # returns bool
+                        is_done = self.xmlrpc().support.taskIsDone(response) # returns bool
                         if is_done:
                             break
                     except Exception as e:

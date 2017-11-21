@@ -658,9 +658,15 @@ class Service(ServiceBase):
         conn = self.connection()
         instances = []
         for zone in self._zone_names(all_regions):
-            r =  _gce_do(conn.instances().list, project=self.project_id, filter=search, zone=zone)
-            if r and 'items' in r:
-                instances.extend(r['items'])
+            page_token = None
+            while True:
+                r =  _gce_do(conn.instances().list, project=self.project_id, filter=search, zone=zone, pageToken=page_token)
+                if r and 'items' in r:
+                    instances.extend(r['items'])
+                if r and 'nextPageToken'  in r:
+                    page_token = r['nextPageToken']
+                if not r or 'nextPageToken' not in r:
+                    break
         return instances
 
     def get_instances(self, instance_ids, all_regions=True):

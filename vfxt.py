@@ -18,7 +18,6 @@ import argparse
 import logging
 import urlparse
 import getpass
-import code
 import uuid
 import vFXT
 import vFXT
@@ -741,7 +740,8 @@ def main():
             print banner
             start_ipython(argv=['--classic', '--no-banner'], user_ns=local)
         except:
-            code.interact(local=local, banner=banner)
+            from code import interact
+            interact(local=local, banner=banner)
 
     elif args.upgrade_alternate_image:
         if not args.upgrade_url:

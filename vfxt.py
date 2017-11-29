@@ -210,6 +210,7 @@ def main():
     parser.add_argument('--proxy-uri', help='Proxy resource for API calls, example http://user:pass@172.16.16.20:8080/', metavar="URL", type=_validate_url)
     parser.add_argument('--ssh-key', help="SSH key for cluster authentication (path to public key file for GCE, key name for AWS)", type=str, default=None)
     parser.add_argument("--telemetry-mode", help="Telemetry custom mode", type=str, default='gsimin')
+    parser.add_argument("--skip-check", help="Skip initial checks for api access and quotas", action="store_true")
 
     shelve_opts = parser.add_argument_group()
     shelve_opts.add_argument('--mine', help=argparse.SUPPRESS, action="store_true")
@@ -444,7 +445,8 @@ def main():
 
     if args.create:
         # run a service check first
-        service.check()
+        if not args.skip_check:
+            service.check()
 
         # minimum args for create
         if not all([args.instance_type, args.cluster_name, args.admin_password]):

@@ -1113,6 +1113,19 @@ class Cluster(object):
             raise vFXTConfigurationException("Node configuration prevents them from being shelved")
 
         try:
+            corefilers = self.xmlrpc().corefiler.list()
+            for corefiler in corefilers:
+                log.debug("Flushing corefiler {}".format(corefiler))
+                self.flush_corefiler(corefiler)
+        except xmlrpclib_Fault as e:
+            if int(e.faultCode) != 108: # Method not supported
+                log.debug("Failed to flush corefilers: {}".format(e))
+                raise vFXTConfigurationException(e)
+        except Exception as e:
+            log.debug("Failed to flush corefilers: {}".format(e))
+            raise
+
+        try:
             xmlrpc = self.xmlrpc()
 
             response = self._xmlrpc_do(xmlrpc.system.enableAPI, 'maintenance')
@@ -1127,19 +1140,6 @@ class Cluster(object):
             if int(e.faultCode) != 108: # Method maint.setShelve not supported
                 raise
             log.debug('maint.setShelve not supported in this release')
-
-        try:
-            corefilers = self.xmlrpc().corefiler.list()
-            for corefiler in corefilers:
-                log.debug("Flushing corefiler {}".format(corefiler))
-                self.flush_corefiler(corefiler)
-        except xmlrpclib_Fault as e:
-            if int(e.faultCode) != 108: # Method not supported
-                log.debug("Failed to flush corefilers: {}".format(e))
-                raise vFXTConfigurationException(e)
-        except Exception as e:
-            log.debug("Failed to flush corefilers: {}".format(e))
-            raise
 
         self.stop(clean_stop=options.get('clean_stop', True))
         self.parallel_call(self.nodes, 'shelve', **options)

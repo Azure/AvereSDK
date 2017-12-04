@@ -118,7 +118,7 @@ class Service(ServiceBase):
     OFF_STATUS = "stopped"
     PENDING_STATUS = 'pending'
     DESTROY_STATUS = "terminated"
-    NTP_SERVERS = ['0.amazon.pool.ntp.org', '1.amazon.pool.ntp.org', '2.amazon.pool.ntp.org']
+    NTP_SERVERS = ['169.254.169.123']
     DNS_SERVERS = []
     MACHINE_DEFAULTS = {
         "t2.micro":     {"data_disk_count": 1, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": False, "node_count": 3},

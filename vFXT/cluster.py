@@ -565,7 +565,7 @@ class Cluster(object):
                 if response['state'] == 'failure':
                     err = '{}: {}'.format(error_msg, response.get('status', 'Unknown'))
                     raise vFXTConfigurationException(err)
-            if retries != None:
+            if retries is not None:
                 if retries == 0:
                     err = '{}: Timed out while {}'.format(error_msg, response['status'])
                     raise vFXTConfigurationException(err)
@@ -759,7 +759,7 @@ class Cluster(object):
                     signal.alarm(0)
                     signal.signal(signal.SIGALRM, signal.SIG_DFL)
 
-            if retries != None:
+            if retries is not None:
                 retries -= 1
                 if retries == 0:
                     raise vFXTConnectionFailure("Timeout waiting for active image")

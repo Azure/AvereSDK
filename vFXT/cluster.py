@@ -576,6 +576,11 @@ class Cluster(object):
             self._sleep()
             tries += 1
 
+    def _enable_maintenance_api(self, xmlrpc):
+        response = self._xmlrpc_do(xmlrpc.system.enableAPI, 'maintenance')
+        if response != 'success':
+            raise vFXTConfigurationException('Failed to enable maintenance API')
+
     @classmethod
     def _log_conditions(cls, xmlrpc):
         '''Debug log the conditions
@@ -1127,11 +1132,7 @@ class Cluster(object):
 
         try:
             xmlrpc = self.xmlrpc()
-
-            response = self._xmlrpc_do(xmlrpc.system.enableAPI, 'maintenance')
-            if response != 'success':
-                raise vFXTConfigurationException('Failed to enable maintenance API')
-
+            self._enable_maintenance_api(xmlrpc)
             response = self._xmlrpc_do(xmlrpc.maint.setShelve)
             if response != 'success':
                 raise vFXTConfigurationException('Failed to notify cluster of intent to shelve')
@@ -1387,11 +1388,7 @@ class Cluster(object):
         '''
         try:
             xmlrpc = self.xmlrpc()
-
-            response = self._xmlrpc_do(xmlrpc.system.enableAPI, 'maintenance')
-            if response != 'success':
-                raise vFXTConfigurationException("Failed to enable maintenance API")
-
+            self._enable_maintenance_api(xmlrpc)
             activity =  self._xmlrpc_do(xmlrpc.corefiler.remove, corefiler)
             self._xmlrpc_wait_for_activity(activity, "Failed to remove corefiler {}".format(corefiler))
         except vFXTConfigurationException as e:
@@ -1410,11 +1407,7 @@ class Cluster(object):
         '''
         try:
             xmlrpc = self.xmlrpc()
-
-            response = self._xmlrpc_do(xmlrpc.system.enableAPI, 'maintenance')
-            if response != 'success':
-                raise Exception("Failed to enable maintenance API")
-
+            self._enable_maintenance_api(xmlrpc)
             activity = self._xmlrpc_do(xmlrpc.corefiler.flush, corefiler)
             self._xmlrpc_wait_for_activity(activity, "Failed to flush corefiler {}".format(corefiler))
         except xmlrpclib_Fault as e:
@@ -1611,12 +1604,7 @@ class Cluster(object):
             Raises: vFXTConfigurationException
         '''
         xmlrpc = self.xmlrpc()
-
-        log.debug("Enabling maintenance API")
-        response = self._xmlrpc_do(xmlrpc.system.enableAPI, 'maintenance')
-        if response != 'success':
-            raise vFXTConfigurationException("Failed to enable maintenance API")
-
+        self._enable_maintenance_api(xmlrpc)
         log.info("Rebalancing directory managers")
         try:
             status = self._xmlrpc_do(xmlrpc.maint.rebalanceDirManagers, _xmlrpc_do_retries=retries)

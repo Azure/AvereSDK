@@ -1627,7 +1627,12 @@ class Cluster(object):
         if not self.mgmt_ip:
             raise vFXTConfigurationException("Cannot configure a cluster without a management address")
         log.info("Waiting for remote API connectivity")
-        xmlrpc = self.xmlrpc(retries=ServiceBase.WAIT_FOR_INITIAL_CONNECTION) #pylint: disable=unused-variable
+        xmlrpc = None
+        try:
+            xmlrpc = self.xmlrpc(retries=ServiceBase.WAIT_FOR_INITIAL_CONNECTION) #pylint: disable=unused-variable
+        except Exception as e:
+            self.first_node_error = e
+            raise
 
         self.set_default_proxy(xmlrpc=xmlrpc)
 

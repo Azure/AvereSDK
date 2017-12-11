@@ -12,5 +12,5 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-__version__ = "0.3.3.9"
-__version_info__ = (0, 3, 3, 9)
+__version__ = "0.3.3.10"
+__version_info__ = (0, 3, 3, 10)

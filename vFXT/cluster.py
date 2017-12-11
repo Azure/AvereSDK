@@ -1609,7 +1609,7 @@ class Cluster(object):
         try:
             status = self._xmlrpc_do(xmlrpc.maint.rebalanceDirManagers, _xmlrpc_do_retries=retries)
             if status != 'success':
-                raise vFXTConfigurationException(response)
+                raise vFXTConfigurationException(status)
         except xmlrpclib_Fault as e:
             # AVERE_EINVAL, not needed or already in progress
             if int(e.faultCode) == 103: #pylint: disable=no-member

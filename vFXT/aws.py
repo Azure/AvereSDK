@@ -1319,7 +1319,6 @@ class Service(ServiceBase):
                 tags (dict, optional): tags for instance (Name autofilled)
                 iamrole (str, optional): iam role (otherwise one is created)
                 config_expiration (int, optional): expiration time for cluster join configuration
-                wait_for_state (str, optional): red, yellow, green cluster state (defaults to yellow)
                 skip_cleanup (bool, optional): do not clean up on failure
                 key_name (str, optional): ssh key-pair name
                 management_address (str, optional): management address for the cluster
@@ -1437,7 +1436,7 @@ class Service(ServiceBase):
             # post first node setup, prior to creating the rest of the cluster
             threads = []
             if not options.get('skip_configuration'):
-                t = threading.Thread(target=cluster.first_node_configuration, args=(options.get('wait_for_state', 'yellow'),))
+                t = threading.Thread(target=cluster.first_node_configuration)
                 t.setDaemon(True)
                 t.start()
                 threads.append(t)

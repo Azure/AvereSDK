@@ -1618,11 +1618,8 @@ class Cluster(object):
         except Exception as e:
             raise vFXTStatusFailure("Waiting for cluster rebalance failed: {}".format(e))
 
-    def first_node_configuration(self, wait_for_state='yellow'):
+    def first_node_configuration(self):
         '''Basic configuration for the first cluster node
-
-            Arguments:
-                wait_for_state (str, optional): red, yellow, green cluster state
         '''
         if not self.mgmt_ip:
             raise vFXTConfigurationException("Cannot configure a cluster without a management address")
@@ -1670,7 +1667,6 @@ class Cluster(object):
                 self.enable_ha(xmlrpc=xmlrpc)
             except Exception as e:
                 log.debug("Failed to enable early HA, will retry later: {}".format(e))
-            self.wait_for_healthcheck(state=wait_for_state, duration=1, xmlrpc=xmlrpc)
         except Exception as e:
             log.debug("Failed during final first node configuration: {}".format(e))
             self.first_node_error = vFXTConfigurationException(e)

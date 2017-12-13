@@ -192,7 +192,7 @@ def main():
     gce_opts.add_argument("--network", help="Network name", default=None)
     gce_opts.add_argument("--subnetwork", help="Subnetwork name", default=None)
     gce_opts.add_argument("--key-file", help="OATH2 service account P12/JSON key file", default=None)
-    gce_opts.add_argument("--local-ssd", help="Use local-ssd disks for cache (WARNING: RISKS DATA LOSS)", action="store_true")
+    gce_opts.add_argument("--local-ssd", help="Use local-ssd disks for cache", action="store_true")
     gce_opts.add_argument("--metadata", help="Key:Value metadata pairs", action='append')
     gce_opts.add_argument("--labels", help="GCE Key:Value labels", action='append')
     gce_opts.add_argument("--gce-tag", help="GCE network tag", action='append', default=None)

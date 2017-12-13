@@ -741,7 +741,7 @@ def main():
             from IPython import start_ipython
             print banner
             start_ipython(argv=['--classic', '--no-banner'], user_ns=local)
-        except:
+        except ImportError:
             from code import interact
             interact(local=local, banner=banner)
 

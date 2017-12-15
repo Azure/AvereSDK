@@ -162,6 +162,7 @@ class Service(ServiceBase):
         ]
       }
     }
+    DEFAULT_CLUSTER_NETWORK_RANGE='172.16.0.0/12'
 
     def __init__(self, network_id, zone, client_email=None, project_id=None,
                  key_file=None, key_data=None, access_token=None, s3_access_key=None,
@@ -1301,27 +1302,9 @@ class Service(ServiceBase):
 
             Raises: vFXTConfigurationException
         '''
-        network       = self._get_network()
-        network_range = None
-        range_offset  = 1
-        if 'IPv4Range' in network:
-            network_range = network['IPv4Range']
-        elif 'subnetworks' in network:
-            # find the last block from the subnetworks
-            subnetworks = self._get_subnetworks()
-            addrs = sorted([Cidr(_['ipCidrRange']) for _ in subnetworks], key=lambda x: x.addr)
-            network_range = str(addrs[-1])
-            # for auto setup subnetworks, we have to go beyond the /16 padding
-            if network['autoCreateSubnetworks']:
-                range_offset = 65536
-        else:
-            if not addr_range:
-                raise vFXTConfigurationException("Unable to determine network/subnetwork range")
-        # find an unused range, either provided or default network_range + range_offset
-        addr_range = addr_range or self.private_range or \
-                        "{}/{}".format(Cidr.to_address(Cidr(network_range).end() + range_offset),
-                                        network_range.split('/')[-1])
-        used          = self.in_use_addresses(addr_range)
+        # find an unused range, either provided or default
+        addr_range = addr_range or self.private_range or self.DEFAULT_CLUSTER_NETWORK_RANGE
+        used = self.in_use_addresses(addr_range)
         if in_use:
             used.extend(in_use)
             used = list(set(used))

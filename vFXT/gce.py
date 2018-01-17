@@ -1209,7 +1209,14 @@ class Service(ServiceBase):
                 create_retries -= 1
 
         # otherwise use the first default
-        return xmlrpc.corefiler.listCredentials()[0]['name']
+        lookup_retries = retries
+        while True:
+            try:
+                return xmlrpc.corefiler.listCredentials()[0]['name']
+            except Exception as e:
+                if lookup_retries == 0:
+                    raise vFXTConfigurationException("Could not find existing credential: {}".format(e))
+            lookup_retries -= 1
 
     # networking
     def get_default_router(self, subnetwork=None):

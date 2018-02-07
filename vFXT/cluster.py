@@ -1204,7 +1204,7 @@ class Cluster(object):
         bucketname      = bucketname or "{}-{}".format(self.name, str(uuid.uuid4()).lower().replace('-', ''))[0:63]
         corefiler       = corefiler or bucketname
         self.service.create_bucket(bucketname, **options)
-        log.info("Created bucket {} ".format(bucketname))
+        log.info("Created cloud storage {} ".format(bucketname))
         return self.attach_bucket(corefiler, bucketname, master_password=self.admin_password, proxy=proxy, remove_on_fail=remove_on_fail, **options)
 
     def attach_bucket(self, corefiler, bucketname, master_password=None, credential=None, proxy=None, **options):
@@ -1251,8 +1251,7 @@ class Cluster(object):
 
         data = {
             'type': options.get('type') or 'cloud',
-            'cloudType': options.get('cloud_type') or 's3',
-            's3Type': options.get('s3_type') or self.service.S3TYPE_NAME,
+            'cloudType': options.get('cloud_type') or self.service.COREFILER_TYPE,
             'bucket': bucketname,
             'cloudCredential': credential,
             'https': options.get('https') or 'yes',
@@ -1262,6 +1261,9 @@ class Cluster(object):
             'proxy': proxy or '',
             'bucketContents': 'used' if options.get('existing_data', False) else 'empty',
         }
+
+        if data['cloudType'] == 's3':
+            data['s3Type'] = options.get('s3_type') or self.service.S3TYPE_NAME
 
         log.info("Creating corefiler {}".format(corefiler))
         log.debug("corefiler.createCloudFiler options {}".format(data))

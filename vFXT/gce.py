@@ -140,6 +140,7 @@ class Service(ServiceBase):
                     'https://www.googleapis.com/auth/devstorage.full_control',
                     'https://www.googleapis.com/auth/userinfo.email']
     S3TYPE_NAME = 'GOOGLE'
+    COREFILER_TYPE = 's3'
     COREFILER_CRED_TYPE = 's3'
     INSTANCENAME_RE = re.compile(r'[a-z]([-a-z0-9]*[a-z0-9])?')
     GSURL_RE = re.compile(r'gs://([^\/]*)/(.*)$')

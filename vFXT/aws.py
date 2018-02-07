@@ -145,6 +145,7 @@ class Service(ServiceBase):
     MACHINE_TYPES = MACHINE_DEFAULTS.keys()
     DEFAULTS_URL = "http://avere-dist.s3-website-us-west-2.amazonaws.com/vfxtdefaults.json"
     S3TYPE_NAME = 'AMAZON'
+    COREFILER_TYPE = 's3'
     COREFILER_CRED_TYPE = 's3'
     INSTANCENAME_RE = re.compile(r'[a-zA-Z0-9\ \t\+\-=\._:\/@]+$')
     ARN = "aws"

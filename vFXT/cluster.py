@@ -1086,7 +1086,8 @@ class Cluster(object):
                     # try and call corefiler.flush, note this will raise vFXTConfigurationException
                     # on error... That will bubble up and prevent the rest of the destroy from
                     # completing
-                    self.flush_corefiler(corefiler)
+                    if data['type'] == 'cloud':
+                        self.flush_corefiler(corefiler)
                     # otherwise remove corefilers to force a flush
                     log.info("Removing corefiler {} on cluster {}".format(corefiler, cluster_name))
                     self.remove_corefiler(corefiler)

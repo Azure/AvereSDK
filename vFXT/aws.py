@@ -1636,6 +1636,11 @@ class Service(ServiceBase):
         '''
         conn     = self.connection()
 
+        if not self.can_shelve(instance):
+            raise vFXTConfigurationException("{} configuration prevents shelving".format(self.name(instance)))
+        if self.is_shelved(instance):
+            raise vFXTConfigurationException("{} is already shelved".format(self.name(instance)))
+
         if instance.state == self.DESTROY_STATUS:
             return
 

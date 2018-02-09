@@ -2351,7 +2351,7 @@ class Service(ServiceBase):
         '''For a given cache size, output the default data disk count and size
 
             Arguments:
-                cache_size (int): vFXT cluster node cache size
+                cache_size (int): vFXT cluster node cache size in GB
                 machine_type (str, optional): vFXT cluster node machine type
                 disk_type (str, optional): vFXT cluster node disk type
 

@@ -985,7 +985,9 @@ class Service(ServiceBase):
         zone     = instance['zone'].split('/')[-1]
 
         if not self.can_shelve(instance):
-            raise vFXTConfigurationException("Node configuration prevents them from being shelved")
+            raise vFXTConfigurationException("{} configuration prevents shelving".format(self.name(instance)))
+        if self.is_shelved(instance):
+            raise vFXTConfigurationException("{} is already shelved".format(self.name(instance)))
 
         if self.is_on(instance):
             self.stop(instance)

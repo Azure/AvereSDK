@@ -791,6 +791,7 @@ def main():
             cluster.wait_for_healthcheck(state=args.wait_for_state, duration=args.wait_for_state_duration)
 
     elif args.check:
+        logger.info("Performing quota checks...")
         opts = {
             'instances': args.nodes,
             'machine_type': args.instance_type,
@@ -799,6 +800,7 @@ def main():
             'data_disk_count': args.data_disk_count
         }
         service.check(**opts)
+        logger.info("Complete")
     elif args.telemetry:
         if not all([args.management_address, args.admin_password]):
             logger.error("Arguments management-address and admin-password are required")

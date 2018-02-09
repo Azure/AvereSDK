@@ -1503,7 +1503,7 @@ class Cluster(object):
         while True:
             try:
                 exports = self._xmlrpc_do(xmlrpc.nfs.listExports, vserver, corefiler)
-                if '/' in [_['path'] for _ in exports]:
+                if exports:
                     break
             except Exception as e:
                 log.debug(e)

@@ -1396,8 +1396,6 @@ class Service(ServiceBase):
         '''
         if not self.valid_instancename(name):
             raise vFXTConfigurationException("{} is not a valid instance name".format(name))
-        if machine_type not in self.MACHINE_TYPES:
-            raise vFXTConfigurationException("{} is not a valid instance type".format(machine_type))
         if self.get_instance(name):
             raise vFXTConfigurationException("{} exists".format(name))
 

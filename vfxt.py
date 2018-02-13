@@ -528,7 +528,7 @@ def main():
                     logger.exception(e)
                 logger.error(e)
                 if not args.skip_cleanup:
-                    cluster.destroy(quick_destroy=True, remove_buckets=False if args.bucket else True) # will not remove a non-empty bucket
+                    cluster.destroy(quick_destroy=True)
                 logger.error("Failed to configure core filer")
                 parser.exit(1)
 
@@ -558,7 +558,7 @@ def main():
                     logger.exception(e)
                 logger.error(e)
                 if not args.skip_cleanup:
-                    cluster.destroy(quick_destroy=True, remove_buckets=False if args.bucket else True) # will not remove a non-empty bucket
+                    cluster.destroy(quick_destroy=True)
                 logger.error("Failed to configure vserver")
                 parser.exit(1)
 

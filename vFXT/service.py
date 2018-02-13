@@ -142,6 +142,7 @@ class ServiceBase(object):
     CLOUD_API_RETRIES = 3
     ENDPOINT_TEST_HOSTS = []
     ALLOCATE_PRIVATE_ADDRESSES = False
+    S3TYPE_NAME = None
 
     def __init__(self, **args):
         self.__dict__ = args

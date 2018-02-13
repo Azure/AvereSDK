@@ -92,7 +92,7 @@ try:
     cluster.add_vserver('vserver')
     cluster.add_vserver_junction('vserver', 'aws')
 except Exception as e:
-    cluster.destroy(remove_buckets=True)
+    cluster.destroy()
     raise
 
 
@@ -1054,16 +1054,13 @@ class Cluster(object):
         self.stop()
         self.start()
 
-    def destroy(self, remove_buckets=False, **options):
+    def destroy(self, **options):
         '''Destroy the cluster
 
             Arguments:
-                remove_buckets (bool, optional): EXPERIMENTAL bucket removal (defaults to False)
                 quick_destroy (bool, optional) skip cleanup steps that prevent data loss (defaults to False)
-
                 **options: passed to ServiceInstance.destroy()
         '''
-        buckets = []
         if not options.pop('quick_destroy', False) and self.is_on() and self.admin_password:
             xmlrpc = self.xmlrpc()
             cluster_name = self.name or 'unknown'
@@ -1081,8 +1078,6 @@ class Cluster(object):
                         self._xmlrpc_wait_for_activity(activity, "Failed to remove junction {} from vserver {}".format(junction['path'], vserver))
 
                 for corefiler, data in corefilers.items():
-                    if 'bucket' in data and data['s3Type'] == self.service.S3TYPE_NAME:
-                        buckets.append(data['bucket'])
                     # try and call corefiler.flush, note this will raise vFXTConfigurationException
                     # on error... That will bubble up and prevent the rest of the destroy from
                     # completing
@@ -1093,14 +1088,6 @@ class Cluster(object):
                     self.remove_corefiler(corefiler)
 
         self.parallel_call(self.nodes, 'destroy', **options)
-        if remove_buckets and buckets:
-            for bucket_name in buckets:
-                log.debug("Deleting bucket {} on cluster {}".format(bucket_name, cluster_name))
-                try:
-                    # XXX will fail as non-empty
-                    self.service.delete_bucket(bucket_name)
-                except Exception as e:
-                    log.debug("Ignoring remove bucket failure: {}".format(e))
         # any post destroy cleanup activities that may be remaining
         self.service.post_destroy_cluster(self)
 

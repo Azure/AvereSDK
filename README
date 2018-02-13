@@ -45,7 +45,7 @@ https://download.averesystems.com/software/avere_vfxt.py_usage_guide.pdf
       cluster.add_vserver('vserver')
       cluster.add_vserver_junction('vserver', 'daily-test-20150309')
     except Exception as e:
-      cluster.destroy(remove_buckets=True)
+      ...
 
     lg = aws.create_instance('c3.xlarge', 'lg1', 'ami-b9faad89', key_name='aws_ssh_key_name') # CentOS6-Avere-LG
     from vFXT.serviceInstance import ServiceInstance

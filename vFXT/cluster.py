@@ -1186,6 +1186,8 @@ class Cluster(object):
                 remove_on_fail (bool, optional): remove the corefiler if the configuration does not finish
                 tags (dict, optional): tags with key/value labels to apply to the bucket (if supported)
 
+                **options: passed through to service.create_bucket and cluster.attach_bucket
+
             Returns:
                 key (dict): encryption key for the bucket as returned from attach_bucket
         '''

@@ -1489,10 +1489,9 @@ class Cluster(object):
 
         log.info("Waiting for corefiler exports to show up")
         op_retries = self.service.WAIT_FOR_SUCCESS
-        xmlrpc = self.xmlrpc()
         while True:
             try:
-                exports = self._xmlrpc_do(xmlrpc.nfs.listExports, vserver, corefiler)
+                exports = self._xmlrpc_do(self.xmlrpc().nfs.listExports, vserver, corefiler)
                 if exports:
                     break
             except Exception as e:
@@ -1500,7 +1499,7 @@ class Cluster(object):
             if op_retries == 0:
                 raise vFXTConfigurationException("Timed out waiting for {} exports".format(corefiler))
             if op_retries % 10 == 0:
-                self._log_conditions(xmlrpc)
+                self._log_conditions(self.xmlrpc())
             op_retries -= 1
             self._sleep()
 

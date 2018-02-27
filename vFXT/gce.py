@@ -778,7 +778,7 @@ class Service(ServiceBase):
                 time.sleep(backoff(errors))
             retries -= 1
             if retries == 0:
-                raise vFXTServiceTimeout("Failed waiting for operation to complete")
+                raise vFXTServiceTimeout("Failed waiting for {}".format(msg))
 
         if 'httpErrorMessage' in response:
             log.debug("response {}".format(response))

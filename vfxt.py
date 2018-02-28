@@ -648,7 +648,7 @@ def main():
             logger.error("Nodes are already shelved.")
             parser.exit(1)
 
-        node_names = ' '.join([i.name() for i in cluster.nodes])
+        node_names = ' '.join([i.id() for i in cluster.nodes])
         logger.info("Shelving nodes {}".format(node_names))
         cluster.shelve()
         logger.info("Completed shelving nodes {}".format(node_names))

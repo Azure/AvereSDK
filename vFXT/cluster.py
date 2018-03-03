@@ -1727,7 +1727,7 @@ class Cluster(object):
             log.debug("Nodes joined on their own")
             return
 
-        log.info("Waiting for {} nodes to show up and ask to join cluster (currently {} of {})".format(expected_unjoined_count, joined_count, node_count))
+        log.info("Waiting for {} nodes to show up and ask to join cluster".format(expected_unjoined_count))
         start_time = int(time.time())
         op_retries = retries
         while True:
@@ -1754,7 +1754,8 @@ class Cluster(object):
                 diff = expected_unjoined_count - unjoined_count
                 raise vFXTConfigurationException("Timed out waiting for {} node(s) to come up.".format(diff))
             if op_retries % 10 == 0:
-                log.debug("Found {}, expected {}".format(unjoined_count, expected_unjoined_count))
+                unjoined_names = ', '.join([_['name'] for _ in unjoined])
+                log.debug("Found {} ({}), expected {}".format(unjoined_count, unjoined_names, expected_unjoined_count))
                 self._log_conditions(xmlrpc=xmlrpc)
             op_retries -= 1
             self._sleep()

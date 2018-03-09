@@ -1,5 +1,6 @@
 {
     "create_clusters": false,
+    "shelve": false,
     "gce": {
         "enabled": false,
         "zone_id": "us-central1-b",

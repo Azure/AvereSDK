@@ -26,6 +26,7 @@ class Base(unittest.TestCase):
             f = open('tests/test_config.json', 'r')
             test_config = json.load(f)
             self.create_clusters                = test_config['create_clusters']
+            self.shelve                         = test_config.get('shelve')
             self.gce = {}                       # gce options
             self.gce['enabled']                 = test_config['gce']['enabled']
             self.gce['client_email']            = test_config['gce']['client_email']

@@ -83,14 +83,15 @@ class Cluster_test(tests.vFXTTestCase.Base):
         self.assertTrue(new_node_count > node_count)
         self.assertTrue(new_node_count == len(cluster.xmlrpc().node.list()))
 
-        cluster.shelve()
-        self.assertTrue(cluster.is_off())
-        self.assertTrue(cluster.is_shelved())
+        if self.shelve:
+            cluster.shelve()
+            self.assertTrue(cluster.is_off())
+            self.assertTrue(cluster.is_shelved())
 
-        cluster.unshelve()
-        cluster.wait_for_healthcheck(state='red', duration=1)
-        self.assertTrue(cluster.is_on())
-        self.assertFalse(cluster.is_shelved())
+            cluster.unshelve()
+            cluster.wait_for_healthcheck(state='red', duration=1)
+            self.assertTrue(cluster.is_on())
+            self.assertFalse(cluster.is_shelved())
 
         cluster.telemetry()
 

@@ -132,12 +132,14 @@ class CookieAuthXMLRPCTransport(xmlrpclib.SafeTransport):
                                       response.msg,
                                       )
 
-def getXmlrpcClient(server_uri, verbose=False, do_cert_checks=True):
+def getXmlrpcClientAndTransport(server_uri, verbose=False, do_cert_checks=True):
     '''Return an xmlrpc client which supports authentication via cookies'''
     trans = CookieAuthXMLRPCTransport(do_cert_checks=do_cert_checks)
     client = xmlrpclib.Server(server_uri, transport=trans, verbose=verbose)
+    return trans, client
 
-    return client
+def getXmlrpcClient(server_uri, verbose=False, do_cert_checks=True):
+    return getXmlrpcClientAndTransport(server_uri, verbose, do_cert_checks)[1]
 
 
 def main():

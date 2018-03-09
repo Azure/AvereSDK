@@ -1736,6 +1736,8 @@ class Service(ServiceBase):
             log.error("Failed to create node: {}".format(e))
             raise
         except (KeyboardInterrupt, Exception) as e:
+            if not log.isEnabledFor(logging.DEBUG):
+                log.exception(e)
             log.error("Failed to create node: {}".format(e))
             if not options.get('skip_cleanup', False):
                 cluster.destroy(quick_destroy=True)
@@ -1842,6 +1844,8 @@ class Service(ServiceBase):
                 n    = self.create_node(name, joincfg, node_opts=opts, instance_options=inst_opts)
                 nodeq.put(n)
             except Exception as e:
+                if not log.isEnabledFor(logging.DEBUG):
+                    log.exception(e)
                 failq.put(e)
 
         for node_num in xrange(max_node_num, max_node_num + count):

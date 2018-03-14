@@ -1706,7 +1706,7 @@ class Service(ServiceBase):
 
         try:
             # create the initial node
-            name = '{}-{}'.format(cluster.name, 1)
+            name = '{}-{:02}'.format(cluster.name, 1)
             opts = {'data_disk_count': data_disk_count, 'data_disk_size': data_disk_size,
                     'data_disk_type': data_disk_type, 'metadata': metadata.copy(),
                     'machine_type': machine_type, 'root_image': root_image,
@@ -1840,7 +1840,7 @@ class Service(ServiceBase):
         def cb(nodenum, inst_opts, nodeq, failq):
             '''callback'''
             try:
-                name = '{}-{}'.format(cluster.name, nodenum)
+                name = '{}-{:02}'.format(cluster.name, nodenum)
                 n    = self.create_node(name, joincfg, node_opts=opts, instance_options=inst_opts)
                 nodeq.put(n)
             except Exception as e:

@@ -1550,7 +1550,7 @@ class Service(ServiceBase):
             next_node_num = node_num + 1
             inst_opts = options.copy()
             inst_opts['subnet'] = next(cycle_subnets)
-            inst_opts['private_ip_address'] = private_addresses.pop()
+            inst_opts['private_ip_address'] = private_addresses.pop(0)
             t = threading.Thread(target=cb, args=(next_node_num, inst_opts, nodeq, failq,))
             t.setDaemon(True)
             t.start()

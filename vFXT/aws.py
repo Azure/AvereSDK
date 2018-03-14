@@ -1421,7 +1421,7 @@ class Service(ServiceBase):
             options['disableSourceDestCheck'] = True
 
         try:
-            name = '{}-{}'.format(cluster.name, 1)
+            name = '{}-{:02}'.format(cluster.name, 1)
             opts = {'data_disk_type': data_disk_type, 'data_disk_count': data_disk_count,
                     'tags': tags.copy(), 'data_disk_size': data_disk_size,
                     'data_disk_iops': data_disk_iops, 'machine_type': machine_type,
@@ -1538,7 +1538,7 @@ class Service(ServiceBase):
         def cb(nodenum, inst_opts, nodeq, failq):
             '''callback'''
             try:
-                name = '{}-{}'.format(cluster.name, nodenum)
+                name = '{}-{:02}'.format(cluster.name, nodenum)
                 n = self.create_node(name, joincfg, node_opts=opts, instance_options=inst_opts)
                 nodeq.put(n)
             except Exception as e:

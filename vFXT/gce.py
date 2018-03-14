@@ -1712,7 +1712,7 @@ class Service(ServiceBase):
                     'machine_type': machine_type, 'root_image': root_image,
                     'disk_type': disk_type, 'data_disk_nvme': data_disk_nvme}
             options['zone'] = zones[0] # first node zone
-            options['private_ip_address'] = instance_addresses.pop()
+            options['private_ip_address'] = instance_addresses.pop(0)
             n    = self.create_node(name, cfg, node_opts=opts, instance_options=options)
             cluster.nodes.append(ServiceInstance(service=self, instance=n))
 
@@ -1852,7 +1852,7 @@ class Service(ServiceBase):
             next_node_num = node_num + 1
             inst_opts = options.copy()
             inst_opts['zone'] = next(cycle_zones)
-            inst_opts['private_ip_address'] = instance_addresses.pop()
+            inst_opts['private_ip_address'] = instance_addresses.pop(0)
             t = threading.Thread(target=cb, args=(next_node_num, inst_opts, nodeq, failq,))
             t.setDaemon(True)
             t.start()

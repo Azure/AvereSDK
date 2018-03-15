@@ -1298,6 +1298,8 @@ class Cluster(object):
             if retries == 0:
                 _cleanup()
                 raise vFXTConfigurationException('Failed to create corefiler {}: Not found'.format(corefiler))
+            if retries % 10 == 0:
+                self._log_conditions(xmlrpc)
             retries -= 1
             self._sleep()
 
@@ -1367,6 +1369,8 @@ class Cluster(object):
                     except Exception as e:
                         log.error("Failed to remove corefiler {}: {}".format(corefiler, e))
                 raise vFXTConfigurationException('Failed to create corefiler {}'.format(corefiler))
+            if retries % 10 == 0:
+                self._log_conditions(xmlrpc)
             retries -= 1
             self._sleep()
 

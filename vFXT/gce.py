@@ -1910,6 +1910,7 @@ class Service(ServiceBase):
             cluster.project_id   = n['zone'].split('/')[-3]
             cluster.network_project_id = self._get_network_project()
             cluster.network_id   = n['networkInterfaces'][0]['network'].split('/')[-1]
+            cluster.name         = self.CLUSTER_NODE_NAME_RE.search(cluster.nodes[0].name()).groups()[0]
 
     # gce specific
     def _get_network(self):

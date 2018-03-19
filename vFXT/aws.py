@@ -1621,6 +1621,7 @@ class Service(ServiceBase):
             cluster.vpc_id       = instances[0].vpc_id
             cluster.machine_type = instances[0].instance_type
             cluster.ephemeral    = True if len(instances[0].block_device_mapping) == 1 else False
+            cluster.name         = self.CLUSTER_NODE_NAME_RE.search(cluster.nodes[0].name()).groups()[0]
 
     def can_shelve(self, instance):
         ''' Some instance configurations cannot be shelved. Check if this is one.

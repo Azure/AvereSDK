@@ -170,7 +170,7 @@ class ServiceInstance(object):
         '''Refresh the backend instance object'''
         self.instance = self.service.refresh(self.instance)
         if not self.instance:
-            raise vFXTConfigurationException("No such instance: {}".format(self.instance_id))
+            raise vFXTConfigurationException("Failed to refresh, no such instance: {}".format(self.instance_id))
 
     def can_shelve(self):
         '''Some instance configurations cannot be shelved. Check if this is one.'''

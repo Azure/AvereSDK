@@ -982,6 +982,8 @@ class Cluster(object):
                 instance.__getattribute__(method)(**options)
             except Exception as e:
                 log.error("Failed to {} {}: {}".format(method, instance_id, e))
+                if log.isEnabledFor(logging.DEBUG):
+                    log.exception(e)
                 q.put(("Failed to {} instance {}".format(method, instance_id), e))
 
         for si in serviceinstances:

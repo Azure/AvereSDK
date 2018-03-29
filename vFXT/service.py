@@ -348,3 +348,18 @@ class ServiceBase(object):
                 gethostbyname(host, timeout)
         except socket.gaierror as e:
             raise vFXTConfigurationException("Failed to establish connection to service: {}".format(e))
+
+    def get_current_instance(self):
+        '''This is a helper to return the current backend instance object.
+
+            This is only applicable when running on a cloud instance.
+        '''
+        return self.get_instance(self.get_current_instance_id()) #pylint: disable=no-member
+    def get_current_instance_id(self):
+        '''This is a helper to return the current backend instance identifier.
+
+            This is only applicable when running on a cloud instance.
+        '''
+        if not self.on_instance: #pylint: disable=no-member
+            raise vFXTConfigurationException("Not a cloud instance")
+        return self.local.instance_data['service_id'] #pylint: disable=no-member

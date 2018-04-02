@@ -337,7 +337,7 @@ class GCE_test(tests.vFXTTestCase.Base):
                 'priority': 900,
                 'destRange': '{}/32'.format(addr)
             }
-            op = vFXT.gce._gce_do(service.connection().routes().insert, project=service.project_id, body=route_body) #pylint: disable=unused-variable
+            op = vFXT.gce._gce_do(service.connection().routes().insert, project=service.network_project_id, body=route_body) #pylint: disable=unused-variable
             # Just do it... we will fix it up later# service._wait_for_operation(op, msg='route to be reserved', op_type='globalOperations')
             # we should be able to take it
             i2.add_address(addr)

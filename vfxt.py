@@ -188,6 +188,7 @@ def main():
     gce_opts = parser.add_argument_group('GCE specific options', 'Options applicable for --cloud-type gce')
     gce_opts.add_argument("--client-email", help="OATH2 Client email if using the p12 key file", default='default')
     gce_opts.add_argument("--project", help="Project name", default=None)
+    gce_opts.add_argument("--network-project", help="Project name for XPN host", default=None)
     gce_opts.add_argument("--zone", nargs="+", help="One or more zone names (us-central1-a)", type=str, default=None)
     gce_opts.add_argument("--network", help="Network name", default=None)
     gce_opts.add_argument("--subnetwork", help="Subnetwork name", default=None)
@@ -374,6 +375,8 @@ def main():
                 service.zones = args.zone
             if args.subnetwork:
                 service.subnetwork_id = args.subnetwork
+            if args.network_project:
+                service.network_project_id = args.network_project
         else:
             if args.from_environment:
                 if not all([args.project, args.network, args.zone]):
@@ -392,6 +395,7 @@ def main():
                 'key_file': args.key_file,
                 'zone': args.zone,
                 'project_id': args.project,
+                'network_project_id': args.network_project,
                 'network_id': args.network,
                 'subnetwork_id': args.subnetwork,
                 's3_access_key': args.s3_access_key,

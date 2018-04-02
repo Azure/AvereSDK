@@ -168,7 +168,8 @@ class Service(ServiceBase):
                  key_file=None, key_data=None, access_token=None, s3_access_key=None,
                  s3_secret_access_key=None, private_range=None, proxy_uri=None,
                  no_connection_test=False, subnetwork_id=None, on_instance=False,
-                 use_environment_for_auth=False, skip_load_defaults=False):
+                 use_environment_for_auth=False, skip_load_defaults=False,
+                 network_project_id=None):
         '''Constructor
 
             This performs an initial connection test and downloads the default
@@ -200,6 +201,7 @@ class Service(ServiceBase):
 
                 no_connection_test (bool, optional): skip connection test
                 skip_load_defaults (bool, optional): do not fetch defaults
+                network_project_id (str, optional): Project ID that owns the network (if outside current project)
         '''
         self.defaults     = {}
         self.client_email = client_email
@@ -209,6 +211,7 @@ class Service(ServiceBase):
         self.project_id   = project_id
         self.zones        = [zone] if isinstance(zone, basestring) else zone
         self.network_id   = network_id
+        self.network_project_id = network_project_id
         self.local        = threading.local()
         self.s3_access_key        = s3_access_key
         self.s3_secret_access_key = s3_secret_access_key
@@ -249,6 +252,9 @@ class Service(ServiceBase):
             self.set_proxy(self.proxy_uri)
         else:
             self.proxy = None
+
+        # check if we have a Xpn host project
+        self.network_project_id = self.network_project_id or self._get_network_project()
 
         if not no_connection_test:
             self.connection_test()
@@ -450,12 +456,14 @@ class Service(ServiceBase):
             project_id   = instance_data['project-id']
             zone_id      = instance_data['zone-id'].split('/')[-1]
             network_id   = instance_data['network-id'].split('/')[-1]
+            network_project_id = instance_data['network-id'].split('/')[1]
             access_token = instance_data['access_token']
             client_email = instance_data['email']
             srv = Service(network_id=network_id, client_email=client_email,
                           project_id=project_id, zone=zone_id,
                           access_token=access_token, no_connection_test=no_connection_test,
-                          proxy_uri=proxy_uri, on_instance=True, skip_load_defaults=kwargs.get('skip_load_defaults'))
+                          proxy_uri=proxy_uri, on_instance=True, skip_load_defaults=kwargs.get('skip_load_defaults'),
+                          network_project_id=network_project_id)
             srv.local.instance_data = instance_data
             region      = srv._zone_to_region(zone_id)
             # no subnetwork in metadata... figure out which subnetwork owns our address
@@ -863,12 +871,12 @@ class Service(ServiceBase):
                 pass
 
         expr   = "nextHopInstance eq .*/{}$".format(instance['name'])
-        routes = _gce_do(conn.routes().list, project=self.project_id, filter=expr)
+        routes = _gce_do(conn.routes().list, project=self.network_project_id, filter=expr)
         if not routes or 'items' not in routes:
             return
         for route in routes['items']:
             try: # need to delete any leftover routes
-                resp = _gce_do(conn.routes().delete, project=self.project_id, route=route['name'])
+                resp = _gce_do(conn.routes().delete, project=self.network_project_id, route=route['name'])
                 self._wait_for_operation(resp, msg='route to be deleted', zone=zone)
             except Exception:
                 pass
@@ -1277,7 +1285,7 @@ class Service(ServiceBase):
 
         if category in ['all', 'routes']:
             search = 'destRange eq .*/32' # only point to point addresses
-            resp   = _gce_do(conn.routes().list, project=self.project_id, filter=search)
+            resp   = _gce_do(conn.routes().list, project=self.network_project_id, filter=search)
             if resp and 'items' in resp:
                 for route in resp['items']:
                     # skip if we don't have a next hop instance (dangling route)
@@ -1888,13 +1896,14 @@ class Service(ServiceBase):
             n                    = nodes[0]
             cluster.machine_type = n['machineType'].split('/')[-1]
             cluster.project_id   = n['zone'].split('/')[-3]
+            cluster.network_project_id = self._get_network_project()
             cluster.network_id   = n['networkInterfaces'][0]['network'].split('/')[-1]
 
     # gce specific
     def _get_network(self):
         '''Get the network object'''
-        conn        = self.connection()
-        return _gce_do(conn.networks().get, project=self.project_id, network=self.network_id)
+        conn = self.connection()
+        return _gce_do(conn.networks().get, project=self.network_project_id, network=self.network_id)
 
     def _get_subnetworks(self, region=None):
         '''Get the subnetworks from the network object
@@ -1902,16 +1911,16 @@ class Service(ServiceBase):
             Arguments:
                 region (str, optional): return only the subnetworks in the provided region
         '''
-        network = self._get_network()
-        if 'subnetworks' not in network:
+        network_data = self._get_network()
+        if 'subnetworks' not in network_data:
             return []
         subnetworks = []
         conn = self.connection()
-        for sn in network['subnetworks']:
+        for sn in network_data['subnetworks']:
             sn_region = sn.split('/')[-3]
             sn_name = sn.split('/')[-1]
             subnetwork = _gce_do(conn.subnetworks().get,
-                            project=self.project_id,
+                            project=self.network_project_id,
                             region=sn_region, subnetwork=sn_name)
             subnetworks.append(subnetwork)
         if region:
@@ -2189,7 +2198,7 @@ class Service(ServiceBase):
 
             # check for existing
             dest_filter = 'destRange eq {}'.format(dest)
-            resp = _gce_do(conn.routes().list, project=self.project_id, filter=dest_filter)
+            resp = _gce_do(conn.routes().list, project=self.network_project_id, filter=dest_filter)
             if 'items' in resp:
                 existing = resp['items']
                 network_selflink = self._get_network()['selfLink']
@@ -2201,7 +2210,7 @@ class Service(ServiceBase):
 
                 for route in existing:
                     log.debug("Deleting route {}".format(route['name']))
-                    resp = _gce_do(conn.routes().delete, project=self.project_id, route=route['name'])
+                    resp = _gce_do(conn.routes().delete, project=self.network_project_id, route=route['name'])
                     self._wait_for_operation(resp, msg='route to be deleted', op_type='globalOperations')
 
             # add the route
@@ -2213,7 +2222,7 @@ class Service(ServiceBase):
                 'priority': options.get('priority') or 900,
             }
             log.debug('Adding instance address body {}'.format(body))
-            resp = _gce_do(conn.routes().insert, project=self.project_id, body=body)
+            resp = _gce_do(conn.routes().insert, project=self.network_project_id, body=body)
             self._wait_for_operation(resp, msg='route to be created', op_type='globalOperations')
         except vFXTConfigurationException as e:
             raise
@@ -2233,7 +2242,7 @@ class Service(ServiceBase):
         try:
             addr = Cidr('{}/32'.format(address)) # validates
             expr = 'destRange eq {}/32'.format(addr.address)
-            routes = _gce_do(conn.routes().list, project=self.project_id, filter=expr)
+            routes = _gce_do(conn.routes().list, project=self.network_project_id, filter=expr)
             if not routes or 'items' not in routes:
                 raise vFXTConfigurationException("No route was found for {}".format(addr.address))
             for route in routes['items']:
@@ -2241,7 +2250,7 @@ class Service(ServiceBase):
                     log.warning("Skipping route destined for other host: {} -> {}".format(address, route['nextHopInstance']))
                     continue
                 log.debug("Deleting route {}".format(route['name']))
-                resp = _gce_do(conn.routes().delete, project=self.project_id, route=route['name'])
+                resp = _gce_do(conn.routes().delete, project=self.network_project_id, route=route['name'])
                 self._wait_for_operation(resp, msg='route to be deleted', op_type='globalOperations')
         except vFXTConfigurationException as e:
             raise
@@ -2269,7 +2278,7 @@ class Service(ServiceBase):
         if category in ['all', 'routes']:
             search = 'nextHopInstance eq .*/{}'.format(instance['name'])
             conn   = self.connection()
-            resp   = _gce_do(conn.routes().list, project=self.project_id, filter=search)
+            resp   = _gce_do(conn.routes().list, project=self.network_project_id, filter=search)
             if resp and 'items' in resp:
                 network_selflink = self._get_network()['selfLink']
                 for route in resp['items']:
@@ -2416,6 +2425,16 @@ class Service(ServiceBase):
             if address in self.instance_in_use_addresses(i):
                 return i
         return None
+
+    def _get_network_project(self):
+        if self.project_id:
+            xpn_project = _gce_do(self.connection().projects().getXpnHost, project=self.project_id).get('name')
+            if xpn_project:
+                log.debug("Using {} for network project".format(xpn_project))
+                return xpn_project
+            return self.project_id
+        else:
+            return None
 
 def _gce_do(f, retries=ServiceBase.CLOUD_API_RETRIES, **options):
     '''GCE function call wrapper with variable retries

@@ -255,7 +255,10 @@ class Service(ServiceBase):
             self.proxy = None
 
         # check if we have a Xpn host project
-        self.network_project_id = self.network_project_id or self._get_network_project()
+        try:
+            self.network_project_id = self.network_project_id or self._get_network_project()
+        except vFXTServiceTimeout as e:
+            raise vFXTServiceConnectionFailure(e)
 
         if not no_connection_test:
             self.connection_test()

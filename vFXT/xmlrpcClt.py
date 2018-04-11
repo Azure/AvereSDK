@@ -12,7 +12,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-# Copyright (c) 2015-2017 Avere Systems, Inc.  All Rights Reserved.
+# Copyright (c) 2015-2018 Avere Systems, Inc.  All Rights Reserved.
 
 import httplib
 import socket

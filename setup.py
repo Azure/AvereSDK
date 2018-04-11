@@ -1,4 +1,4 @@
-# Copyright (c) 2015-2017 Avere Systems, Inc.  All Rights Reserved.
+# Copyright (c) 2015-2018 Avere Systems, Inc.  All Rights Reserved.
 from setuptools import setup
 
 version = {}

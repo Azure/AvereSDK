@@ -1295,7 +1295,9 @@ class Cluster(object):
             try:
                 if corefiler in xmlrpc.corefiler.list():
                     break
-            except Exception: pass
+            except xmlrpclib_Fault as xfe:
+                log.debug(xfe)
+                xmlrpc = self.xmlrpc()
             log.debug("Waiting for corefiler to show up")
             if retries == 0:
                 _cleanup()

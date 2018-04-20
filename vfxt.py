@@ -340,6 +340,7 @@ def main():
                 'subnet': args.subnet,
                 'proxy_uri': args.proxy_uri,
                 'security_groups': args.security_group,
+                'private_range': args.cluster_range,
             }
             if args.from_environment:
                 del opts['access_key']
@@ -398,6 +399,7 @@ def main():
                 'network_project_id': args.network_project,
                 'network_id': args.network,
                 'subnetwork_id': args.subnetwork,
+                'private_range': args.cluster_range,
                 's3_access_key': args.s3_access_key,
                 's3_secret_access_key': args.s3_secret_key,
                 'proxy_uri': args.proxy_uri,
@@ -437,7 +439,6 @@ def main():
 
     # generic service options
     service.POLLTIME = args.poll_time
-    service.private_range = args.cluster_range
 
     if args.node_cache_size:
         if any([args.data_disk_count, args.data_disk_size]):

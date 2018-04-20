@@ -260,6 +260,13 @@ class Service(ServiceBase):
         except vFXTServiceTimeout as e:
             raise vFXTServiceConnectionFailure(e)
 
+        if self.private_range:
+            # cannot overlap with the network range(s)
+            ranges = [Cidr(_) for _ in self._get_network_address_ranges()]
+            addr_from_private_range = Cidr(self.private_range).start_address()
+            if any([_.contains(addr_from_private_range) for _ in ranges]):
+                raise vFXTConfigurationException('Unable to use the specified address range {} for VM instances'.format(self.private_range))
+
         if not no_connection_test:
             self.connection_test()
 
@@ -1916,6 +1923,21 @@ class Service(ServiceBase):
             cluster.name         = self.CLUSTER_NODE_NAME_RE.search(cluster.nodes[0].name()).groups()[0]
 
     # gce specific
+    def _get_network_address_ranges(self):
+        conn = self.connection()
+        ranges = set()
+        networks = _gce_do(conn.networks().list, project=self.network_project_id)['items']
+        for network in networks:
+            # for legacy, non-subnet networks
+            ipv4_range = network.get('IPv4Range')
+            if ipv4_range:
+                ranges.add(ipv4_range)
+            for subnetwork_id in network.get('subnetworks', []):
+                subnetwork = self._get_subnetwork(subnetwork_id.split('/')[-1])
+                ranges.add(subnetwork.get('ipCidrRange'))
+                # subnetwork.secondaryIpRanges[*]['ipCidrRange'] are allowed to be used by instances
+        return list(ranges)
+
     def _get_network(self):
         '''Get the network object'''
         conn = self.connection()

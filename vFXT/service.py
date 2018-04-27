@@ -123,7 +123,7 @@ def load_defaults(service):
 class ServiceBase(object):
     '''Basic service interface'''
     CLUSTER_NODE_NAME_RE = re.compile(r'^(.*?)\-([0-9]+)$')
-    BUCKET_NAME_RE = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9\._-]{1,253}[a-zA-Z0-9]$')
+    BUCKET_NAME_RE = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9_-]{1,253}[a-zA-Z0-9]$') # no periods for S3 Transfer acceleration
     TOO_LONG_DNS_NAME_COMP_RE = re.compile(r'[-_a-z0-9]{64}')
     POLLTIME = 1
     WAIT_FOR_SUCCESS = 300

@@ -26,12 +26,6 @@ log = logging.getLogger(__name__)
 
 class Cluster_test(tests.vFXTTestCase.Base):
 
-    def setUp(self):
-        tests.vFXTTestCase.Base.setUp(self)
-        if not self.create_clusters:
-            self.skipTest("skipping tests for cluster creation")
-
-
     def test__init__aws(self):
         if not self.aws['enabled']:
             self.skipTest("skipping test for AWS")
@@ -158,7 +152,16 @@ class Cluster_test(tests.vFXTTestCase.Base):
         gce = self.mk_gce_service()
         self.assertRaises(vFXT.service.vFXTConfigurationException, Cluster.create, gce, 'bogus', 'clustername', 'adminpass')
 
-    def test_bad_cluster_name(self):
+    def test_bad_cluster_name_aws(self):
+        if not self.aws['enabled']:
+            self.skipTest("skipping test for AWS")
+        aws = self.mk_aws_service()
+        self.assertRaises(vFXT.service.vFXTConfigurationException, Cluster.create, aws, self.aws['instance_type'], '', 'adminpass')
+        self.assertRaises(vFXT.service.vFXTConfigurationException, Cluster.create, aws, self.aws['instance_type'], '1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890', 'adminpass')
+
+    def test_bad_cluster_name_gce(self):
+        if not self.gce['enabled']:
+            self.skipTest("skipping test for GCE")
         gce = self.mk_gce_service()
         self.assertRaises(vFXT.service.vFXTConfigurationException, Cluster.create, gce, self.gce['instance_type'], '', 'adminpass')
         self.assertRaises(vFXT.service.vFXTConfigurationException, Cluster.create, gce, self.gce['instance_type'], '1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890', 'adminpass')

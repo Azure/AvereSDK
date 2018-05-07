@@ -1102,10 +1102,17 @@ class Cluster(object):
             raise vFXTConfigurationException("Node configuration prevents them from being shelved")
 
         try:
-            corefilers = self.xmlrpc().corefiler.list()
-            for corefiler in corefilers:
-                log.debug("Flushing corefiler {}".format(corefiler))
-                self.flush_corefiler(corefiler)
+            xmlrpc = self.xmlrpc()
+            corefilers = xmlrpc.corefiler.list()
+
+            if corefilers:
+                self._enable_maintenance_api(xmlrpc)
+                activity = self._xmlrpc_do(xmlrpc.maint.suspendAccess)
+                self._xmlrpc_wait_for_activity(activity, "Failed to suspend access", retries=self.service.WAIT_FOR_SUCCESS)
+
+                for corefiler in corefilers:
+                    log.debug("Flushing corefiler {}".format(corefiler))
+                    self.flush_corefiler(corefiler)
         except xmlrpclib_Fault as e:
             if int(e.faultCode) != 108: # Method not supported
                 log.debug("Failed to flush corefilers: {}".format(e))
@@ -1138,6 +1145,11 @@ class Cluster(object):
         # password, etc... if so we wait at least until we have api connectivity
         if self.mgmt_ip and self.admin_password and self.nodes and self.is_on():
             self.wait_for_healthcheck(state='red', duration=1, conn_retries=ServiceBase.WAIT_FOR_SUCCESS)
+
+            xmlrpc = self.xmlrpc()
+            self._enable_maintenance_api(xmlrpc)
+            activity = self._xmlrpc_do(xmlrpc.maint.unsuspendAccess)
+            self._xmlrpc_wait_for_activity(activity, "Failed to unsuspend access", retries=self.service.WAIT_FOR_SUCCESS)
 
     def is_on(self):
         '''Returns true if all nodes are on'''

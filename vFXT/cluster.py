@@ -168,8 +168,6 @@ class Cluster(object):
         self.node_rename      = True
         self.first_node_error = None
         self.timezone         = None
-        self.skip_support_cfg = False
-        self.core_uploads     = False
 
         if self.proxy:
             self.proxy = validate_proxy(self.proxy) # imported from vFXT.service
@@ -211,8 +209,6 @@ class Cluster(object):
                 size (int, optional): size of cluster (node count)
                 root_image (str, optional): root disk image name
                 skip_cleanup (bool, optional): do not clean up on failure
-                skip_support_configuration (bool, optional): do not setup initial support configuration
-                enable_core_uploads (bool, optional): Enable automatic core uploads
                 address_range_start (str, optional): The first of a custom range of addresses to use for the cluster
                 address_range_end (str, optional): The last of a custom range of addresses to use for the cluster
                 address_range_netmask (str, optional): cluster address range netmask
@@ -227,8 +223,6 @@ class Cluster(object):
         c.trace_level     = options.get('trace_level', None)
         c.timezone        = options.get('timezone', None)
         c.join_mgmt       = False if options.get('join_instance_address', True) else True
-        c.skip_support_cfg = options.get('skip_support_configuration') or False
-        c.core_uploads    = options.get('enable_core_uploads') or False
 
         if c.proxy:
             c.proxy = validate_proxy(c.proxy) # imported from vFXT.service
@@ -1632,26 +1626,16 @@ class Cluster(object):
 
         self.set_default_proxy(xmlrpc=xmlrpc)
 
-        # minimum, required support config
-        support_opts = {'statsMonitor': 'yes', 'generalInfo': 'yes'}
-        # SPS support config
-        if not self.skip_support_cfg:
-            log.info("Enabling SPS")
-            support_opts['SPSLinkEnabled'] = 'yes'
-            support_opts['customerId'] = self.name
         if self.trace_level:
             log.info("Setting trace {}".format(self.trace_level))
-            support_opts['traceLevel'] = self.trace_level
-            support_opts['rollingTrace'] = 'yes'
-        if self.core_uploads:
-            support_opts['crashInfo'] = 'full'
-        try:
-            response = self._xmlrpc_do(xmlrpc.support.modify, support_opts)
-            if response[0] != 'success':
-                self.first_node_error = vFXTConfigurationException(response)
-                raise self.first_node_error #pylint: disable=raising-bad-type
-        except Exception as e:
-            log.error("Failed to configure support options: {}".format(e))
+            support_opts = {'rollingTrace': 'yes', 'traceLevel': self.trace_level}
+            try:
+                response = self._xmlrpc_do(xmlrpc.support.modify, support_opts)
+                if response[0] != 'success':
+                    self.first_node_error = vFXTConfigurationException(response)
+                    raise self.first_node_error #pylint: disable=raising-bad-type
+            except Exception as e:
+                log.error("Failed to configure trace options: {}".format(e))
 
         if self.timezone:
             log.info("Setting timezone to {}".format(self.timezone))

@@ -1,5 +1,8 @@
 # Copyright (c) 2015-2018 Avere Systems, Inc.  All Rights Reserved.
+import logging
 from setuptools import setup
+
+logging.basicConfig(level=logging.WARNING)
 
 version = {}
 with open("vFXT/version.py") as f:

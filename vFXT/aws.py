@@ -2378,7 +2378,9 @@ def _aws_do_non_idempotent(function, *args, **kwargs):
             log.debug("_aws_do_non_idempotent exception: {}".format(e))
             errors += 1
             # probably could be only 503 but boto also looks for 500
-            if e.status < 500: raise
+            # Throttling is 400
+            throttled = True if e.status == 400 and 'Throttling' in str(e) else False
+            if e.status < 500 and not throttled: raise # #pylint: disable=no-member
 
             time.sleep(backoff(errors))
 
@@ -2405,7 +2407,9 @@ def _aws_do(function, *args, **kwargs):
 
             # probably could be only 503 but boto also looks for 500
             if isinstance(e, boto.exception.BotoServerError):
-                if e.status < 500: raise # #pylint: disable=no-member
+                # Throttling is 400
+                throttled = True if e.status == 400 and 'Throttling' in str(e) else False
+                if e.status < 500 and not throttled: raise # #pylint: disable=no-member
 
             time.sleep(backoff(errors))
 

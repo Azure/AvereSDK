@@ -1,0 +1,12 @@
+**/*.pyc
+*coverage*
+*unittest*
+*.egg*
+**/*.swp
+**/*.swo
+**/*.log
+**/*.diff
+**/*junit.xml
+*htmlcov*
+build/
+dist/

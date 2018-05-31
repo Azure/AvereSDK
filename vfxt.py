@@ -257,7 +257,7 @@ def main():
     cluster_opts.add_argument("--nfs-mount", help="NFS mountpoint to use as the core filer (host:/path)")
     cluster_opts.add_argument("--core-filer", help="Name of the core filer to create")
     cluster_opts.add_argument("--subdir", help="NFS Export subdirectory (if / is the only export)", type=str, default='')
-    cluster_opts.add_argument("--junction", help="Path of the vserver junction (must start with /, defaults to end of NFS export path or cloud vendor name)", type=str, default='')
+    cluster_opts.add_argument("--junction", help="Path of the vserver junction (must start with /, defaults to /nfs for NFS exports or cloud vendor name)", type=str, default='')
     cluster_opts.add_argument("--vserver", help="Name of the vserver to create (defaults to vserver)", default='vserver')
     cluster_opts.add_argument('--vserver-address-range-start', help=argparse.SUPPRESS, type=_validate_ip)
     cluster_opts.add_argument('--vserver-address-range-end', help=argparse.SUPPRESS, type=_validate_ip)
@@ -535,7 +535,7 @@ def main():
                     }
                     if args.nfs_mount:
                         mount = args.nfs_mount.split(':')[-1]
-                        junction_opts['path'] = args.junction or '/{}'.format(mount.split(os.sep)[-1])
+                        junction_opts['path'] = args.junction or '/{}'.format(corefiler_name)
                         junction_opts['export'] = mount
                         junction_opts['subdir'] = args.subdir
                     cluster.add_vserver_junction(args.vserver, corefiler_name, **junction_opts)

@@ -541,6 +541,8 @@ class Service(ServiceBase):
             usage = int(q.get('usage') or 0)
             limit = int(q.get('limit') or 0)
             metric = q.get('metric')
+            if not metric:
+                continue
 
             if metric == 'CPUS':
                 usage += core_count

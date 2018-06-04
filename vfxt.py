@@ -22,7 +22,7 @@ def _validate_ip(addr):
     try:
         if all([v <= 255 and v >= 0 for v in [int(n) for n in octets]]):
             return addr
-    except:
+    except Exception:
         raise argparse.ArgumentTypeError("malformed IP address: {}".format(addr))
 
 def _validate_url(url):

@@ -2342,7 +2342,7 @@ class Service(ServiceBase):
         '''
         try:
             return self.defaults[region or self.region]['current']
-        except:
+        except Exception:
             raise vFXTConfigurationException("You must provide a root disk image.")
 
 

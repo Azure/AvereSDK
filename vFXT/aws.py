@@ -1811,13 +1811,16 @@ class Service(ServiceBase):
         if not addr_range:
             if len(self.subnets) == 1: # fall back to a subnet if only one
                 addr_range = self._get_subnet(self.subnets[0]).cidr_block
+                log.debug("Using subnet {} range of {}".format(self.subnets[0], addr_range))
             else: # lots of subnets, determine a private range outside vpc XXX review
                 # this requires permission to view vpc
                 vpc_cidr   = Cidr(self._subnet_to_vpc().cidr_block)
                 addr_range = '{}/{}'.format(Cidr.to_address(vpc_cidr.end() + 1), vpc_cidr.bits)
                 netmask = '255.255.255.255'
+                log.debug("Using range {} outside of VPC range of {}".format(addr_range, vpc_cidr))
         else:
             netmask = '255.255.255.255'
+            log.debug("Using specified address range {}".format(addr_range))
 
         used = self.in_use_addresses(addr_range)
         if in_use:

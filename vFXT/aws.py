@@ -139,6 +139,7 @@ class Service(ServiceBase):
     INSTANCENAME_RE = re.compile(r'[a-zA-Z0-9\ \t\+\-=\._:\/@]+$')
     ARN = "aws"
     IAM_HOST = 'iam.amazonaws.com'
+    IAM_ROLE_PRINCIPAL_SERVICE = 'ec2.amazonaws.com'
     AWS_INSTANCE_HOST = '169.254.169.254'
     S3URL_RE = re.compile(r's3://(?P<bucket>[^\/]*)/(?P<path>.*)$')
     IAM_BUCKET_POLICY = ['s3:GetLifecycleConfiguration',
@@ -200,6 +201,7 @@ class Service(ServiceBase):
                 s3_profile_name (str, optional): S3 profile name
                 arn (str, optional): defaults to aws
                 iam_host (str, optional): custom IAM host
+                iam_role_principal_service (str, optional): custom IAM role principal service hostname
                 security_token (str, optional): AWS security token
                 private_range (str, optional): private address range (cidr)
                 security_groups (str, optional): default security groups
@@ -221,6 +223,7 @@ class Service(ServiceBase):
         self.s3_profile_name      = options.get('s3_profile_name') or self.profile_name
         self.arn                  = options.get('arn') or self.ARN
         self.iam_host             = options.get('iam_host') or self.IAM_HOST
+        self.iam_role_principal_service = options.get('iam_role_principal_service') or self.IAM_ROLE_PRINCIPAL_SERVICE
         self.security_token       = options.get('security_token', None)
         self.private_range        = options.get('private_range', None)
         self.proxy_uri            = options.get('proxy_uri', None)
@@ -1909,6 +1912,8 @@ class Service(ServiceBase):
             export['iam_host'] = self.iam_host
         if self.arn:
             export['arn'] = self.arn
+        if self.iam_role_principal_service:
+            export['iam_role_principal_service'] = self.iam_role_principal_service
 
         return export
 
@@ -2045,7 +2050,7 @@ class Service(ServiceBase):
             "Version": "2012-10-17",
             "Statement": [{
                 "Effect": "Allow",
-                "Principal": { "Service": "ec2.amazonaws.com" },
+                "Principal": { "Service": self.iam_role_principal_service},
                 "Action": "sts:AssumeRole"
             }]
         }

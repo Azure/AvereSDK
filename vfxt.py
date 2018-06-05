@@ -161,6 +161,7 @@ def main():
     aws_opts.add_argument("--region", help="AWS region in which to create the cluster")
     aws_opts.add_argument("--iam-role", help="IAM role to assign to the cluster", default=None)
     aws_opts.add_argument("--iam-host", help="IAM host", default=None)
+    aws_opts.add_argument("--iam-role-principal-service", help="IAM Role principal service domain", default=None)
     aws_opts.add_argument("--arn", help="ARN string", default=None)
     aws_opts.add_argument("--ephemeral", help="Use EC2 ephemeral disks for cache (WARNING: RISKS DATA LOSS)", action="store_true")
     aws_opts.add_argument("--placement-group", help="Name of a placement group to use. ", default=None, action="store")
@@ -323,6 +324,7 @@ def main():
                 's3_profile_name': args.s3_profile,
                 'arn': args.arn,
                 'iam_host': args.iam_host,
+                'iam_role_principal_service': args.iam_role_principal_service,
                 'subnet': args.subnet,
                 'proxy_uri': args.proxy_uri,
                 'security_groups': args.security_group,

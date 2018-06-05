@@ -1500,7 +1500,7 @@ class Service(ServiceBase):
             options['security_group_ids'] = security_groups
         # overrides
         opts = {'tags': instance.tags, 'data_disk_iops': None, 'machine_type': cluster.machine_type, 'root_image': instance.image_id, 'role': role}
-        overrides = ['tags', 'machine_type', 'root_image', 'data_disk_size', 'data_disk_type', 'data_disk_count']
+        overrides = ['tags', 'machine_type', 'root_image', 'data_disk_size', 'data_disk_type', 'data_disk_count', 'disk_encryption']
         for o in overrides:
             if o in options:
                 opts[o] = options.pop(o)

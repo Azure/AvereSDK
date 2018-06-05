@@ -1331,7 +1331,9 @@ class Service(ServiceBase):
 
         # find an unused range, either provided or default
         addr_range = addr_range or self.private_range
-        if not addr_range:
+        if addr_range:
+            log.debug("Using specified address range {}".format(addr_range))
+        else:
             network = self._get_network()
             if 'subnetworks' in network:
                 subnetwork = self._get_subnetwork(self.subnetwork_id)
@@ -1341,6 +1343,7 @@ class Service(ServiceBase):
                     addr_range = r['ipCidrRange']
                     log.debug("Using subnetwork {} {} secondary range of {}".format(subnetwork['name'], r.get('rangeName', 'unnamed'), r['ipCidrRange']))
                 else:
+                    log.debug("Using subnetwork {} range of {}".format(subnetwork['name'], subnetwork['ipCidrRange']))
                     addr_range = subnetwork['ipCidrRange']
         # otherwise we use our defaults
         addr_range = addr_range or self.DEFAULT_CLUSTER_NETWORK_RANGE

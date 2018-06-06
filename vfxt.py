@@ -292,6 +292,16 @@ def main():
             service = Service.on_instance_init(proxy_uri=args.proxy_uri)
             if args.subnet:
                 service.subnets = args.subnet
+            if args.cluster_range:
+                service.private_range = args.cluster_range
+            if args.proxy_uri:
+                service.proxy_uri = args.proxy_uri
+            if args.arn:
+                service.arn = args.arn
+            if args.iam_host:
+                service.iam_host = args.iam_host
+            if args.iam_role_principal_service:
+                service.iam_role_principal_service = args.iam_role_principal_service
         else:
             if not args.from_environment and not all([args.region, args.access_key, args.secret_key]):
                 logger.error("Arguments region, access-key, and secret-key are required")
@@ -366,6 +376,10 @@ def main():
                 service.subnetwork_id = args.subnetwork
             if args.network_project:
                 service.network_project_id = args.network_project
+            if args.cluster_range:
+                service.private_range = args.cluster_range
+            if args.proxy_uri:
+                service.proxy_uri = args.proxy_uri
         else:
             if args.from_environment:
                 if not all([args.project, args.network, args.zone]):

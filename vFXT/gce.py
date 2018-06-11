@@ -664,12 +664,15 @@ class Service(ServiceBase):
         for zone in self._zone_names(all_regions):
             page_token = None
             while True:
-                r =  _gce_do(conn.instances().list, project=self.project_id, filter=search, zone=zone, pageToken=page_token)
-                if r and 'items' in r:
-                    instances.extend(r['items'])
-                if r and 'nextPageToken'  in r:
-                    page_token = r['nextPageToken']
-                if not r or 'nextPageToken' not in r:
+                try: # sometimes we can see a region/zone before we can inspect it
+                    r =  _gce_do(conn.instances().list, project=self.project_id, filter=search, zone=zone, pageToken=page_token)
+                    if r and 'items' in r:
+                        instances.extend(r['items'])
+                    if r and 'nextPageToken'  in r:
+                        page_token = r['nextPageToken']
+                    if not r or 'nextPageToken' not in r:
+                        break
+                except Exception:
                     break
         return instances
 
@@ -688,9 +691,12 @@ class Service(ServiceBase):
         conn   = self.connection()
         instances = []
         for zone in self._zone_names(all_regions):
-            r = _gce_do(conn.instances().list, project=self.project_id, filter=search, zone=zone)
-            if r and 'items' in r:
-                instances.extend(r['items'])
+            try: # sometimes we can see a region/zone before we can inspect it
+                r = _gce_do(conn.instances().list, project=self.project_id, filter=search, zone=zone)
+                if r and 'items' in r:
+                    instances.extend(r['items'])
+            except Exception:
+                pass
         return instances
 
     def get_instance(self, instance_id, all_regions=True):
@@ -705,7 +711,7 @@ class Service(ServiceBase):
         '''
         conn   = self.connection()
         for zone in self._zone_names(all_regions):
-            try:
+            try: # sometimes we can see a region/zone before we can inspect it
                 return _gce_do(conn.instances().get, project=self.project_id, instance=instance_id, zone=zone)
             except Exception:
                 pass

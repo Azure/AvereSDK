@@ -8,7 +8,6 @@ import urlparse
 import getpass
 import uuid
 import vFXT
-import vFXT
 from vFXT import Cluster
 from vFXT.service import *
 from vFXT import Cidr

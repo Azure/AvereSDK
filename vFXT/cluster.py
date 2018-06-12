@@ -960,8 +960,16 @@ class Cluster(object):
         def thread_cb(service, instance_id, q):
             '''thread callback'''
             try:
-                # create this within the thread
-                instance = ServiceInstance(service=service, instance_id=instance_id)
+                # create the instance within the thread, retry initial load prior to calling the method
+                retries = service.CLOUD_API_RETRIES
+                while True:
+                    try:
+                        instance = ServiceInstance(service=service, instance_id=instance_id)
+                        break
+                    except Exception:
+                        if retries == 0:
+                            raise
+                        retries -= 1
                 instance.__getattribute__(method)(**options)
             except Exception as e:
                 log.error("Failed to {} {}: {}".format(method, instance_id, e))

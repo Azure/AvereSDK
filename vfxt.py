@@ -201,6 +201,7 @@ def main():
     parser.add_argument('--ssh-key', help="SSH key for cluster authentication (path to public key file for GCE, key name for AWS)", type=str, default=None)
     parser.add_argument("--telemetry-mode", help="Telemetry custom mode", type=str, default='gsimin')
     parser.add_argument("--skip-check", help="Skip initial checks for api access and quotas", action="store_true")
+    parser.add_argument("--log", help="Skip initial checks for api access and quotas", type=str, default=None)
 
     shelve_opts = parser.add_argument_group()
     shelve_opts.add_argument('--mine', help=argparse.SUPPRESS, action="store_true")
@@ -268,13 +269,17 @@ def main():
 
     # logging
     logging.basicConfig(format='%(asctime)s - %(name)s:%(levelname)s - %(message)s', datefmt='%Y-%m-%dT%H:%M:%S%z')
+    log_file = logging.FileHandler(args.log) if args.log else logging.NullHandler()
+    log_file.setFormatter(logging.Formatter('%(asctime)s - %(name)s:%(levelname)s - %(message)s', '%Y-%m-%dT%H:%M:%S%z'))
     logger = logging.getLogger('vfxt')
     logger.setLevel(logging.INFO)
+    logger.addHandler(log_file)
     if args.debug:
         logging.getLogger(Cluster.__module__).setLevel(logging.DEBUG)
         logger.setLevel(logging.DEBUG)
     else:
         logging.getLogger(Cluster.__module__).setLevel(logging.INFO)
+    logging.getLogger(Cluster.__module__).addHandler(log_file)
     logger.info("Using vFXT version {}".format(vFXT.__version__))
 
     # Service setup
@@ -286,6 +291,7 @@ def main():
         else:
             logging.getLogger('boto').setLevel(logging.CRITICAL)
             logging.getLogger(Service.__module__).setLevel(logging.INFO)
+        logging.getLogger(Service.__module__).addHandler(log_file)
 
         # init our service
         if args.on_instance:
@@ -365,6 +371,7 @@ def main():
             logging.getLogger(Service.__module__).setLevel(logging.DEBUG)
         else:
             logging.getLogger(Service.__module__).setLevel(logging.INFO)
+        logging.getLogger(Service.__module__).addHandler(log_file)
 
         if args.on_instance:
             service = Service.on_instance_init(proxy_uri=args.proxy_uri)

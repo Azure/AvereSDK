@@ -294,7 +294,7 @@ def main():
 
         # init our service
         if args.on_instance:
-            service = Service.on_instance_init(proxy_uri=args.proxy_uri)
+            service = Service.on_instance_init(proxy_uri=args.proxy_uri, no_connection_test=args.skip_check)
             if args.subnet:
                 service.subnets = args.subnet
             if args.cluster_range:
@@ -344,6 +344,7 @@ def main():
                 'proxy_uri': args.proxy_uri,
                 'security_groups': args.security_group,
                 'private_range': args.cluster_range,
+                'no_connection_test': args.skip_check,
             }
             if args.from_environment:
                 del opts['access_key']
@@ -373,7 +374,7 @@ def main():
         logging.getLogger(Service.__module__).addHandler(log_file)
 
         if args.on_instance:
-            service = Service.on_instance_init(proxy_uri=args.proxy_uri)
+            service = Service.on_instance_init(proxy_uri=args.proxy_uri, no_connection_test=args.skip_check)
             if args.network:
                 service.network_id = args.network
             if args.zone:
@@ -411,6 +412,7 @@ def main():
                 's3_access_key': args.s3_access_key,
                 's3_secret_access_key': args.s3_secret_key,
                 'proxy_uri': args.proxy_uri,
+                'no_connection_test': args.skip_check,
             }
             if args.from_environment:
                 service = Service.environment_init(**opts)

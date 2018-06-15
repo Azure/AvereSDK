@@ -260,6 +260,7 @@ class Cluster(object):
             c.wait_for_healthcheck(state=options.get('wait_for_state', 'yellow'),
                 duration=int(options.get('wait_for_state_duration', 30)), xmlrpc=xmlrpc)
         except (KeyboardInterrupt, Exception) as e:
+            log.error("Cluster configuration failed: {}".format(e))
             if not options.get('skip_cleanup', False):
                 c.destroy(quick_destroy=True)
             else:

@@ -304,6 +304,7 @@ class Cluster(object):
                 alertstats = xmlrpc.cluster.maxActiveAlertSeverity()
             except Exception as e:
                 log.debug("Ignoring cluster.maxActiveAlertSeverity() failure: {}".format(e))
+                xmlrpc = self.xmlrpc(conn_retries)
 
             if 'maxCondition' in alertstats and alertstats['maxCondition'] in acceptable_states:
                 observed = int(time.time()) - start_time
@@ -315,6 +316,7 @@ class Cluster(object):
                 start_time = int(time.time())
 
             if retries % 10 == 0:
+                self._log_conditions(xmlrpc)
                 log.debug("Not {} for {}s({})... alertStats: {}".format(state, duration, observed, alertstats))
 
             retries -= 1
@@ -325,6 +327,7 @@ class Cluster(object):
                     alert_codes = [c['name'] for c in conditions if c['severity'] != state]
                 except Exception as e:
                     log.debug("Failed to get alert conditions: {}".format(e))
+                    xmlrpc = self.xmlrpc(conn_retries)
                 if alert_codes:
                     raise vFXTStatusFailure("Healthcheck for state {} failed: {}".format(state, alert_codes))
                 else:

@@ -1700,6 +1700,8 @@ class Service(ServiceBase):
         machine_defs    = self.MACHINE_DEFAULTS[machine_type]
         cluster_size    = int(options.get('size', machine_defs['node_count']))
 
+        log.info('Creating cluster configuration')
+
         ip_count = cluster_size + (1 if not options.get('management_address') else 0)
         custom_ip_config_reqs = ['address_range_start', 'address_range_end']
         if all([options.get(_) for _ in custom_ip_config_reqs]):

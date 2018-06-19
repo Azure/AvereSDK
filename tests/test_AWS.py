@@ -108,14 +108,18 @@ class AWS_test(tests.vFXTTestCase.Base):
             self.assertTrue(instance.fqdn())
             self.assertTrue(instance.status())
 
-            instance.add_address('172.16.200.200')
+            # get a free address
+            addrs, _ = service.get_available_addresses(count=1, addr_range='172.16.16.0/24')
+            addr = addrs[0]
+
+            instance.add_address(addr)
             instance.refresh()
-            self.assertTrue('172.16.200.200' in instance.in_use_addresses())
+            self.assertTrue(addr in instance.in_use_addresses())
             # duplicate failure
-            self.assertRaises(vFXT.service.vFXTConfigurationException, instance.add_address, '172.16.200.200')
-            instance.remove_address('172.16.200.200')
+            self.assertRaises(vFXT.service.vFXTConfigurationException, instance.add_address, addr)
+            instance.remove_address(addr)
             instance.refresh()
-            self.assertFalse('172.16.200.200' in instance.in_use_addresses())
+            self.assertFalse(addr in instance.in_use_addresses())
 
             self.assertTrue(instance.is_on())
             if service.can_stop(instance.instance):
@@ -252,15 +256,20 @@ class AWS_test(tests.vFXTTestCase.Base):
         i1 = None
         i2 = None
         try:
-            i1 = ServiceInstance.create(service, self.aws['instance_type'], 'vfxttest-dup-route-1', self.aws['ami'])
-            i2 = ServiceInstance.create(service, self.aws['instance_type'], 'vfxttest-dup-route-2', self.aws['ami'])
+            uniq = int(time.time())
+            i1 = ServiceInstance.create(service, self.aws['instance_type'], 'vfxttest-dup-route-1-{}'.format(uniq), self.aws['ami'])
+            i2 = ServiceInstance.create(service, self.aws['instance_type'], 'vfxttest-dup-route-2-{}'.format(uniq), self.aws['ami'])
 
-            i1.add_address('172.16.200.201')
-            i2.add_address('172.16.200.201')
+            # get a free address
+            addrs, _ = service.get_available_addresses(count=1, addr_range='172.16.16.0/24')
+            addr = addrs[0]
+
+            i1.add_address(addr)
+            i2.add_address(addr)
             i1.refresh()
             i2.refresh()
-            self.assertTrue('172.16.200.201' not in i1.in_use_addresses())
-            self.assertTrue('172.16.200.201' in i2.in_use_addresses())
+            self.assertTrue(addr not in i1.in_use_addresses())
+            self.assertTrue(addr in i2.in_use_addresses())
 
         finally:
             if i1:

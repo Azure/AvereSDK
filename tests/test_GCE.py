@@ -174,14 +174,18 @@ class GCE_test(tests.vFXTTestCase.Base):
             self.assertTrue(instance.fqdn())
             self.assertTrue(instance.status())
 
-            instance.add_address('172.16.200.200')
+            # get a free address
+            addrs, _ = service.get_available_addresses(count=1, addr_range='172.16.16.0/24')
+            addr = addrs[0]
+
+            instance.add_address(addr)
             instance.refresh()
-            self.assertTrue('172.16.200.200' in instance.in_use_addresses())
+            self.assertTrue(addr in instance.in_use_addresses())
             # duplicate failure
-            self.assertRaises(vFXT.service.vFXTConfigurationException, instance.add_address, '172.16.200.200')
-            instance.remove_address('172.16.200.200')
+            self.assertRaises(vFXT.service.vFXTConfigurationException, instance.add_address, addr)
+            instance.remove_address(addr)
             instance.refresh()
-            self.assertFalse('172.16.200.200' in instance.in_use_addresses())
+            self.assertFalse(addr in instance.in_use_addresses())
 
             # metadata
             instance.refresh()
@@ -307,8 +311,9 @@ class GCE_test(tests.vFXTTestCase.Base):
         i1 = None
         i2 = None
         try:
-            i1 = ServiceInstance.create(service, self.gce['instance_type'], 'vfxttest-dup-route-1', self.gce['image'], metadata={'purpose': 'test'}, tags=['avere-dev'])
-            i2 = ServiceInstance.create(service, self.gce['instance_type'], 'vfxttest-dup-route-2', self.gce['image'], metadata={'purpose': 'test'}, tags=['avere-dev'])
+            uniq = int(time.time())
+            i1 = ServiceInstance.create(service, self.gce['instance_type'], 'vfxttest-dup-route-1-{}'.format(uniq), self.gce['image'], metadata={'purpose': 'test'}, tags=['avere-dev'])
+            i2 = ServiceInstance.create(service, self.gce['instance_type'], 'vfxttest-dup-route-2-{}'.format(uniq), self.gce['image'], metadata={'purpose': 'test'}, tags=['avere-dev'])
 
             addrs, mask = service.get_available_addresses(count=2, addr_range='172.16.16.0/24') #pylint: disable=unused-variable
             addr = addrs[0]
@@ -355,20 +360,22 @@ class GCE_test(tests.vFXTTestCase.Base):
         i1 = None
         i2 = None
         try:
-            i1 = ServiceInstance.create(service, self.gce['instance_type'], 'vfxttest-ip-alias-1', self.gce['image'], metadata={'purpose':'test'}, tags=['avere-dev'])
-            i2 = ServiceInstance.create(service, self.gce['instance_type'], 'vfxttest-ip-alias-2', self.gce['image'], metadata={'purpose':'test'}, tags=['avere-dev'])
+            uniq = int(time.time())
+            i1 = ServiceInstance.create(service, self.gce['instance_type'], 'vfxttest-ip-alias-1-{}'.format(uniq), self.gce['image'], metadata={'purpose':'test'}, tags=['avere-dev'])
+            i2 = ServiceInstance.create(service, self.gce['instance_type'], 'vfxttest-ip-alias-2-{}'.format(uniq), self.gce['image'], metadata={'purpose':'test'}, tags=['avere-dev'])
 
             addrs, _ = service.get_available_addresses(count=1, addr_range=ipalias_range)
+            addr = addrs[0]
 
             # add to first instance
-            i1.add_address(addrs[0])
-            self.assertTrue(addrs[0] in i1.in_use_addresses())
-            self.assertTrue(addrs[0] not in i2.in_use_addresses())
+            i1.add_address(addr)
+            self.assertTrue(addr in i1.in_use_addresses())
+            self.assertTrue(addr not in i2.in_use_addresses())
 
             # move it
-            i2.add_address(addrs[0])
-            self.assertTrue(addrs[0] not in i1.in_use_addresses())
-            self.assertTrue(addrs[0] in i2.in_use_addresses())
+            i2.add_address(addr)
+            self.assertTrue(addr not in i1.in_use_addresses())
+            self.assertTrue(addr in i2.in_use_addresses())
 
         finally:
             if i1:

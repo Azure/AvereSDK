@@ -460,8 +460,14 @@ def main():
 
     if args.create:
         # run a service check first
-        if not args.skip_check:
-            service.check()
+        try:
+            if not args.skip_check:
+                service.check()
+        except Exception as e:
+            if args.debug:
+                logger.exception(e)
+            logger.error(e)
+            parser.exit(1)
 
         # minimum args for create
         if not all([args.instance_type, args.cluster_name, args.admin_password]):

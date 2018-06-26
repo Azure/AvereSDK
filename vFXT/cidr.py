@@ -69,6 +69,11 @@ class Cidr(object):
             Returns: int
         '''
         return self.addr | (((1L << (32 - self.bits)) - 1))
+    def size(self):
+        '''Return the size (in IP addresses) of the cidr block
+            Returns: int
+        '''
+        return 2**(32 - self.bits)
     def start_address(self):
         ''' start address of cidr block
             Returns: str

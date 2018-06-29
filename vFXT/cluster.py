@@ -438,6 +438,9 @@ class Cluster(object):
 
             Raises: vFXTConfigurationException
         '''
+        if self.service.AUTO_LICENSE:
+            return
+
         log.info('Waiting for FlashCloud licensing feature')
         xmlrpc = self.xmlrpc() if xmlrpc is None else xmlrpc
         while wait > 0:

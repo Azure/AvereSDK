@@ -1348,6 +1348,16 @@ class Cluster(object):
             Arguments:
                 corefiler (str): name of the corefiler to create
                 networkname (str): network reachable name/address of the filer
+                retries (int, optional): defaults to ServiceBase.WAIT_FOR_SUCCESS
+                remove_on_fail (bool, optional): remove if any post create check fails
+                ignore_warnings (bool, optional): ignore warnings during create, defaults to False
+                nfs_type (str, optional): specify the type of the NFS server
+
+                nfs_type can be one of:
+                  NetappNonClustered
+                  NetappClustered
+                  EmcIsilon
+                  Other (default)
 
             Raises: vFXTConfigurationException
         '''
@@ -1359,8 +1369,13 @@ class Cluster(object):
         except Exception as e:
             raise vFXTConfigurationException("Unknown host {}: {}".format(corefiler, e))
 
+        ignore_warnings = options.get('ignore_warnings') or False
+        create_options = {
+            'filerClass': options.get('nfs_type') or 'Other'
+        }
+
         log.info("Creating corefiler {}".format(corefiler))
-        activity = self._xmlrpc_do(self.xmlrpc().corefiler.create, corefiler, networkname)
+        activity = self._xmlrpc_do(self.xmlrpc().corefiler.create, corefiler, networkname, ignore_warnings, create_options)
         self._xmlrpc_wait_for_activity(activity, "Failed to create corefiler {}".format(corefiler), retries=self.service.WAIT_FOR_SUCCESS)
 
         # we have to wait for the corefiler to show up... may be blocked by other things

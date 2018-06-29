@@ -91,7 +91,11 @@ def _add_nfs_corefiler(cluster, logger, args):
     corefiler = args.core_filer or 'nfs'
     server = args.nfs_mount.split(':')[0]
     logger.info("Creating core filer {}".format(corefiler))
-    cluster.attach_corefiler(corefiler, server)
+
+    options = {
+        'nfs_type': args.nfs_type,
+    }
+    cluster.attach_corefiler(corefiler, server, **options)
     return corefiler
 
 def _add_bucket_corefiler(cluster, logger, args):
@@ -255,6 +259,7 @@ def main():
     cluster_opts.add_argument("--disable-bucket-https", help=argparse.SUPPRESS, action='store_true') # Disable the use of HTTPS for bucket communication
     cluster_opts.add_argument("--disable-bucket-https-verify", help=argparse.SUPPRESS, action='store_true') # Disable HTTPS certificate verification for bucket communication
     cluster_opts.add_argument("--nfs-mount", help="NFS mountpoint to use as the core filer (host:/path)")
+    cluster_opts.add_argument("--nfs-type", help="NFS server type", choices=['NetappNonClustered', 'NetappClustered', 'EmcIsilon'], default=None)
     cluster_opts.add_argument("--core-filer", help="Name of the core filer to create")
     cluster_opts.add_argument("--subdir", help="NFS Export subdirectory (if / is the only export)", type=str, default='')
     cluster_opts.add_argument("--junction", help="Path of the vserver junction (must start with /, defaults to /nfs for NFS exports or cloud vendor name)", type=str, default='')

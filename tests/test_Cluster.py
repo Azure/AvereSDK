@@ -76,8 +76,6 @@ class Cluster_test(tests.vFXTTestCase.Base):
             self.assertTrue(cluster.is_on())
             self.assertFalse(cluster.is_shelved())
 
-        cluster.telemetry()
-
     def test_create_aws(self):
         if not self.create_clusters:
             self.skipTest("skipping full cluster create tests for AWS")

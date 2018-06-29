@@ -152,7 +152,8 @@ class Service(ServiceBase):
         ]
       }
     }
-    DEFAULT_CLUSTER_NETWORK_RANGE='172.16.0.0/12'
+    DEFAULT_CLUSTER_NETWORK_RANGE = '172.16.0.0/12'
+    AUTO_LICENSE = False
 
     def __init__(self, network_id, zone, client_email=None, project_id=None,
                  key_file=None, key_data=None, access_token=None, s3_access_key=None,

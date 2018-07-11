@@ -641,7 +641,7 @@ class Service(ServiceBase):
                 except Exception as e:
                     if connection_attempts == retries:
                         raise vFXTServiceConnectionFailure("Failed to establish connection to service: {}".format(e))
-                    log.debug("Retrying failed connection attemp: {}".format(e))
+                    log.debug("Retrying failed connection attempt: {}".format(e))
                     connection_attempts += 1
                     time.sleep(backoff(connection_attempts))
 
@@ -1129,7 +1129,7 @@ class Service(ServiceBase):
             Arguments:
                 name (str): bucket name to create
                 storage_class (str, optional): storage class of MULTI_REGIONAL, REGIONAL,
-                    STANDARD, NEARLINE, COLDLINE, and DURABLE_REDUCED_AVAILABILIT
+                    STANDARD, NEARLINE, COLDLINE, and DURABLE_REDUCED_AVAILABILITY
                 region (str, optional): region for the bucket if using REGIONAL (defaults to service default region)
                 tags (dict, optional): tag labels to apply to the bucket
 

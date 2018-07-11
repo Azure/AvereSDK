@@ -233,7 +233,7 @@ def main():
     cluster_opts.add_argument("--root-size", help="Total size of the boot disk (in GB)",
                         default=None, type=int)
     cluster_opts.add_argument("--configuration-expiration", help=argparse.SUPPRESS, default=Cluster.CONFIGURATION_EXPIRATION, type=int) # Number of minutes until the cluster.cfg file should expire
-    cluster_opts.add_argument('--upgrade-url', help="Url to an AvereOS upgrade packagea")
+    cluster_opts.add_argument('--upgrade-url', help="Url to an AvereOS upgrade package")
     cluster_opts.add_argument('--upgrade-non-ha', help="Perform a non-HA upgrade", action="store_true")
     cluster_opts.add_argument('--cluster-range', help='IP address range (cidr format) to use for addressing', default=None,
                         type=lambda x: str(Cidr(x)))

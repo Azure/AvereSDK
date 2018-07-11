@@ -923,7 +923,9 @@ class Cluster(object):
                     log.error('Failed to undo configuration: {}'.format(destroy_e))
 
             # if we added no nodes successfully, clean up addresses added
-            if len(unjoined) == count:
+            none_joined = len(unjoined) == count
+            nothing_created = node_count == len(joined_nodes)
+            if none_joined or nothing_created:
                 for a in added:
                     if 'vserver' in a:
                         a = a['vserver']

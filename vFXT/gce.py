@@ -1366,7 +1366,7 @@ class Service(ServiceBase):
             netmask = "255.255.255.255" # hardcoded for gce /32
             return (avail, netmask)
         except Exception as e:
-            raise vFXTConfigurationException(e)
+            raise vFXTConfigurationException("Check that the subnetwork or specified address range has enough free addresses: {}".format(e))
 
     def export(self):
         '''Export the service object in an easy to serialize format

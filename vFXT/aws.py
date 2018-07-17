@@ -1837,8 +1837,7 @@ class Service(ServiceBase):
                 netmask = addr_cidr.netmask
             return (avail, netmask)
         except Exception as e:
-            log.exception(e)
-            raise vFXTConfigurationException(e)
+            raise vFXTConfigurationException("Check that the subnet or specified address range has enough free addresses: {}".format(e))
 
     def get_dns_servers(self, subnet_id=None):
         '''Get DNS server addresses

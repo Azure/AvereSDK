@@ -204,7 +204,7 @@ def main():
     parser.add_argument('--ssh-key', help="SSH key for cluster authentication (path to public key file for GCE, key name for AWS)", type=str, default=None)
     parser.add_argument("--telemetry-mode", help="Telemetry custom mode", type=str, default='gsimin')
     parser.add_argument("--skip-check", help="Skip initial checks for api access and quotas", action="store_true")
-    parser.add_argument("--log", help="Skip initial checks for api access and quotas", type=str, default=None)
+    parser.add_argument("--log", help="Automatically log the output to the provided file name", type=str, default=None)
 
     shelve_opts = parser.add_argument_group()
     shelve_opts.add_argument('--mine', help=argparse.SUPPRESS, action="store_true")

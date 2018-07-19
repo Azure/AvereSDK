@@ -131,7 +131,7 @@ class ServiceBase(object):
     XMLRPC_RETRIES = 5
     CLOUD_API_RETRIES = 3
     ENDPOINT_TEST_HOSTS = []
-    ALLOCATE_PRIVATE_ADDRESSES = False
+    ALLOCATE_INSTANCE_ADDRESSES = False
     S3TYPE_NAME = None
 
     def __init__(self, **args):

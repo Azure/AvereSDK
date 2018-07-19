@@ -829,11 +829,11 @@ class Cluster(object):
         need_cluster     = ((node_count + count) * cluster_ips_per_node) - len(existing_cluster)
         need_cluster     = need_cluster if need_cluster > 0 else 0
         need_vserver     = need_vserver if need_vserver > 0 else 0
-        need_private     = count if self.service.ALLOCATE_PRIVATE_ADDRESSES else 0
+        need_instance    = count if self.service.ALLOCATE_INSTANCE_ADDRESSES else 0
 
         added = [] # cluster and vserver extensions (for undo)
 
-        ip_count = need_vserver + need_cluster + need_private
+        ip_count = need_vserver + need_cluster + need_instance
 
         if ip_count > 0: # if we need more, extend ourselves
             in_use_addrs    = self.in_use_addresses(xmlrpc=xmlrpc)
@@ -847,9 +847,9 @@ class Cluster(object):
             else:
                 avail_ips, mask = self.service.get_available_addresses(count=ip_count, contiguous=True, in_use=in_use_addrs)
 
-            if need_private:
-                options['private_addresses']  = avail_ips[0:need_private]
-                del avail_ips[0:need_private]
+            if need_instance:
+                options['instance_addresses']  = avail_ips[0:need_instance]
+                del avail_ips[0:need_instance]
 
             if need_cluster > 0:
                 addresses = avail_ips[0:need_cluster]

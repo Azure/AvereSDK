@@ -113,14 +113,14 @@ def _add_bucket_corefiler(cluster, logger, args):
         bucket_opts['tags'] = tags
 
     if not args.bucket:
-        logger.info("Creating corefiler {} with new bucket: {}".format(corefiler, bucketname))
+        logger.info("Creating corefiler {} with new cloud storage: {}".format(corefiler, bucketname))
         if args.govcloud:
             cluster.service.create_bucket(bucketname, storage_class=args.storage_class)
             cluster.attach_bucket(corefiler, '{}:{}'.format(bucketname, cluster.service.region), **bucket_opts)
         else:
             cluster.make_test_bucket(bucketname=bucketname, corefiler=corefiler, storage_class=args.storage_class, **bucket_opts)
     else: # existing bucket
-        logger.info("Attaching an existing bucket {} to corefiler {}".format(bucketname, corefiler))
+        logger.info("Attaching an existing cloud storage {} to corefiler {}".format(bucketname, corefiler))
         bucket_opts['existing_data'] = args.bucket_not_empty
         cluster.attach_bucket(corefiler, bucketname, master_password=args.admin_password, **bucket_opts)
     return corefiler

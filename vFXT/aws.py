@@ -167,7 +167,7 @@ class Service(ServiceBase):
     ENDPOINT_TEST_HOSTS = ['s3.amazonaws.com']
     BOTO_503_RETRIES = 10
     CREATE_INSTANCE_IAM_PROPAGATION_RETRIES = 60
-    ALLOCATE_PRIVATE_ADDRESSES = True
+    ALLOCATE_INSTANCE_ADDRESSES = True
     OFFLINE_DEFAULTS = {
         'version': '1',
         'clustermanager': {
@@ -1476,7 +1476,7 @@ class Service(ServiceBase):
                 cluster (vFXT.cluster.Cluster): cluster object
                 count (int): number of nodes to add
                 skip_cleanup (bool, optional): do not clean up on failure
-                private_addresses ([], optional): list of instance private addresses
+                instance_addresses ([], optional): list of instance addresses
                 **options: passed to create_node()
 
             Raises: exceptions from create_node()
@@ -1487,13 +1487,13 @@ class Service(ServiceBase):
         subnets.extend([s for s in cluster.subnets if s not in subnets])
         cycle_subnets = cycle(subnets)
 
-        # if we are preallocating our private_addresses
-        private_addresses = options.pop('private_addresses', [None] * count)
-        if len(private_addresses) != count:
-            raise vFXTConfigurationException("Not enough private addresses were provided")
+        # if we are preallocating our instance_addresses
+        instance_addresses = options.pop('instance_addresses', [None] * count)
+        if len(instance_addresses) != count:
+            raise vFXTConfigurationException("Not enough instance addresses were provided")
         # but only for non-xaz setups
         if len(subnets) > 1:
-            private_addresses = [None] * count
+            instance_addresses = [None] * count
 
         instance        = cluster.nodes[0].instance
         role            = self._get_iamrole(cluster.iamrole)
@@ -1545,7 +1545,7 @@ class Service(ServiceBase):
             next_node_num = node_num + 1
             inst_opts = options.copy()
             inst_opts['subnet'] = next(cycle_subnets)
-            inst_opts['private_ip_address'] = private_addresses.pop(0)
+            inst_opts['instance_ip_address'] = instance_addresses.pop(0)
             t = threading.Thread(target=cb, args=(next_node_num, inst_opts, nodeq, failq,))
             t.setDaemon(True)
             t.start()

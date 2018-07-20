@@ -731,6 +731,7 @@ def main():
             'join_wait': args.join_wait or None,
             'service_account': args.service_account,
             'home_addresses': args.vserver_home_addresses,
+            'key_name': args.ssh_key, # aws ssh key
         }
         # prune out unfortunate command line defaults
         options = {k: v for k, v in options.iteritems() if v is not None and v != ''}

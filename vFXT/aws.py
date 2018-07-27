@@ -1409,7 +1409,7 @@ class Service(ServiceBase):
                     '''\nname={0}''' \
                     '''\nrole={0}''' \
                     .format(role['role_name'])
-        log.debug("Generated cluster config: {}".format(cfg))
+        log.debug("Generated cluster config: {}".format(cfg.replace(cluster.admin_password, '[redacted]')))
 
         # for point to point addressing we need to disable Source/Dest checks
         if mask == '255.255.255.255':

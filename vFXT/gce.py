@@ -1726,7 +1726,7 @@ class Service(ServiceBase):
         cluster.zones = [zones[0]] # first node zone
 
         cfg     = cluster.cluster_config(expiration=options.get('config_expiration', None))
-        log.debug("Generated cluster config: {}".format(cfg))
+        log.debug("Generated cluster config: {}".format(cfg.replace(cluster.admin_password, '[redacted]')))
 
         # gce needs them base64 encoded
         cfg     = ''.join(cfg.encode('base64').split()).strip()

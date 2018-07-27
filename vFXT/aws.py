@@ -990,7 +990,9 @@ class Service(ServiceBase):
 
             Raises: vFXTServiceFailure
         '''
-        xmlrpc      = cluster.xmlrpc() if xmlrpc is None else xmlrpc
+        xmlrpc = cluster.xmlrpc() if xmlrpc is None else xmlrpc
+        existing_creds = cluster._xmlrpc_do(xmlrpc.corefiler.listCredentials, _xmlrpc_do_retries=retries)
+
         iam         = self.connection(connection_type='iam')
         iamrole     = cluster.iamrole
         policy_name = 'policy_{}'.format(iamrole)
@@ -1028,30 +1030,26 @@ class Service(ServiceBase):
 
         # we cant reuse the existing default creds
         if self.s3_access_key != self.access_key:
-            cred = 's3-{}'.format(cluster.name)
+            cred_name = 's3-{}'.format(cluster.name)
 
             # if it exists, use it
-            if cred in [c['name'] for c in xmlrpc.corefiler.listCredentials()]:
-                return cred
+            if cred_name in [c['name'] for c in existing_creds]:
+                return cred_name
 
-            log.debug("Creating credential {}".format(cred))
-            create_retries = retries
-            while True:
-                try:
-                    r = xmlrpc.corefiler.createCredential(cred, self.COREFILER_CRED_TYPE, {
-                        'accessKey': self.s3_access_key,
-                        'privateKey': self.s3_secret_access_key,
-                    })
-                    if r != 'success':
-                        raise Exception(r)
-                    return cred
-                except Exception as e:
-                    if create_retries == 0:
-                        raise vFXTConfigurationException("Could not create credential {}: {}".format(cred, e))
-                create_retries -= 1
+            log.debug("Creating credential {}".format(cred_name))
+            cred_body = {
+                'accessKey': self.s3_access_key,
+                'privateKey': self.s3_secret_access_key,
+            }
+            r = cluster._xmlrpc_do(xmlrpc.corefiler.createCredential, cred_name, self.COREFILER_CRED_TYPE, cred_body, _xmlrpc_do_retries=retries)
+            if r != 'success':
+                raise vFXTConfigurationException("Could not create credential {}: {}".format(cred_name, r))
+            return cred_name
 
         # XXX otherwise assume first credential (internalName = cloudCredential1)
-        return xmlrpc.corefiler.listCredentials()[0]['name']
+        if not existing_creds:
+            raise vFXTConfigurationException("Could not find a credential to use")
+        return existing_creds[0]['name']
 
 
     def delete_bucket(self, name):

@@ -1189,41 +1189,32 @@ class Service(ServiceBase):
             Raises: vFXTServiceFailure
         '''
         xmlrpc = cluster.xmlrpc() if xmlrpc is None else xmlrpc
+
+        existing_creds = cluster._xmlrpc_do(xmlrpc.corefiler.listCredentials, _xmlrpc_do_retries=retries)
+
         # see if we have s3 interop credentials
         if self.s3_access_key and self.s3_secret_access_key:
             log.debug("Found s3 access keys")
-            cred = 's3-{}'.format(cluster.name)
+            cred_name = 's3-{}'.format(cluster.name)
 
             # if it exists, use it
-            if cred in [c['name'] for c in xmlrpc.corefiler.listCredentials()]:
-                return cred
+            if cred_name in [c['name'] for c in existing_creds]:
+                return cred_name
 
-            log.debug("Creating credential {}".format(cred))
-            create_retries = retries
-            while True:
-                try:
-                    r = xmlrpc.corefiler.createCredential(cred, self.COREFILER_CRED_TYPE, {
-                        'accessKey': self.s3_access_key,
-                        'privateKey': self.s3_secret_access_key,
-                    })
-                    if r != 'success':
-                        raise Exception(r)
-                    return cred
-
-                except Exception as e:
-                    if create_retries == 0:
-                        raise vFXTConfigurationException("Could not create credential {}: {}".format(cred, e))
-                create_retries -= 1
+            log.debug("Creating credential {}".format(cred_name))
+            cred_body = {
+                'accessKey': self.s3_access_key,
+                'privateKey': self.s3_secret_access_key,
+            }
+            r = cluster._xmlrpc_do(xmlrpc.corefiler.createCredential, cred_name, self.COREFILER_CRED_TYPE, cred_body)
+            if r != 'success':
+                raise vFXTConfigurationException("Could not create credential {}: {}".format(cred_name, r))
+            return cred_name
 
         # otherwise use the first default
-        lookup_retries = retries
-        while True:
-            try:
-                return xmlrpc.corefiler.listCredentials()[0]['name']
-            except Exception as e:
-                if lookup_retries == 0:
-                    raise vFXTConfigurationException("Could not find existing credential: {}".format(e))
-            lookup_retries -= 1
+        if not existing_creds:
+            raise vFXTConfigurationException("Could not find existing credential to use")
+        return existing_creds[0]['name']
 
     # networking
     def get_default_router(self, subnetwork=None):

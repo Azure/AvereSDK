@@ -1479,7 +1479,7 @@ class Service(ServiceBase):
 
             Raises: exceptions from create_node()
         '''
-        subnets = options.get('subnet') or []
+        subnets = options.get('subnet') or cluster.subnets if hasattr(cluster, 'subnets') else self.subnets
         subnets = [subnets] if isinstance(subnets, basestring) else subnets
         # make sure to use unused subnets first, but account for our cluster subnets
         subnets.extend([s for s in cluster.subnets if s not in subnets])

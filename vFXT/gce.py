@@ -1790,7 +1790,7 @@ class Service(ServiceBase):
 
             Raises: exceptions from create_node()
         '''
-        zones = options.get('zone') or []
+        zones = options.get('zone') or cluster.zones if hasattr(cluster, 'zones') else self.zones
         zones = [zones] if isinstance(zones, basestring) else zones
         # make sure to use unused zones first, but account for our cluster zones
         zones.extend([z for z in cluster.zones if z not in zones])

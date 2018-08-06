@@ -112,7 +112,8 @@ class Cluster(object):
         operations through it or the XMLRPC client.
 
     '''
-    CONFIGURATION_EXPIRATION = 7200
+    CONFIGURATION_EXPIRATION = 1800
+    JOIN_CONFIGURATION_EXPIRATION = 7200
     LICENSE_TIMEOUT = 120
 
     def __init__(self, service, **options):
@@ -370,7 +371,7 @@ class Cluster(object):
         if expected_count != found_count:
             raise vFXTStatusFailure("Failed to load all {} nodes (found {})".format(expected_count, found_count))
 
-    def cluster_config(self, joining=False, expiration=CONFIGURATION_EXPIRATION):
+    def cluster_config(self, joining=False, expiration=CONFIGURATION_EXPIRATION, joining_expiration=JOIN_CONFIGURATION_EXPIRATION):
         '''Return cluster configuration for master and slave nodes
 
             Arguments:
@@ -379,12 +380,13 @@ class Cluster(object):
 
             Raises: vFXTConfigurationException
         '''
-        expiry = str(int(time.time() + (expiration or self.CONFIGURATION_EXPIRATION)))
 
         if joining:
+            expiry = str(int(time.time()) + (joining_expiration or self.JOIN_CONFIGURATION_EXPIRATION))
             mgmt_ip = (self.nodes[0].ip() if self.nodes and not self.join_mgmt else self.mgmt_ip)
             return '# cluster.cfg\n[basic]\njoin cluster={}\nexpiration={}\n'.format(mgmt_ip, expiry)
 
+        expiry      = str(int(time.time()) + (expiration or self.CONFIGURATION_EXPIRATION))
         dns_servs   = self.service.get_dns_servers()
         ntp_servs   = self.service.get_ntp_servers()
         router      = self.service.get_default_router()

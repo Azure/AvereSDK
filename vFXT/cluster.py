@@ -792,6 +792,7 @@ class Cluster(object):
                 count (int, optional): number of nodes to add
                 skip_cleanup (bool, optional): do not clean up on failure
                 join_wait (int, optional): join wait time (defaults to wait_for_nodes_to_join default)
+                skip_node_renaming (bool optional): Do not automatically configure and enforce node naming convention (defaults to False)
                 address_range_start (str, optional): Specify the first of a custom range of addresses to use
                 address_range_end (str, optional): Specify the last of a custom range of addresses to use
                 address_range_netmask (str, optional): Specify the netmask of the custom address range to use
@@ -890,8 +891,9 @@ class Cluster(object):
             self.allow_node_join(enable=False, retries=wait, xmlrpc=xmlrpc)
             self.refresh()
             self.enable_ha()
-            self.set_node_naming_policy()
-            if options.get('vserver_home_addresses') or False:
+            if not options.get('skip_node_renaming'):
+                self.set_node_naming_policy()
+            if options.get('vserver_home_addresses'):
                 self.vserver_home_addresses()
         except (KeyboardInterrupt, Exception) as e:
             log.error(e)

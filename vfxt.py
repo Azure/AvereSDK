@@ -726,6 +726,7 @@ def main():
             'tags': args.aws_tag or args.gce_tag,
             'metadata': args.metadata,
             'skip_cleanup': args.skip_cleanup,
+            'skip_node_renaming': args.skip_node_renaming,
             'machine_type': args.instance_type,
             'auto_public_address': args.public_address,
             'join_wait': args.join_wait or None,

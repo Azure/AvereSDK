@@ -495,6 +495,7 @@ def main():
             logging.getLogger(Service.__module__).setLevel(logging.DEBUG)
         else:
             logging.getLogger(Service.__module__).setLevel(logging.INFO)
+        logging.getLogger(Service.__module__).addHandler(log_file)
 
         if args.on_instance:
             service = Service.on_instance_init(proxy_uri=args.proxy_uri,

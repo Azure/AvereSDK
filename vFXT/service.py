@@ -11,6 +11,7 @@ import logging
 import random
 import urlparse
 import socket
+import threading
 import json
 
 class vFXTServiceTimeout(Exception): pass
@@ -108,6 +109,25 @@ def load_defaults(service):
     except Exception as e:
         logging.getLogger(service.__module__).error("Failed to load up to date defaults, using offline copy: {}".format(e))
         service.defaults = service.OFFLINE_DEFAULTS
+
+
+class BarrierTimeout(Exception): pass
+class Barrier(object):
+    def __init__(self, size=1, timeout=None, errmsg="Timed out waiting for synchronization"):
+        self.size = size
+        self.counter = 0
+        self.timeout = timeout
+        self.errmsg = errmsg
+        self.lock = threading.RLock()
+        self.event = threading.Event()
+    def wait(self, timeout=None):
+        with self.lock:
+            self.counter += 1
+        if self.counter >= self.size:
+            self.event.set()
+        if not self.event.wait(timeout or self.timeout):
+            raise BarrierTimeout(self.errmsg)
+
 
 class ServiceBase(object):
     '''Basic service interface'''

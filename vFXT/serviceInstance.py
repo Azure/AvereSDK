@@ -22,7 +22,7 @@ i = gce.create_instance(...)
 inst = ServiceInstance(gce, i)
 
 # or the .create() constructor which takes
-srv = aws or gce
+srv = aws or gce or azure
 inst = ServiceInstance.create(srv, **opts)
 
 # using the ServiceInstance

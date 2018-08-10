@@ -23,7 +23,7 @@ class Cluster_test(tests.vFXTTestCase.Base):
         cluster = Cluster(service=aws)
         self.assertIsInstance(cluster, Cluster)
 
-    def _run_cluster_steps(self, cluster):
+    def _run_cluster_steps(self, cluster, skip_corefiler=False, use_instance_for_mgmt=False):
         service = cluster.service
 
         self.assertIsInstance(cluster, Cluster)
@@ -33,7 +33,8 @@ class Cluster_test(tests.vFXTTestCase.Base):
         self.assertTrue(cluster.xmlrpc().cluster.get())
 
         # verify we can load the cluster and get the same info back
-        loaded = Cluster.load(service, mgmt_ip=cluster.mgmt_ip, admin_password=cluster.admin_password)
+        mgmt_ip = cluster.nodes[0].ip() if use_instance_for_mgmt else cluster.mgmt_ip
+        loaded = Cluster.load(service, mgmt_ip=mgmt_ip, admin_password=cluster.admin_password)
         self.assertTrue(len(loaded.nodes) == len(cluster.nodes))
         loaded_export  = loaded.export()
         cluster_export = cluster.export()
@@ -50,9 +51,10 @@ class Cluster_test(tests.vFXTTestCase.Base):
         cluster.add_vserver('vserver')
         cluster.wait_for_healthcheck(state='green', duration=10)
         self.assertTrue(cluster.xmlrpc().vserver.get('vserver'))
-        cluster.make_test_bucket(cluster.name)
-        self.assertTrue(cluster.name in cluster.xmlrpc().corefiler.list())
-        cluster.add_vserver_junction('vserver', cluster.name)
+        if not skip_corefiler:
+            cluster.make_test_bucket(cluster.name)
+            self.assertTrue(cluster.name in cluster.xmlrpc().corefiler.list())
+            cluster.add_vserver_junction('vserver', cluster.name)
 
         self.assertTrue(cluster.in_use_addresses())
         self.assertTrue(cluster.in_use_addresses('mgmt'))
@@ -127,6 +129,43 @@ class Cluster_test(tests.vFXTTestCase.Base):
             if cleanups:
                 Cluster(service, nodes=cleanups).destroy(quick_destroy=True)
 
+    def test__init__azure(self):
+        if not self.azure['enabled']:
+            self.skipTest("skipping test for Azure")
+
+        azure = self.mk_azure_service()
+        self.assertIsInstance(azure, vFXT.msazure.Service)
+        cluster = Cluster(service=azure)
+        self.assertIsInstance(cluster, Cluster)
+
+    def test_create_azure(self):
+        if not self.create_clusters:
+            self.skipTest("skipping full cluster create tests for Azure")
+        if not self.azure['enabled']:
+            self.skipTest("skipping test for Azure")
+
+        service = self.mk_azure_service()
+        name = 'vfxt-test-{}'.format(int(time.time()))
+        cluster = Cluster.create(service, self.azure['instance_type'], name, 'adminpass', root_image=self.azure['vfxt_image'], size=3, wait_for_state='yellow', azure_role=self.azure['role'])
+        cluster.join_mgmt = False # force use of instance address for xmlrpc
+
+        self.assertIsInstance(cluster, Cluster)
+        self.assertTrue(cluster.is_on())
+        self.assertTrue(len(cluster.nodes) == 3)
+
+        self.assertTrue(cluster.xmlrpc().cluster.get())
+
+        try:
+            self._run_cluster_steps(cluster, skip_corefiler=True, use_instance_for_mgmt=True)
+        except Exception as e:
+            log.error(e)
+            raise
+        finally:
+            cluster.destroy(quick_destroy=True)
+            cleanups = [service.instance_id(_) for _ in service.find_instances() if name in service.name(_)]
+            if cleanups:
+                Cluster(service, nodes=cleanups).destroy(quick_destroy=True)
+
     def test_bad_machine_type_aws(self):
         if not self.aws['enabled']:
             self.skipTest("skipping test for AWS")
@@ -139,12 +178,25 @@ class Cluster_test(tests.vFXTTestCase.Base):
         gce = self.mk_gce_service()
         self.assertRaises(vFXT.service.vFXTConfigurationException, Cluster.create, gce, 'bogus', 'clustername', 'adminpass')
 
+    def test_bad_machine_type_azure(self):
+        if not self.azure['enabled']:
+            self.skipTest("skipping test for Azure")
+        azure = self.mk_azure_service()
+        self.assertRaises(vFXT.service.vFXTConfigurationException, Cluster.create, azure, 'bogus', 'clustername', 'adminpass')
+
     def test_bad_cluster_name_aws(self):
         if not self.aws['enabled']:
             self.skipTest("skipping test for AWS")
         aws = self.mk_aws_service()
         self.assertRaises(vFXT.service.vFXTConfigurationException, Cluster.create, aws, self.aws['instance_type'], '', 'adminpass')
         self.assertRaises(vFXT.service.vFXTConfigurationException, Cluster.create, aws, self.aws['instance_type'], '1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890', 'adminpass')
+
+    def test_bad_cluster_name_azure(self):
+        if not self.azure['enabled']:
+            self.skipTest("skipping test for Azure")
+        azure = self.mk_azure_service()
+        self.assertRaises(vFXT.service.vFXTConfigurationException, Cluster.create, azure, self.azure['instance_type'], '', 'adminpass')
+        self.assertRaises(vFXT.service.vFXTConfigurationException, Cluster.create, azure, self.azure['instance_type'], '1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890', 'adminpass')
 
     def test_bad_cluster_name_gce(self):
         if not self.gce['enabled']:

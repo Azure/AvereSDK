@@ -54,6 +54,26 @@ class ServiceInstance_test(tests.vFXTTestCase.Base):
         self.assertTrue(ServiceInstance(gce, instance=si.instance))
         self.assertRaises(vFXT.service.vFXTConfigurationException, ServiceInstance, gce, str(uuid.uuid4()))
 
+    def test__init__azure(self):
+        if not self.azure['enabled']:
+            self.skipTest("skipping test for Azure")
+
+        azure = self.mk_azure_service()
+        si = ServiceInstance(azure, self.azure['existing'][0])
+        self.assertIsInstance(si, ServiceInstance)
+        self.assertTrue(si.instance_id == self.azure['existing'][0])
+        self.assertTrue(si.ip() != '')
+        self.assertTrue(si.id() != '')
+        self.assertTrue(si.name() != '')
+        self.assertTrue(si.fqdn() != '')
+        self.assertTrue(si.status() != '')
+        self.assertTrue(si.is_on())
+        self.assertFalse(si.is_off())
+        self.assertFalse(si.refresh())
+        self.assertTrue(len(si.in_use_addresses())>0)
+        self.assertTrue(ServiceInstance(azure, instance=si.instance))
+        self.assertRaises(vFXT.service.vFXTConfigurationException, ServiceInstance, azure, str(uuid.uuid4()))
+
     def test_bad_instance_aws(self):
         if not self.aws['enabled']:
             self.skipTest("skipping test for AWS")
@@ -68,6 +88,13 @@ class ServiceInstance_test(tests.vFXTTestCase.Base):
         gce = self.mk_gce_service()
         invalid_gce_instance = ServiceInstance(gce, instance={'name': str(uuid.uuid4())})
         self.assertRaises(vFXT.service.vFXTConfigurationException, invalid_gce_instance.refresh)
+
+    def test_bad_instance_azure(self):
+        if not self.azure['enabled']:
+            self.skipTest("skipping test for Azure")
+
+        azure = self.mk_azure_service()
+        self.assertRaises(vFXT.service.vFXTConfigurationException, ServiceInstance, azure, str(uuid.uuid4()))
 
 
 if __name__ == '__main__':

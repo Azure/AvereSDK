@@ -28,6 +28,7 @@ https://download.averesystems.com/software/avere_vfxt.py_usage_guide.pdf
 
     - AWS: requires the access key/secret access key pair
     - GCE: requires a service account with the P12/JSON key file
+    - Azure: requires an AD application/service principal
 
 
 1. vFXT Library
@@ -78,6 +79,20 @@ https://download.averesystems.com/software/avere_vfxt.py_usage_guide.pdf
 
     lg_instance.destroy()
 
+
+  - Azure Example
+    from vFXT.cluster import Cluster
+    from vFXT.msazure import Service
+
+    azure = Service(client_email='fill me in', key_file='path-to.json', zone='us-central1-b', project_id='fill me in', network_id='fill me in')
+    azure = Service(subscription_id='', tenant_id='',
+        application_id='', application_secret='',
+        resource_group='', storage_account='',
+        location='', network='', subnet='',
+    )
+    cluster = Cluster.create(azure, 'Standard_D16s_v3', 'daily-test-20150309', 'adminpass')
+
+    lg = ServiceInstance.create(azure, 'Standard_DS1', 'lg1', 'OpenLogic:CentOS:7.1:latest', admin_ssh_data='')
 
   - To load an existing, running cluster:
 
@@ -241,5 +256,22 @@ https://download.averesystems.com/software/avere_vfxt.py_usage_guide.pdf
     --nodes 3                         \
     --management-address 10.50.248.50 \
     --admin-password adminpass
+
+
+  # Azure interactive
+  ./vfxt.py --cloud-type azure \
+    --subscription-id 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' \
+    --client-id 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' \
+    --client-secret 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' \
+    --tenant-id 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' \
+    --resource-group xxxxxxxxxxxx \
+    \
+    --storage-account xxxxxxxxxxxx \
+    --storage-key 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' \
+    --location xxxxxx \
+    --azure-network xxxxxx \
+    --azure-subnet xxxxxxx  \
+    \
+    --interact --debug
 
 

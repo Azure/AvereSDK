@@ -5,6 +5,7 @@ import unittest
 
 from vFXT.aws import Service as AWS
 from vFXT.gce import Service as GCE
+from vFXT.msazure import Service as Azure
 
 
 class Base(unittest.TestCase):
@@ -49,6 +50,24 @@ class Base(unittest.TestCase):
             self.aws['vfxt_image']              = test_config['aws']['vfxt_image']
             self.aws['check_on_instance']       = test_config['aws']['check_on_instance']
             self.aws['check_from_environment']  = test_config['aws']['check_from_environment']
+            self.azure = {}                             # azure options
+            self.azure['enabled']                       = test_config['azure']['enabled']
+            self.azure['subscription_id']               = test_config['azure']['subscription_id']
+            self.azure['application_id']                = test_config['azure']['application_id']
+            self.azure['application_secret']            = test_config['azure']['application_secret']
+            self.azure['tenant_id']                     = test_config['azure']['tenant_id']
+            self.azure['resource_group']                = test_config['azure']['resource_group']
+            self.azure['location']                      = test_config['azure']['location']
+            self.azure['network']                       = test_config['azure']['network']
+            self.azure['subnet']                        = test_config['azure']['subnet']
+            self.azure['role']                          = test_config['azure']['role']
+            self.azure['storage_account']               = test_config['azure']['storage_account']
+            self.azure['instance_type']                 = test_config['azure']['instance_type']
+            self.azure['existing']                      = test_config['azure']['existing_instances']
+            self.azure['image']                         = test_config['azure']['image']
+            self.azure['vfxt_image']                    = test_config['azure']['vfxt_image']
+            self.azure['check_on_instance']             = test_config['azure']['check_on_instance']
+            self.azure['check_from_environment']        = test_config['azure']['check_from_environment']
 
         except Exception as e:
             self.skipTest(e)
@@ -73,3 +92,17 @@ class Base(unittest.TestCase):
         key_file        = self.gce['key_file']
         private_range   = self.gce['private_range']
         return GCE(client_email=client_email, key_file=key_file, zone=zone_id, project_id=project_id, network_id=network_id, private_range=private_range, subnetwork_id=subnetwork_id)
+
+    def mk_azure_service(self):
+        service =  Azure(
+            subscription_id=str(self.azure['subscription_id']), # WTF, TypeError("Parameter 'subscription_id' must be str.")
+            application_id=self.azure['application_id'],
+            application_secret=self.azure['application_secret'],
+            tenant_id=self.azure['tenant_id'],
+            resource_group=self.azure['resource_group'],
+            location=self.azure['location'],
+            network=self.azure['network'],
+            subnet=self.azure['subnet'],
+            storage_account=self.azure['storage_account'],
+        )
+        return service

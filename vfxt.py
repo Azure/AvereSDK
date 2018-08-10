@@ -50,6 +50,19 @@ def _get_user_shelveable_gce(service, user):
             shelveable.append(instance['name'])
     return shelveable
 
+def _get_user_shelveable_azure(service, user):
+    shelveable = []
+    for inst in service.find_instances():
+        if 'tags' not in inst:
+            continue
+        if 'shelve' not in inst['tags']:
+            continue
+        if 'owner' not in inst['tags']:
+            continue
+        if inst['tags']['owner'] == user:
+            shelveable.append(inst['name'])
+    return shelveable
+
 def _get_cluster(service, logger, args):
     cluster = None
     try:
@@ -102,6 +115,9 @@ def _add_bucket_corefiler(cluster, logger, args):
     bucketname = args.bucket or "{}-{}".format(cluster.name, str(uuid.uuid4()).lower().replace('-', ''))[0:63]
     corefiler  = args.core_filer or cluster.service.__module__.split('.')[-1]
 
+    if args.cloud_type == 'azure':
+        bucketname = '{}/{}'.format(cluster.service.storage_account, bucketname)
+
     bucket_opts = {
         'crypto_mode': 'DISABLED' if args.disable_bucket_encryption else None,
         'compress_mode': 'DISABLED' if args.disable_bucket_compression else None,
@@ -145,7 +161,7 @@ def main():
     action_opts.add_argument("--interact", help="Use the Python interpreter", action="store_true")
 
     # service arguments
-    parser.add_argument("--cloud-type", help="the cloud provider to use", choices=['aws', 'gce'], required=True)
+    parser.add_argument("--cloud-type", help="the cloud provider to use", choices=['aws', 'gce', 'azure'], required=True)
     parser.add_argument('--s3-access-key', help='custom or specific S3 access key', default=None)
     parser.add_argument('--s3-secret-key', help='custom or specific S3 secret key', default=None)
     parser.add_argument('--s3-profile',    help='custom or specific S3 profile',       default=None)
@@ -194,6 +210,27 @@ def main():
     gce_opts.add_argument("--instance-addresses", nargs='+', help="GCE instance addresses to use", type=_validate_ip, default=None)
     gce_opts.add_argument("--storage-class", help="GCE bucket storage class", default=None, type=str)
 
+    # service arguments (Azure)
+    azure_opts = parser.add_argument_group('Azure specific options', 'Options applicable for --cloud-type azure')
+    azure_opts.add_argument("--subscription-id", help='Azure subscription identifier', default=None)
+    azure_opts.add_argument("--application-id", help='AD application ID', default=None)
+    azure_opts.add_argument("--application-secret", help='AD Application secret', default=None)
+    azure_opts.add_argument("--tenant-id", help='AD application tenant identifier', default=None)
+    azure_opts.add_argument("--resource-group", help='Resource group', default=None)
+    azure_opts.add_argument("--network-resource-group", help='Network resource group (if vnet/subnet are different from the vm instance group)', default=None)
+    azure_opts.add_argument("--storage-resource-group", help='Storage resource group (if different from the vm instance group)', default=None)
+    azure_opts.add_argument("--storage-account", help='Azure Storage account', default=None)
+    azure_opts.add_argument("--azure-role", help='Existing Azure role for the cluster (otherwise one is created)', default=None)
+    azure_opts.add_argument("--location", help='Azure location', default=None)
+    azure_opts.add_argument("--azure-network", help='Azure virtual network', default=None)
+    azure_opts.add_argument("--azure-subnet", help='Azure virtual network subnet (one or more)', type=str, default=None)
+    azure_opts.add_argument("--azure-tag", help="Azure instance tag", action='append', default=None)
+    azure_opts.add_argument("--network-security-group", help="Network security group name", default=None)
+    azure_opts.add_argument("--enable-boot-diagnostics", help="Azure instance boot diagnostics", action="store_true")
+    azure_opts.add_argument("--root-disk-caching", help="Azure root disk caching mode (defaults to None)", choices=['ReadOnly', 'ReadWrite'], default=None)
+    azure_opts.add_argument("--data-disk-caching", help="Azure data disk caching mode (defaults to None)", choices=['ReadOnly', 'ReadWrite'], default=None)
+    azure_opts.add_argument("--azure-instance-addresses", nargs='+', help="Instance addresses to use rather than dynamically assigned", type=_validate_ip, default=None)
+
     # optional arguments
     parser.add_argument("-d", "--debug", help="Give verbose feedback", action="store_true")
     parser.add_argument("--skip-cleanup", help="Do not cleanup buckets, volumes, instances, etc on failure", action="store_true")
@@ -201,7 +238,7 @@ def main():
     parser.add_argument("--wait-for-state-duration", help="Number of seconds cluster state must remain for success", type=int, default=30)
     parser.add_argument("--poll-time", help=argparse.SUPPRESS, default=1, type=int) # seconds per poll when waiting
     parser.add_argument('--proxy-uri', help='Proxy resource for API calls, example http://user:pass@172.16.16.20:8080/', metavar="URL", type=_validate_url)
-    parser.add_argument('--ssh-key', help="SSH key for cluster authentication (path to public key file for GCE, key name for AWS)", type=str, default=None)
+    parser.add_argument('--ssh-key', help="SSH key for cluster authentication (path to public key file for GCE and Azure, key name for AWS)", type=str, default=None)
     parser.add_argument("--telemetry-mode", help="Telemetry custom mode", type=str, default='gsimin')
     parser.add_argument("--skip-check", help="Skip initial checks for api access and quotas", action="store_true")
     parser.add_argument("--log", help="Automatically log the output to the provided file name", type=str, default=None)
@@ -252,7 +289,7 @@ def main():
     # corefiler
     cluster_opts.add_argument("--no-corefiler", help="Skip creating core filer", action='store_true')
     cluster_opts.add_argument("--no-vserver", help="Skip creating default virtual server", action='store_true')
-    cluster_opts.add_argument("--bucket", help="S3 or Google Storage bucket to use as the core filer (must be empty), otherwise one will be created")
+    cluster_opts.add_argument("--bucket", "--azurecontainer", help="S3 bucket, Google Storage bucket, Azure storageaccount/container to use as the core filer (must be empty), otherwise one will be created", metavar='STORAGE')
     cluster_opts.add_argument("--bucket-not-empty", help=argparse.SUPPRESS, action='store_true') # Existing bucket has data in it
     cluster_opts.add_argument("--disable-bucket-encryption", help=argparse.SUPPRESS, action='store_true') # Disable the use of encryption for files in the bucket
     cluster_opts.add_argument("--disable-bucket-compression", help=argparse.SUPPRESS, action='store_true') # Disable the use of compression for files in the bucket
@@ -452,6 +489,89 @@ def main():
 
         service._get_user_shelveable = _get_user_shelveable_gce
 
+    elif args.cloud_type == 'azure':
+        from vFXT.msazure import Service
+        if args.debug:
+            logging.getLogger(Service.__module__).setLevel(logging.DEBUG)
+        else:
+            logging.getLogger(Service.__module__).setLevel(logging.INFO)
+
+        if args.on_instance:
+            service = Service.on_instance_init(proxy_uri=args.proxy_uri,
+                subscription_id=args.subscription_id,
+                application_id=args.application_id,
+                application_secret=args.application_secret,
+                tenant_id=args.tenant_id,
+                resource_group=args.resource_group,
+                network_resource_group=args.network_resource_group,
+                storage_resource_group=args.storage_resource_group,
+                network=args.azure_network, subnet=args.azure_subnet,
+                no_connection_test=args.skip_check,
+            )
+            if args.storage_account:
+                service.storage_account = args.storage_account
+            if args.cluster_range:
+                service.private_range = args.cluster_range
+        else:
+            if args.from_environment:
+                if not all([args.resource_group, args.location, args.azure_network, args.azure_subnet]):
+                    logger.error("Arguments azure-network, azure-subnet, location, and resource_group are required with environment")
+                    parser.exit(1)
+            else:
+                if not all([args.application_id, args.application_secret, args.tenant_id]):
+                    logger.error("Arguments tenant-id, application-id, and application-secret are required")
+                    parser.exit(1)
+
+                    if not args.subscription_id:
+                        subscriptions = Service._list_subscriptions(
+                                application_id=args.application_id,
+                                application_secret=args.application_secret,
+                                tenant_id=args.tenant_id)
+                        args.subscription_id = subscriptions[0]['subscriptionId']
+
+                if not all([args.subscription_id, args.azure_network, args.azure_subnet, args.resource_group, args.location]):
+                    logger.error("Arguments subscription-id, azure-network, azure-subnet, resource-group, and location are required")
+                    parser.exit(1)
+
+            opts = {
+                'subscription_id': args.subscription_id,
+                'application_id': args.application_id,
+                'application_secret': args.application_secret,
+                'tenant_id': args.tenant_id,
+                'resource_group': args.resource_group,
+                'network_resource_group': args.network_resource_group,
+                'storage_account': args.storage_account,
+                'storage_resource_group': args.storage_resource_group,
+                'location': args.location,
+                'network': args.azure_network,
+                'subnet': args.azure_subnet,
+                'proxy_uri': args.proxy_uri,
+                'private_range': args.cluster_range,
+                'no_connection_test': args.skip_check,
+            }
+            if args.from_environment:
+                service = Service.environment_init(**opts)
+            else:
+                service = Service(**opts)
+
+        service._get_user_shelveable = _get_user_shelveable_azure
+
+        if args.ssh_key:
+            try:
+                with open(args.ssh_key) as f:
+                    ssh_key_data = f.read()
+                    if 'rsa' not in ssh_key_data:
+                        raise Exception("The SSH key must be of type RSA")
+                    args.ssh_key = ssh_key_data
+            except Exception as e:
+                logger.error("Failed to read SSH key: {}".format(e))
+                parser.exit(1)
+
+        if args.create and (not (args.no_corefiler or args.nfs_mount) and not args.storage_account):
+            logger.error("You must specify a storage account for cloud corefilers")
+            parser.exit(1)
+
+
     # generic service options
     service.POLLTIME = args.poll_time
 
@@ -500,9 +620,9 @@ def main():
             'wait_for_state': args.wait_for_state,
             'wait_for_state_duration': args.wait_for_state_duration,
             'security_group_ids': args.security_group,
-            'network_security_group': args.security_group,
+            'network_security_group': args.network_security_group,
             'config_expiration': args.configuration_expiration,
-            'tags': args.aws_tag or args.gce_tag,
+            'tags': args.aws_tag or args.gce_tag or args.azure_tag,
             'labels': args.labels,
             'metadata': args.metadata,
             'skip_cleanup': args.skip_cleanup,
@@ -515,13 +635,18 @@ def main():
             'address_range_start': args.cluster_address_range_start,
             'address_range_end': args.cluster_address_range_end,
             'address_range_netmask': args.cluster_address_range_netmask,
-            'instance_addresses': args.instance_addresses,
+            'instance_addresses': args.instance_addresses or args.azure_instance_addresses,
             'trace_level': args.trace_level,
             'timezone': args.timezone,
+            'admin_ssh_data': args.ssh_key, # azure ssh key
+            'azure_role': args.azure_role,
             'key_name': args.ssh_key, # aws ssh key
             'join_wait': args.join_wait or None,
             'service_account': args.service_account,
             'scopes': args.scopes,
+            'enable_boot_diagnostics': args.enable_boot_diagnostics,
+            'root_disk_caching': args.root_disk_caching,
+            'data_disk_caching': args.data_disk_caching,
         }
         # prune out unfortunate command line defaults
         options = {k: v for k, v in options.iteritems() if v is not None and v != ''}
@@ -723,7 +848,7 @@ def main():
             'data_disk_size': args.data_disk_size,
             'data_disk_type': args.data_disk_type,
             'data_disk_iops': args.data_disk_iops,
-            'tags': args.aws_tag or args.gce_tag,
+            'tags': args.aws_tag or args.gce_tag or args.azure_tag,
             'metadata': args.metadata,
             'skip_cleanup': args.skip_cleanup,
             'skip_node_renaming': args.skip_node_renaming,
@@ -733,6 +858,7 @@ def main():
             'service_account': args.service_account,
             'home_addresses': args.vserver_home_addresses,
             'key_name': args.ssh_key, # aws ssh key
+            'admin_ssh_data': args.ssh_key, # azure ssh key
         }
         # prune out unfortunate command line defaults
         options = {k: v for k, v in options.iteritems() if v is not None and v != ''}

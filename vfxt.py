@@ -60,9 +60,9 @@ def _get_cluster(service, logger, args):
             logger.info("If this cluster is offline, the instance list will be used instead")
         cluster = Cluster.load(service, mgmt_ip=args.management_address, admin_password=args.admin_password)
     except vFXTConnectionFailure as load_exception:
-        logger.error(load_exception)
         if not args.instances and not args.mine:
-            logger.info("Unable to connect to cluster.  It may be offline")
+            logger.error(load_exception)
+            logger.error("Unable to connect to cluster.  It may be offline")
             return None
 
         try:

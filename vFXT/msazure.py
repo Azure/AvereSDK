@@ -1331,8 +1331,15 @@ class Service(ServiceBase):
             log.debug("Using overrides for cluster management and address range")
             mask = options.get('address_range_netmask')
             avail = Cidr.expand_address_range(options.get('address_range_start'), options.get('address_range_end'))
+
             if len(avail) < ip_count:
-                raise vFXTConfigurationException("Not enough addresses provided, require {}".format(ip_count))
+                # if our addresses are outside of the subnet, allow with dynamic assigned private addresses
+                if len(avail) == cluster_size and not self._cidr_overlaps_network('{}/32'.format(avail[0])):
+                    # for private addresses add None entries
+                    for _ in xrange(cluster_size):
+                        avail.insert(0, None)
+                else:
+                    raise vFXTConfigurationException("Not enough addresses provided, require {}".format(ip_count))
         else:
             if self.private_range:
                 if self._cidr_overlaps_network(self.private_range):

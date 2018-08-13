@@ -418,7 +418,7 @@ class Service(ServiceBase):
                         newconn = azure.common.client_factory.get_client_from_cli_profile(connection_cls)
                         break
                     except Exception as e:
-                        if not log.isEnabledFor(logging.DEBUG):
+                        if log.isEnabledFor(logging.DEBUG):
                             log.exception(e)
                         retries -= 1
                         if retries == 0:

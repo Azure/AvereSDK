@@ -486,6 +486,7 @@ class Cluster(object):
             for addr in addrs:
                 try:
                     xmlrpc = vFXT.xmlrpcClt.getXmlrpcClient("https://{}/cgi-bin/rpc2.py".format(addr), do_cert_checks=False)
+                    xmlrpc('transport').user_agent = 'vFXT/{}'.format(vFXT.__version__)
                     xmlrpc.system.login( "admin".encode('base64'), password.encode('base64') )
                     if addr != self.mgmt_ip and self.join_mgmt:
                         log.warn("Connected via instance address {} instead of management address {}".format(addr, self.mgmt_ip))

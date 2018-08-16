@@ -1353,6 +1353,11 @@ class Service(ServiceBase):
                     raise vFXTConfigurationException("Range {} overlaps with the virtual network {} address space".format(self.private_range, self.network))
             mgmt_requested = options.get('management_address') or None
             in_use = [mgmt_requested] if mgmt_requested else None
+            if 'instance_addresses' in options:
+                if not in_use:
+                    in_use = options['instance_addresses']
+                else:
+                    in_use.extend(options['instance_addresses'])
             avail, mask = self.get_available_addresses(count=ip_count, contiguous=True, in_use=in_use)
 
         cluster.mgmt_ip = options.get('management_address') or avail.pop(0)
@@ -1468,6 +1473,12 @@ class Service(ServiceBase):
         instance_addresses = options.pop('instance_addresses', [None] * count)
         if len(instance_addresses) != count:
             raise vFXTConfigurationException("Not enough instance addresses provided, require {}".format(count))
+        # our instance addresses musts always reside within the subnet
+        if instance_addresses[0]:
+            subnet = self.connection('network').subnets.get(self.network_resource_group, self.network, subnets[0])
+            if not Cidr(subnet.address_prefix).contains(instance_addresses[0]) and not subnet.route_table:
+                log.debug("Resetting instance addresses to be provided via the backend service")
+                instance_addresses = [None] * count
 
         try:
             if instance.os_profile.linux_configuration.ssh and 'admin_ssh_data' not in options:

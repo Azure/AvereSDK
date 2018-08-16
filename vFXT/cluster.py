@@ -228,6 +228,35 @@ class Cluster(object):
             if service.in_use_addresses('{}/32'.format(requested_mgmt_ip)):
                 raise vFXTConfigurationException("The requested management address {} is already in use".format(requested_mgmt_ip))
 
+        # Need to validate if instance_addresses passed in are already in use before creating the cluster
+        if options.get('instance_addresses'):
+            try:
+                already_in_use = []
+                for address in options['instance_addresses']:
+                    if service.in_use_addresses('{}/32'.format(address)):
+                        already_in_use.append(address)
+                if already_in_use:
+                    raise vFXTConfigurationException("The requested instance addresses {} are already in use".format(already_in_use))
+            except vFXTConfigurationException:
+                raise
+            except Exception as e:
+                log.debug(e)
+                raise vFXTConfigurationException("Invalid instance addresses: {}".format(options['instance_addresses']))
+        if all([options.get(_) for _ in ['address_range_start', 'address_range_end', 'address_range_netmask']]):
+            try:
+                already_in_use = []
+                cluster_range = Cidr.expand_address_range(options.get('address_range_start'), options.get('address_range_end'))
+                for address in cluster_range:
+                    if c.service.in_use_addresses('{}/32'.format(address)):
+                        already_in_use.append(address)
+                if already_in_use:
+                    raise vFXTConfigurationException("The requested instance addresses {} are already in use".format(already_in_use))
+            except vFXTConfigurationException:
+                raise
+            except Exception as e:
+                log.debug(e)
+                raise vFXTConfigurationException("Invalid instance addresses: {}".format(options['instance_addresses']))
+
         # machine type is validated by service create_cluster
 
         try:
@@ -824,7 +853,7 @@ class Cluster(object):
             msg = "Cannot expand cluster to {} nodes as the current licensed maximum is {}"
             raise vFXTConfigurationException(msg.format(node_count + count, licensed_count))
 
-        cluster_data    = self._xmlrpc_do(xmlrpc.cluster.get)
+        cluster_data     = self._xmlrpc_do(xmlrpc.cluster.get)
         cluster_ips_per_node = int(cluster_data['clusterIPNumPerNode'])
         vserver_count    = len(self._xmlrpc_do(xmlrpc.vserver.list))
         existing_vserver = self.in_use_addresses('vserver', xmlrpc=xmlrpc)
@@ -834,25 +863,55 @@ class Cluster(object):
         need_cluster     = need_cluster if need_cluster > 0 else 0
         need_vserver     = need_vserver if need_vserver > 0 else 0
         need_instance    = count if self.service.ALLOCATE_INSTANCE_ADDRESSES else 0
+        in_use_addrs     = self.in_use_addresses(xmlrpc=xmlrpc)
+
+        if options.get('instance_addresses'):
+            # check that the instance addresses are not already used by the cluster
+            try:
+                existing = []
+                for address in options['instance_addresses']:
+                    if address in in_use_addrs:
+                        existing.append(address)
+                    else:
+                        # otherwise we should note our intent to use it
+                        in_use_addrs.append(address)
+                        # also check if another instance is using the address
+                        if self.service.in_use_addresses('{}/32'.format(address)):
+                            existing.append(address)
+                if existing:
+                    raise vFXTConfigurationException("Instance addresses are already in use: {}".format(existing))
+            except vFXTConfigurationException:
+                raise
+            except Exception as e:
+                log.debug(e)
+                raise vFXTConfigurationException("Invalid instance addresses: {}".format(options['instance_addresses']))
+            need_instance = 0
 
         added = [] # cluster and vserver extensions (for undo)
 
         ip_count = need_vserver + need_cluster + need_instance
-
         if ip_count > 0: # if we need more, extend ourselves
-            in_use_addrs    = self.in_use_addresses(xmlrpc=xmlrpc)
 
             custom_ip_config_reqs = ['address_range_start', 'address_range_end', 'address_range_netmask']
             if all([options.get(_) for _ in custom_ip_config_reqs]):
-                avail_ip = Cidr.expand_address_range(options.get('address_range_start'), options.get('address_range_end'))
+                avail_ips = Cidr.expand_address_range(options.get('address_range_start'), options.get('address_range_end'))
                 mask = options.get('address_range_netmask')
-                if len(avail_ip) < ip_count:
+                if len(avail_ips) < ip_count:
                     raise vFXTConfigurationException("Not enough addresses provided, require {}".format(ip_count))
+
+                if any([_ in in_use_addrs for _ in avail_ips]):
+                    raise vFXTConfigurationException("Specified address range conflicts with existing cluster addresses")
+                existing = []
+                for address in avail_ips:
+                    if self.service.in_use_addresses('{}/32'.format(address)):
+                        existing.append(address)
+                if existing:
+                    raise vFXTConfigurationException("Instance addresses are already in use: {}".format(existing))
             else:
                 avail_ips, mask = self.service.get_available_addresses(count=ip_count, contiguous=True, in_use=in_use_addrs)
 
             if need_instance:
-                options['instance_addresses']  = avail_ips[0:need_instance]
+                options['instance_addresses'] = avail_ips[0:need_instance]
                 del avail_ips[0:need_instance]
 
             if need_cluster > 0:

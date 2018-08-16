@@ -1727,6 +1727,11 @@ class Service(ServiceBase):
         else:
             mgmt_requested = options.get('management_address') or None
             in_use = [mgmt_requested] if mgmt_requested else None
+            if 'instance_addresses' in options:
+                if not in_use:
+                    in_use = options['instance_addresses']
+                else:
+                    in_use.extend(options['instance_addresses'])
             avail, mask = self.get_available_addresses(count=ip_count, contiguous=True, in_use=in_use)
 
         cluster.mgmt_ip = options.get('management_address') or avail.pop(0)

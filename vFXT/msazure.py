@@ -1118,14 +1118,13 @@ class Service(ServiceBase):
 
         # network interface
         network_security_group = options.get('network_security_group') or self.network_security_group
-        network_resource_group = options.get('network_resource_group') or resource_group # use compute resource group for NICs
         public_ip_address = options.get('auto_public_address', False)
         nic = None
         try:
             nic = self._create_nic('{}-1-NIC-{}'.format(name, int(time.time())),
                 network=network,
                 subnet=subnet,
-                resource_group=network_resource_group,
+                resource_group=resource_group, # use compute resource group for NICs
                 network_security_group=network_security_group,
                 enable_ip_forwarding=ip_forward,
                 enable_public_address=public_ip_address,
@@ -1188,7 +1187,7 @@ class Service(ServiceBase):
 
             if public_ip_address:
                 try:
-                    op = self.connection('network').public_ip_addresses.delete(network_resource_group, '{}-public-address'.format(name))
+                    op = self.connection('network').public_ip_addresses.delete(resource_group, '{}-public-address'.format(name))
                     self._wait_for_operation(op, msg="public IP address to be removed")
                 except Exception as addr_e:
                     log.debug("Failed while cleaning up public address: {}".format(addr_e))
@@ -1196,7 +1195,7 @@ class Service(ServiceBase):
             # delete nic
             try:
                 if nic:
-                    self.connection('network').network_interfaces.delete(network_resource_group, nic.name)
+                    self.connection('network').network_interfaces.delete(resource_group, nic.name)
             except Exception as nic_e:
                 log.debug("Failed while cleaning up instance NIC: {}".format(nic_e))
 

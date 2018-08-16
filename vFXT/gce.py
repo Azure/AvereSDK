@@ -154,6 +154,7 @@ class Service(ServiceBase):
     }
     DEFAULT_CLUSTER_NETWORK_RANGE = '172.16.0.0/12'
     AUTO_LICENSE = False
+    ALLOCATE_INSTANCE_ADDRESSES = True
 
     def __init__(self, network_id, zone, client_email=None, project_id=None,
                  key_file=None, key_data=None, access_token=None, s3_access_key=None,
@@ -1312,6 +1313,27 @@ class Service(ServiceBase):
 
         return list(addresses)
 
+    def _cidr_overlaps_network(self, cidr_range):
+        cidr = Cidr(cidr_range)
+        address = cidr.start_address()
+        network = self._get_network()
+        if 'subnetworks' in network:
+            subnetwork = self._get_subnetwork(self.subnetwork_id)
+            if 'secondaryIpRanges' in subnetwork:
+                r = subnetwork['secondaryIpRanges'][0] # XXX only using the first one (support more than one if avail?)
+                secondary_range = Cidr(r['ipCidrRange'])
+                if secondary_range.contains(address):
+                    return True
+            else:
+                subnetwork_range = Cidr(subnetwork['ipCidrRange'])
+                if subnetwork_range.contains(address):
+                    return True
+        else:
+            network_range = Cidr(network['IPv4Range'])
+            if network_range.contains(address):
+                return True
+        return False
+
     def get_available_addresses(self, count=1, contiguous=False, addr_range=None, in_use=None):
         '''Returns a list of available addresses for the given range
             Arguments:
@@ -1694,7 +1716,7 @@ class Service(ServiceBase):
 
         log.info('Creating cluster configuration')
 
-        ip_count = cluster_size + (1 if not options.get('management_address') else 0)
+        ip_count = (cluster_size * 2) + (1 if not options.get('management_address') else 0)
         custom_ip_config_reqs = ['address_range_start', 'address_range_end']
         if all([options.get(_) for _ in custom_ip_config_reqs]):
             log.debug("Using overrides for cluster management and address range")
@@ -1708,7 +1730,8 @@ class Service(ServiceBase):
             avail, mask = self.get_available_addresses(count=ip_count, contiguous=True, in_use=in_use)
 
         cluster.mgmt_ip = options.get('management_address') or avail.pop(0)
-        cluster_ips     = avail
+        private_ips     = avail[0:cluster_size]
+        cluster_ips     = avail[cluster_size:]
 
         # store for cluster config
         cluster.mgmt_netmask     = mask
@@ -1716,11 +1739,11 @@ class Service(ServiceBase):
         cluster.cluster_ip_end   = cluster_ips[-1]
         cluster.zones = [zones[0]] # first node zone
 
-        cfg     = cluster.cluster_config(expiration=options.get('config_expiration', None))
+        cfg = cluster.cluster_config(expiration=options.get('config_expiration', None))
         log.debug("Generated cluster config: {}".format(cfg.replace(cluster.admin_password, '[redacted]')))
 
         # gce needs them base64 encoded
-        cfg     = ''.join(cfg.encode('base64').split()).strip()
+        cfg = ''.join(cfg.encode('base64').split()).strip()
 
         disk_type   = options.get('disk_type') or machine_defs['root_disk_type']
         root_image  = options.get('root_image') or self._get_default_image()
@@ -1732,7 +1755,12 @@ class Service(ServiceBase):
 
         metadata    = options.pop('metadata', {})
 
-        instance_addresses = options.pop('instance_addresses', [None] * cluster_size)
+        # our private addresses must be inside the network ranges
+        if not self._cidr_overlaps_network('{}/32'.format(private_ips[0])):
+            log.debug("Resetting instance addresses to be provided via the backend service")
+            private_ips = [None] * cluster_size
+
+        instance_addresses = options.pop('instance_addresses', private_ips)
         if len(instance_addresses) != cluster_size:
             raise vFXTConfigurationException("Not enough instance addresses provided, require {}".format(cluster_size))
 
@@ -1799,6 +1827,9 @@ class Service(ServiceBase):
         instance_addresses = options.pop('instance_addresses', [None] * count)
         if len(instance_addresses) != count:
             raise vFXTConfigurationException("Not enough instance addresses provided, require {}".format(count))
+        if instance_addresses[0] and not self._cidr_overlaps_network('{}/32'.format(instance_addresses[0])):
+            log.debug("Resetting instance addresses to be provided via the backend service")
+            instance_addresses = [None] * count
 
         # look at cluster.nodes[0].instance
         instance       = cluster.nodes[0].instance
@@ -1814,7 +1845,7 @@ class Service(ServiceBase):
         if 'email' in instance['serviceAccounts'] and 'service_account' not in options:
             options['service_account'] = instance['serviceAccounts']['email']
 
-        metadata       = {opt['key']: opt['value'] for opt in instance['metadata']['items']}
+        metadata = {opt['key']: opt['value'] for opt in instance['metadata']['items']}
         # overrides
         opts = {'data_disk_count': data_disk_count, 'metadata': metadata, 'machine_type': cluster.machine_type}
         overrides = ['machine_type', 'data_disk_size', 'data_disk_type', 'root_image', 'disk_type']
@@ -2336,7 +2367,7 @@ class Service(ServiceBase):
                 routes = _gce_do(conn.routes().list, project=self.network_project_id,filter=expr)
                 if not routes or 'items' not in routes:
                     #raise vFXTConfigurationException("No route was found for {}".format(addr.address))
-                    raise vFXTConfigurationException("Address not assigned: {}".format(address))
+                    raise vFXTConfigurationException("Address not assigned via routes: {}".format(address))
                 for route in routes['items']:
                     if instance['selfLink'] != route['nextHopInstance']:
                         log.warning("Skipping route destined for other host: {} -> {}".format(address, route['nextHopInstance']))

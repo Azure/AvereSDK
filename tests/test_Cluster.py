@@ -205,6 +205,141 @@ class Cluster_test(tests.vFXTTestCase.Base):
         self.assertRaises(vFXT.service.vFXTConfigurationException, Cluster.create, gce, self.gce['instance_type'], '', 'adminpass')
         self.assertRaises(vFXT.service.vFXTConfigurationException, Cluster.create, gce, self.gce['instance_type'], '1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890', 'adminpass')
 
+    def test_aws_in_use_mgmt_ip_fail(self):
+        if not self.aws['enabled']:
+            self.skipTest("skipping test for AWS")
+        service = self.mk_aws_service()
+        name = 'vfxtpy-unittest-{}'.format(int(time.time()))
+
+        instances = service.get_instances(self.aws['existing'])
+        existing_address = service.ip(instances[0])
+        def _should_fail():
+            cluster = Cluster.create(service, self.aws['instance_type'], name, 'adminpass', management_address=existing_address, tags=['unittest'], metadata={'vfxtpy-unittest': 'auto'})
+            # the above should not complete... but if it does
+            cluster.destroy()
+            raise Exception("test_aws_in_use_mgmt_ip_fail did not fail")
+        self.assertRaises(vFXT.service.vFXTConfigurationException, _should_fail)
+
+    def test_aws_in_use_instance_ip_fail(self):
+        if not self.aws['enabled']:
+            self.skipTest("skipping test for AWS")
+        service = self.mk_aws_service()
+        name = 'vfxtpy-unittest-{}'.format(int(time.time()))
+
+        instances = service.get_instances(self.aws['existing'])
+        existing_address = service.ip(instances[0])
+        def _should_fail():
+            cluster = Cluster.create(service, self.aws['instance_type'], name, 'adminpass', instance_addresses=[existing_address], size=1, tags=['unittest'], metadata={'vfxtpy-unittest': 'auto'})
+            # the above should not complete... but if it does
+            cluster.destroy()
+            raise Exception("test_aws_in_use_instance_ip_fail did not fail")
+        self.assertRaises(vFXT.service.vFXTConfigurationException, _should_fail)
+
+    def test_aws_in_use_cluster_ip_fail(self):
+        if not self.aws['enabled']:
+            self.skipTest("skipping test for AWS")
+        service = self.mk_aws_service()
+        name = 'vfxtpy-unittest-{}'.format(int(time.time()))
+
+        instances = service.get_instances(self.aws['existing'])
+        existing_address = service.ip(instances[0])
+        def _should_fail():
+            cluster = Cluster.create(service, self.aws['instance_type'], name, 'adminpass', address_range_start=existing_address, address_range_end=vFXT.Cidr.to_address(vFXT.Cidr.from_address(existing_address) + 1), address_range_netmask='255.255.255.255', size=1, tags=['unittest'], metadata={'vfxtpy-unittest': 'auto'})
+            # the above should not complete... but if it does
+            cluster.destroy()
+            raise Exception("test_aws_in_use_cluster_ip_fail did not fail")
+        self.assertRaises(vFXT.service.vFXTConfigurationException, _should_fail)
+
+    def test_azure_in_use_mgmt_ip_fail(self):
+        if not self.azure['enabled']:
+            self.skipTest("skipping test for Azure")
+        service = self.mk_azure_service()
+        name = 'vfxtpy-unittest-{}'.format(int(time.time()))
+
+        instances = service.get_instances(self.azure['existing'])
+        existing_address = service.ip(instances[0])
+        def _should_fail():
+            cluster = Cluster.create(service, self.azure['instance_type'], name, 'adminpass', management_address=existing_address, tags=['unittest'], metadata={'vfxtpy-unittest': 'auto'})
+            # the above should not complete... but if it does
+            cluster.destroy()
+            raise Exception("test_azure_in_use_mgmt_ip_fail did not fail")
+        self.assertRaises(vFXT.service.vFXTConfigurationException, _should_fail)
+
+    def test_azure_in_use_instance_ip_fail(self):
+        if not self.azure['enabled']:
+            self.skipTest("skipping test for Azure")
+        service = self.mk_azure_service()
+        name = 'vfxtpy-unittest-{}'.format(int(time.time()))
+
+        instances = service.get_instances(self.azure['existing'])
+        existing_address = service.ip(instances[0])
+        def _should_fail():
+            cluster = Cluster.create(service, self.azure['instance_type'], name, 'adminpass', instance_addresses=[existing_address], size=1, tags=['unittest'], metadata={'vfxtpy-unittest': 'auto'})
+            # the above should not complete... but if it does
+            cluster.destroy()
+            raise Exception("test_azure_in_use_instance_ip_fail did not fail")
+        self.assertRaises(vFXT.service.vFXTConfigurationException, _should_fail)
+
+    def test_azure_in_use_cluster_ip_fail(self):
+        if not self.azure['enabled']:
+            self.skipTest("skipping test for Azure")
+        service = self.mk_azure_service()
+        name = 'vfxtpy-unittest-{}'.format(int(time.time()))
+
+        instances = service.get_instances(self.azure['existing'])
+        existing_address = service.ip(instances[0])
+        def _should_fail():
+            cluster = Cluster.create(service, self.azure['instance_type'], name, 'adminpass', address_range_start=existing_address, address_range_end=vFXT.Cidr.to_address(vFXT.Cidr.from_address(existing_address) + 1), address_range_netmask='255.255.255.255', size=1, tags=['unittest'], metadata={'vfxtpy-unittest': 'auto'})
+            # the above should not complete... but if it does
+            cluster.destroy()
+            raise Exception("test_azure_in_use_cluster_ip_fail did not fail")
+        self.assertRaises(vFXT.service.vFXTConfigurationException, _should_fail)
+
+    def test_gce_in_use_mgmt_ip_fail(self):
+        if not self.gce['enabled']:
+            self.skipTest("skipping test for GCE")
+        service = self.mk_gce_service()
+        name = 'vfxtpy-unittest-{}'.format(int(time.time()))
+
+        instances = service.get_instances(self.gce['existing'])
+        existing_address = service.ip(instances[0])
+        def _should_fail():
+            cluster = Cluster.create(service, self.gce['instance_type'], name, 'adminpass', management_address=existing_address, tags=['unittest'], metadata={'vfxtpy-unittest': 'auto'})
+            # the above should not complete... but if it does
+            cluster.destroy()
+            raise Exception("test_gce_in_use_mgmt_ip_fail did not fail")
+        self.assertRaises(vFXT.service.vFXTConfigurationException, _should_fail)
+
+    def test_gce_in_use_instance_ip_fail(self):
+        if not self.gce['enabled']:
+            self.skipTest("skipping test for GCE")
+        service = self.mk_gce_service()
+        name = 'vfxtpy-unittest-{}'.format(int(time.time()))
+
+        instances = service.get_instances(self.gce['existing'])
+        existing_address = service.ip(instances[0])
+        def _should_fail():
+            cluster = Cluster.create(service, self.gce['instance_type'], name, 'adminpass', instance_addresses=[existing_address], size=1, tags=['unittest'], metadata={'vfxtpy-unittest': 'auto'})
+            # the above should not complete... but if it does
+            cluster.destroy()
+            raise Exception("test_gce_in_use_instance_ip_fail did not fail")
+        self.assertRaises(vFXT.service.vFXTConfigurationException, _should_fail)
+
+    def test_gce_in_use_cluster_ip_fail(self):
+        if not self.gce['enabled']:
+            self.skipTest("skipping test for GCE")
+        service = self.mk_gce_service()
+        name = 'vfxtpy-unittest-{}'.format(int(time.time()))
+
+        instances = service.get_instances(self.gce['existing'])
+        existing_address = service.ip(instances[0])
+        def _should_fail():
+            cluster = Cluster.create(service, self.gce['instance_type'], name, 'adminpass', address_range_start=existing_address, address_range_end=vFXT.Cidr.to_address(vFXT.Cidr.from_address(existing_address) + 1), address_range_netmask='255.255.255.255', size=1, tags=['unittest'], metadata={'vfxtpy-unittest': 'auto'})
+            # the above should not complete... but if it does
+            cluster.destroy()
+            raise Exception("test_gce_in_use_cluster_ip_fail did not fail")
+        self.assertRaises(vFXT.service.vFXTConfigurationException, _should_fail)
+
 
 if __name__ == '__main__':
     unittest.main()

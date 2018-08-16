@@ -2018,7 +2018,6 @@ class Service(ServiceBase):
 
         conn = self.connection('network')
         subnet = self._instance_subnet(instance)
-        resource_group = self._instance_resource_group(instance)
 
         try:
             dest = '{}/32'.format(address)
@@ -2047,7 +2046,8 @@ class Service(ServiceBase):
                 }
                 nic_data['properties']['ipConfigurations'].append(new_ip)
 
-                op = conn.network_interfaces.create_or_update(resource_group, nic.name, nic_data)
+                nic_rsg = nic.id.split('/')[4]
+                op = conn.network_interfaces.create_or_update(nic_rsg, nic.name, nic_data)
                 self._wait_for_operation(op, retries=self.WAIT_FOR_IPCONFIG, msg='{} to be assigned to {}'.format(address, nic.name))
 
             # otherwise we use routes
@@ -2098,7 +2098,6 @@ class Service(ServiceBase):
 
         conn = self.connection('network')
         subnet = self._instance_subnet(instance)
-        resource_group = subnet.id.split('/')[4]
 
         try:
             # address in subnet range, we use IP configurations
@@ -2108,7 +2107,8 @@ class Service(ServiceBase):
                 ip_configurations = nic_data['properties']['ipConfigurations']
                 nic_data['properties']['ipConfigurations'] = [_ for _ in ip_configurations if _['properties']['privateIPAddress'] != address]
 
-                op = conn.network_interfaces.create_or_update(resource_group, nic.name, nic_data)
+                nic_rsg = nic.id.split('/')[4]
+                op = conn.network_interfaces.create_or_update(nic_rsg, nic.name, nic_data)
                 self._wait_for_operation(op, retries=self.WAIT_FOR_IPCONFIG, msg='{} to be removed from {}'.format(address, nic.name))
 
             # otherwise we use routes
@@ -2116,6 +2116,7 @@ class Service(ServiceBase):
                 if not subnet.route_table:
                     raise vFXTConfigurationException("Subnet {} does not have an associated route table".format(subnet.name))
 
+                resource_group = subnet.id.split('/')[4]
                 primary_ip = self.ip(instance)
                 route_table = subnet.route_table.id.split('/')[-1]
                 rt = conn.route_tables.get(resource_group, route_table)

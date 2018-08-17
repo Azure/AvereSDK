@@ -955,7 +955,6 @@ class Service(ServiceBase):
                 admin_ssh_data (str, optional): SSH key data (used in place of the admin password)
                 availability_set (str, optional): availability set name
                 network_security_group (str, optional): network security group name
-                network_resource_group (str, optional): network resource group name
                 location (str, optional): Azure location
                 wait_for_success (int, optional): wait time for the instance to report success (default WAIT_FOR_SUCCESS)
                 auto_public_address (bool, optional): auto assign a public address (defaults to False)
@@ -1604,7 +1603,7 @@ class Service(ServiceBase):
                         if 'primaryClusterIP' in n])
 
         instances = set()
-        for nic in self.connection('network').network_interfaces.list(self.resource_group):
+        for nic in self.connection('network').network_interfaces.list_all():
             for ip_config in nic.ip_configurations:
                 if ip_config.private_ip_address in node_ips:
                     if not nic.virtual_machine or not nic.virtual_machine.id:

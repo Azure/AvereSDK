@@ -1340,9 +1340,6 @@ class Service(ServiceBase):
                 else:
                     raise vFXTConfigurationException("Not enough addresses provided, require {}".format(ip_count))
         else:
-            if self.private_range:
-                if self._cidr_overlaps_network(self.private_range):
-                    raise vFXTConfigurationException("Range {} overlaps with the virtual network {} address space".format(self.private_range, self.network))
             mgmt_requested = options.get('management_address') or None
             in_use = [mgmt_requested] if mgmt_requested else None
             if 'instance_addresses' in options:

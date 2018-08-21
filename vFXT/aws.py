@@ -181,7 +181,6 @@ class Service(ServiceBase):
             ]
         }
     }
-    AUTO_LICENSE = False
 
     def __init__(self, region, access_key, secret_access_key, **options):
         '''Constructor

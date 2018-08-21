@@ -153,7 +153,6 @@ class Service(ServiceBase):
       }
     }
     DEFAULT_CLUSTER_NETWORK_RANGE = '172.16.0.0/12'
-    AUTO_LICENSE = False
     ALLOCATE_INSTANCE_ADDRESSES = True
 
     def __init__(self, network_id, zone, client_email=None, project_id=None,

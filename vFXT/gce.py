@@ -1802,7 +1802,7 @@ class Service(ServiceBase):
         except (KeyboardInterrupt, Exception) as e:
             if not log.isEnabledFor(logging.DEBUG):
                 log.exception(e)
-            log.error("Failed to create node: {}".format(e))
+            log.error("Failed to create nodes: {}".format(e))
             if not options.get('skip_cleanup', False):
                 cluster.destroy(quick_destroy=True)
             raise vFXTCreateFailure(e)

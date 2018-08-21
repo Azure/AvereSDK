@@ -1323,7 +1323,8 @@ class Service(ServiceBase):
 
         log.info('Creating cluster configuration')
 
-        ip_count = (cluster_size * 2) + (1 if not options.get('management_address') else 0)
+        multiplier = 1 if 'instance_addresses' in options else 2
+        ip_count = (cluster_size * multiplier) + (1 if not options.get('management_address') else 0)
         custom_ip_config_reqs = ['address_range_start', 'address_range_end', 'address_range_netmask']
         if all([options.get(_) for _ in custom_ip_config_reqs]):
             log.debug("Using overrides for cluster management and address range")

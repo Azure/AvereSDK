@@ -166,7 +166,6 @@ class Service(ServiceBase):
     # 256 mentioned here: https://docs.microsoft.com/en-us/azure/virtual-machines/windows/managed-disks-overview
     VALID_DATA_DISK_SIZES = [128, 256, 512, 1024, 2048, 4095]
     MACHINE_TYPES = MACHINE_DEFAULTS.keys()
-    DEFAULTS_URL = 'https://averedistribution.blob.core.windows.net/public/vfxtdefaults.json'
     BLOB_HOST = 'blob.core.windows.net'
     BLOB_URL_FMT = 'https://{}.blob.core.windows.net/{}/{}' # account, container, blob
     DEFAULT_STORAGE_ACCOUNT_TYPE = 'Premium_LRS'
@@ -218,6 +217,7 @@ class Service(ServiceBase):
     REGIONS_WITH_3_FAULT_DOMAINS = ['canadacentral', 'centralus', 'eastus', 'eastus2', 'northcentralus', 'northeurope', 'southcentralus', 'westeurope', 'westus']
     MAX_UPDATE_DOMAIN_COUNT = 20
     ALLOCATE_INSTANCE_ADDRESSES = True
+    DEFAULT_MARKETPLACE_URN = 'microsoft-avere:vfxt:avere-vfxt-node:latest'
 
     def __init__(self, subscription_id=None, application_id=None, application_secret=None,
                        tenant_id=None, resource_group=None, storage_account=None,
@@ -243,12 +243,10 @@ class Service(ServiceBase):
                 private_range (str, optional): private address range (cidr)
                 proxy_uri (str, optional): URI of proxy resource (e.g. http://user:pass@172.16.16.20:8080)
                 no_connection_test (bool, optional): skip connection test
-                skip_load_defaults (bool, optional): do not fetch defaults
 
             If an access token is provided it is used in place of the application ID/secret pair
             for API authentication.
         '''
-        self.defaults        = {}
         self.subscription_id = subscription_id
         self.application_id       = application_id
         self.application_secret   = application_secret
@@ -295,10 +293,6 @@ class Service(ServiceBase):
 
         if not options.get('no_connection_test', None):
             self.connection_test()
-
-        if not options.get('skip_load_defaults', False):
-            log.debug("Fetching defaults from {}".format(self.DEFAULTS_URL))
-            load_defaults(self)
 
     def connection_test(self):
         '''Connection test
@@ -1310,12 +1304,11 @@ class Service(ServiceBase):
             raise vFXTConfigurationException('{} is not a valid instance type'.format(machine_type))
         machine_defs    = self.MACHINE_DEFAULTS[machine_type]
         cluster_size    = int(options.get('size', machine_defs['node_count']))
-        location        = options.get('location') or self.location
         subnets         = options.get('subnets') or self.subnets
         subnets         = [subnets] if isinstance(subnets, basestring) else subnets
 
         # disk sizing
-        root_image        = options.get('root_image')      or self._get_default_image(location)
+        root_image        = options.get('root_image')      or self._get_default_image()
         data_disk_size    = options.get('data_disk_size')  or machine_defs['data_disk_size']
         data_disk_count   = options.get('data_disk_count') or machine_defs['data_disk_count']
         data_disk_caching = options.get('data_disk_caching') or 'ReadOnly'
@@ -2726,22 +2719,10 @@ class Service(ServiceBase):
         '''
         return list(self.connection('storage').storage_accounts.list())
 
-    def _get_default_image(self, location):
+    def _get_default_image(self):
         '''Get the default image from the defaults
-
-            Arguments:
-                location (str, optional): Azure location
-
-            This may not be available if we are unable to fetch the defaults.
         '''
-        try:
-            if location in self.defaults:
-                return self.defaults[location]['current']
-            else:
-                return self.defaults['machineimages']['current']
-            raise Exception("no disk found")
-        except Exception:
-            raise vFXTConfigurationException("You must provide a root disk image.")
+        return self.DEFAULT_MARKETPLACE_URN
 
     def _subscription_scope(self):
         return '/subscriptions/{}'.format(self.subscription_id)

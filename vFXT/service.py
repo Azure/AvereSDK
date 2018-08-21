@@ -153,6 +153,7 @@ class ServiceBase(object):
     ENDPOINT_TEST_HOSTS = []
     ALLOCATE_INSTANCE_ADDRESSES = False
     S3TYPE_NAME = None
+    AUTO_LICENSE = False
 
     def __init__(self, **args):
         self.__dict__ = args

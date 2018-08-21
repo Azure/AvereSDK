@@ -2177,8 +2177,8 @@ class Service(ServiceBase):
 
         for ss in self.connection('compute').virtual_machine_scale_sets.list_all():
             try:
-                rg = ss.virtual_machine_profile.network_profile.network_interface_configurations[0].ip_configurations[0].subnet.id.split('/')[4]
-                for nic in conn.network_interfaces.list_virtual_machine_scale_set_network_interfaces(rg, ss.name):
+                ss_rg = ss.id.split('/')[4]
+                for nic in conn.network_interfaces.list_virtual_machine_scale_set_network_interfaces(ss_rg, ss.name):
                     for ipconfig in nic.ip_configurations:
                         addr = ipconfig.private_ip_address
                         if addr and c.contains(addr):

@@ -861,6 +861,7 @@ def main():
             'home_addresses': args.vserver_home_addresses,
             'key_name': args.ssh_key, # aws ssh key
             'admin_ssh_data': args.ssh_key, # azure ssh key
+            'instance_addresses': args.instance_addresses,
         }
         # prune out unfortunate command line defaults
         options = {k: v for k, v in options.iteritems() if v is not None and v != ''}

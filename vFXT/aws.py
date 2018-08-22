@@ -211,7 +211,7 @@ class Service(ServiceBase):
                 no_connection_test (bool, optional): skip connection test
                 skip_load_defaults (bool, optional): do not fetch defaults
         '''
-        self.defaults             = {}
+        super(Service, self).__init__()
         self.region               = region
         self.access_key           = access_key
         self.secret_access_key    = secret_access_key
@@ -230,8 +230,6 @@ class Service(ServiceBase):
         self.security_groups      = options.get('security_groups', None)
         self.on_instance          = options.get('on_instance') or False
 
-        self.local                = threading.local()
-
         if not self.subnets:
             raise vFXTConfigurationException("You must provide at least one subnet")
 
@@ -240,8 +238,6 @@ class Service(ServiceBase):
 
         if self.proxy_uri:
             self.set_proxy(self.proxy_uri)
-        else:
-            self.proxy = None
 
         # emit third party library version information
         log.debug("Using boto version {}".format(boto.__version__))

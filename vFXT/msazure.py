@@ -247,9 +247,10 @@ class Service(ServiceBase):
             If an access token is provided it is used in place of the application ID/secret pair
             for API authentication.
         '''
+        super(Service, self).__init__()
         self.subscription_id = subscription_id
-        self.application_id       = application_id
-        self.application_secret   = application_secret
+        self.application_id     = application_id
+        self.application_secret = application_secret
         self.tenant_id       = tenant_id
         self.resource_group  = resource_group
         self.storage_account = storage_account
@@ -265,8 +266,6 @@ class Service(ServiceBase):
         self.proxy_uri       = options.get('proxy_uri') or None
         if self.proxy_uri:
             self.set_proxy(self.proxy_uri)
-        else:
-            self.proxy = None
 
         self.use_environment_for_auth = options.get('use_environment_for_auth') or False
 
@@ -282,8 +281,6 @@ class Service(ServiceBase):
         # should have a resource group at least
         if not self.resource_group:
             raise vFXTConfigurationException("You must provide the resource group name")
-
-        self.local = threading.local()
 
         log.debug("Using azure.mgmt.authorization version {}".format(azure.mgmt.authorization.version.VERSION))
         log.debug("Using azure.mgmt.compute version {}".format(azure.mgmt.compute.version.VERSION))

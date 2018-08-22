@@ -194,7 +194,7 @@ class Service(ServiceBase):
                 skip_load_defaults (bool, optional): do not fetch defaults
                 network_project_id (str, optional): Project ID that owns the network (if outside current project)
         '''
-        self.defaults     = {}
+        super(Service, self).__init__()
         self.client_email = client_email
         self.key_file     = key_file
         self.key_data     = key_data
@@ -203,7 +203,6 @@ class Service(ServiceBase):
         self.zones        = [zone] if isinstance(zone, basestring) else zone
         self.network_id   = network_id
         self.network_project_id = network_project_id
-        self.local        = threading.local()
         self.s3_access_key        = s3_access_key
         self.s3_secret_access_key = s3_secret_access_key
         self.private_range = private_range
@@ -241,8 +240,6 @@ class Service(ServiceBase):
 
         if self.proxy_uri:
             self.set_proxy(self.proxy_uri)
-        else:
-            self.proxy = None
 
         # check if we have a Xpn host project
         try:

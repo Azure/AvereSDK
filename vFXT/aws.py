@@ -2409,7 +2409,7 @@ def _aws_do(function, *args, **kwargs):
             # probably could be only 503 but boto also looks for 500
             if isinstance(e, boto.exception.BotoServerError):
                 # Throttling is 400
-                throttled = True if e.status == 400 and 'Throttling' in str(e) else False
+                throttled = True if e.status == 400 and 'Throttling' in str(e) else False # pylint: disable=no-member
                 if e.status < 500 and not throttled: raise # #pylint: disable=no-member
 
             time.sleep(backoff(errors))

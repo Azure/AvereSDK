@@ -79,7 +79,7 @@ class CookieAuthXMLRPCTransport(xmlrpclib.SafeTransport):
             cookie_header = headers.getheaders('Set-Cookie')
             if cookie_header:
                 self._cookie = '; '.join(cookie_header)
-            self.verbose = verbose
+            self.verbose = verbose # pylint: disable=attribute-defined-outside-init
             try:
                 sock = h._conn.sock # pylint: disable=no-member
             except AttributeError:
@@ -99,7 +99,7 @@ class CookieAuthXMLRPCTransport(xmlrpclib.SafeTransport):
 
             response = h.getresponse(buffering=True)
             if response.status == 200:
-                self.verbose = verbose
+                self.verbose = verbose # pylint: disable=attribute-defined-outside-init
                 cookie_header = response.getheader('set-cookie')
                 if cookie_header:
                     cookies = cookie_header.split(', ')

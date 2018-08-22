@@ -262,7 +262,7 @@ class Cluster(object):
         try:
             service.create_cluster(c, **options)
             if options.get('skip_configuration'):
-                return
+                return c
         except KeyboardInterrupt:
             if not options.get('skip_cleanup', False):
                 c.destroy(quick_destroy=True)

@@ -1247,7 +1247,7 @@ class Service(ServiceBase):
             if region_gateways:
                 return region_gateways[0]
 
-            raise vFXTConfigurationException("Unable to determine default router for this configuration")
+        raise vFXTConfigurationException("Unable to determine default router for this configuration")
 
     def get_dns_servers(self):
         '''Get DNS server addresses
@@ -2036,7 +2036,7 @@ class Service(ServiceBase):
                 key (str): key to delete
         '''
         if 'items' not in instance['metadata']:
-            return None
+            return
 
         conn        = self.connection()
         metadata    = instance['metadata']
@@ -2557,6 +2557,8 @@ class Service(ServiceBase):
                 region  = parts[3]
                 name    = parts[5]
                 return _gce_do(conn.subnetworks().get, project=project, region=region, subnetwork=name)
+            else:
+                raise Exception("Unknown subnetwork configuration")
         except Exception as e:
             log.debug("Failed to find subnetwork {}: {}".format(subnetwork, e))
             raise vFXTConfigurationException("Failed to find subnetwork {}: {}".format(subnetwork, e))

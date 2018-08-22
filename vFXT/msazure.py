@@ -896,8 +896,7 @@ class Service(ServiceBase):
         '''
         conn = self.connection('authorization')
         if not hasattr(instance, 'identity') and not hasattr(instance.identity, 'principal_id'):
-            log.debug("Instance {} has no identity configuration".format(self.name(instance)))
-            return
+            raise vFXTConfigurationException("Instance {} has no identity configuration".format(self.name(instance)))
 
         principal_id = instance.identity.principal_id
         role_assignments = [_ for _ in conn.role_assignments.list("principalId eq '{}'".format(principal_id))]
@@ -2192,6 +2191,7 @@ class Service(ServiceBase):
                 if address == ipconfig.private_ip_address:
                     if nic.virtual_machine:
                         return self.get_instance(nic.virtual_machine.id.split('/')[-1])
+        return None
 
     def instance_in_use_addresses(self, instance, category='all'):
         '''Get the in use addresses for the instance
@@ -2557,7 +2557,7 @@ class Service(ServiceBase):
         assignments = [_ for _ in conn.role_assignments.list() if role.id == _.role_definition_id]
         if principal in [_.principal_id for _ in assignments]:
             log.debug("Assignment for role {} and principal {} exists.".format(role.role_name, principal))
-            return
+            return None
 
         body = {
             'role_definition_id': role.id,

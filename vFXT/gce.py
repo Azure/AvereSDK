@@ -1692,12 +1692,16 @@ class Service(ServiceBase):
             the format is projects/<project>/global/images/<image name>.  The full
             URL also is accepted.
         '''
+        if not all([cluster.mgmt_ip, cluster.mgmt_netmask, cluster.cluster_ip_start, cluster.cluster_ip_end]):
+            raise vFXTConfigurationException("Cluster networking configuration is incomplete")
+
         zones = options.get('zones') or self.zones
         zones = [zones] if isinstance(zones, basestring) else zones
         # extend our service zones if necessary
         for z in zones:
             if z not in self.zones:
                 self.zones.append(z)
+        cluster.zones = [zones[0]] # first node zone
 
         machine_type    = cluster.machine_type
         if machine_type not in self.MACHINE_TYPES:
@@ -1711,38 +1715,8 @@ class Service(ServiceBase):
         cluster_size    = int(options.get('size', machine_defs['node_count']))
 
         log.info('Creating cluster configuration')
-
-        ip_count = (cluster_size * 2) + (1 if not options.get('management_address') else 0)
-        custom_ip_config_reqs = ['address_range_start', 'address_range_end']
-        if all([options.get(_) for _ in custom_ip_config_reqs]):
-            log.debug("Using overrides for cluster management and address range")
-            mask = options.get('address_range_netmask') or '255.255.255.255'
-            avail = Cidr.expand_address_range(options.get('address_range_start'), options.get('address_range_end'))
-            if len(avail) < ip_count:
-                raise vFXTConfigurationException("Not enough addresses provided, require {}".format(ip_count))
-        else:
-            mgmt_requested = options.get('management_address') or None
-            in_use = [mgmt_requested] if mgmt_requested else None
-            if 'instance_addresses' in options:
-                if not in_use:
-                    in_use = options['instance_addresses']
-                else:
-                    in_use.extend(options['instance_addresses'])
-            avail, mask = self.get_available_addresses(count=ip_count, contiguous=True, in_use=in_use)
-
-        cluster.mgmt_ip = options.get('management_address') or avail.pop(0)
-        private_ips     = avail[0:cluster_size]
-        cluster_ips     = avail[cluster_size:]
-
-        # store for cluster config
-        cluster.mgmt_netmask     = mask
-        cluster.cluster_ip_start = cluster_ips[0]
-        cluster.cluster_ip_end   = cluster_ips[-1]
-        cluster.zones = [zones[0]] # first node zone
-
         cfg = cluster.cluster_config(expiration=options.get('config_expiration', None))
         log.debug("Generated cluster config: {}".format(cfg.replace(cluster.admin_password, '[redacted]')))
-
         # gce needs them base64 encoded
         cfg = ''.join(cfg.encode('base64').split()).strip()
 
@@ -1756,14 +1730,11 @@ class Service(ServiceBase):
 
         metadata    = options.pop('metadata', {})
 
+        instance_addresses = cluster.instance_addresses
         # our private addresses must be inside the network ranges
-        if not self._cidr_overlaps_network('{}/32'.format(private_ips[0])):
+        if not self._cidr_overlaps_network('{}/32'.format(instance_addresses[0])):
             log.debug("Resetting instance addresses to be provided via the backend service")
-            private_ips = [None] * cluster_size
-
-        instance_addresses = options.pop('instance_addresses', private_ips)
-        if len(instance_addresses) != cluster_size:
-            raise vFXTConfigurationException("Not enough instance addresses provided, require {}".format(cluster_size))
+            instance_addresses = [None] * cluster_size
 
         try:
             # create the initial node

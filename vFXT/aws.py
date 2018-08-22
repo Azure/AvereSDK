@@ -1316,17 +1316,21 @@ class Service(ServiceBase):
             Raises: vFXTConfigurationException, vFXTCreateFailure
 
         '''
-        machine_type    = cluster.machine_type
+        if not all([cluster.mgmt_ip, cluster.mgmt_netmask, cluster.cluster_ip_start, cluster.cluster_ip_end]):
+            raise vFXTConfigurationException("Cluster networking configuration is incomplete")
+
+        machine_type = cluster.machine_type
 
         if machine_type not in self.MACHINE_TYPES:
             raise vFXTConfigurationException("{} is not a valid instance type".format(machine_type))
 
-        machine_defs    = self.MACHINE_DEFAULTS[machine_type]
-        cluster_size    = int(options.get('size', machine_defs['node_count']))
+        machine_defs = self.MACHINE_DEFAULTS[machine_type]
+        cluster_size = int(options.get('size', machine_defs['node_count']))
 
         # networking
         subnets = options.get('subnet') or self.subnets
         subnets = [subnets] if isinstance(subnets, basestring) else subnets
+        cluster.subnets = [subnets[0]] # first node subnet
 
         # check subnet objects for mapPublicIpOnLaunch
         for subnet_id in subnets:
@@ -1345,39 +1349,10 @@ class Service(ServiceBase):
         if len(route_tables) > 1:
             raise vFXTConfigurationException("All subnets must share the same route table")
 
-        log.info('Creating cluster configuration')
-
-        ip_count = (cluster_size * 2) + (1 if not options.get('management_address') else 0)
-        custom_ip_config_reqs = ['address_range_start', 'address_range_end', 'address_range_netmask']
-        if all([options.get(_) for _ in custom_ip_config_reqs]):
-            log.debug("Using overrides for cluster management and address range")
-            mask = options.get('address_range_netmask')
-            avail = Cidr.expand_address_range(options.get('address_range_start'), options.get('address_range_end'))
-            if len(avail) < ip_count:
-                raise vFXTConfigurationException("Not enough addresses provided, require {}".format(ip_count))
-        else:
-            mgmt_requested = options.get('management_address') or None
-            in_use = [mgmt_requested] if mgmt_requested else None
-            if 'instance_addresses' in options:
-                if not in_use:
-                    in_use = options['instance_addresses']
-                else:
-                    in_use.extend(options['instance_addresses'])
-            avail, mask = self.get_available_addresses(count=ip_count, contiguous=True, in_use=in_use)
-
-        cluster.mgmt_ip = options.get('management_address') or avail.pop(0)
-        private_ips     = avail[0:cluster_size]
-        cluster_ips     = avail[cluster_size:]
-
         # if we are going to span multiple subnets we can not assign the private ip address
+        instance_addresses = cluster.instance_addresses
         if len(subnets) > 1:
-            private_ips = [None] * cluster_size
-
-        # store for cluster config
-        cluster.mgmt_netmask     = mask
-        cluster.cluster_ip_start = cluster_ips[0]
-        cluster.cluster_ip_end   = cluster_ips[-1]
-        cluster.subnets = [subnets[0]] # first node subnet
+            instance_addresses = [None] * cluster_size
 
         # disks
         root_image      = options.get('root_image') or self._get_default_image()
@@ -1401,6 +1376,7 @@ class Service(ServiceBase):
             role = self._create_iamrole('avere_cluster_role_{}_{}'.format(int(time.time()), cluster.name))
         cluster.iamrole = role['role_name']
 
+        log.info('Creating cluster configuration')
         # config
         cfg     = cluster.cluster_config(expiration=options.get('config_expiration', None))
         cfg     +=  '''\n[EC2 admin credential]''' \
@@ -1410,7 +1386,7 @@ class Service(ServiceBase):
         log.debug("Generated cluster config: {}".format(cfg.replace(cluster.admin_password, '[redacted]')))
 
         # for point to point addressing we need to disable Source/Dest checks
-        if mask == '255.255.255.255':
+        if cluster.mgmt_netmask == '255.255.255.255':
             options['disableSourceDestCheck'] = True
 
         try:
@@ -1421,7 +1397,7 @@ class Service(ServiceBase):
                     'root_image': root_image, 'role': role, 'disk_encryption': disk_encryption}
             inst_opts = options.copy()
             inst_opts['subnet'] = subnets[0] # first node subnet
-            inst_opts['private_ip_address'] = private_ips.pop(0)
+            inst_opts['private_ip_address'] = instance_addresses.pop(0)
             n    = self.create_node(name, cfg, node_opts=opts, instance_options=inst_opts)
             cluster.nodes.append(ServiceInstance(service=self, instance=n))
 
@@ -1433,7 +1409,7 @@ class Service(ServiceBase):
                 t.start()
                 threads.append(t)
             options.update(opts)
-            options['private_addresses'] = private_ips
+            options['private_ip_addresses'] = instance_addresses
             options['subnet'] = subnets if len(subnets) == 1 else subnets[1:]
             self.add_cluster_nodes(cluster, cluster_size - 1, **options)
             # do a timeout join to handle KeyboardInterrupts
@@ -1491,6 +1467,7 @@ class Service(ServiceBase):
             raise vFXTConfigurationException("Not enough instance addresses were provided")
         # but only for non-xaz setups
         if len(subnets) > 1:
+            log.debug("Resetting instance addresses to be provided via the backend service")
             instance_addresses = [None] * count
 
         instance        = cluster.nodes[0].instance
@@ -1543,7 +1520,7 @@ class Service(ServiceBase):
             next_node_num = node_num + 1
             inst_opts = options.copy()
             inst_opts['subnet'] = next(cycle_subnets)
-            inst_opts['instance_ip_address'] = instance_addresses.pop(0)
+            inst_opts['private_ip_address'] = instance_addresses.pop(0)
             t = threading.Thread(target=cb, args=(next_node_num, inst_opts, nodeq, failq,))
             t.setDaemon(True)
             t.start()

@@ -155,8 +155,11 @@ class ServiceBase(object):
     S3TYPE_NAME = None
     AUTO_LICENSE = False
 
-    def __init__(self, **args):
-        self.__dict__ = args
+    def __init__(self, *args, **kwargs): #pylint: disable=unused-argument
+        self.defaults = {}
+        self.local = threading.local()
+        self.proxy_uri = None
+        self.proxy = None
 
     def connection_test(self):
         raise NotImplementedError()

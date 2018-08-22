@@ -1124,7 +1124,7 @@ class Service(ServiceBase):
                 enable_ip_forwarding=ip_forward,
                 enable_public_address=public_ip_address,
                 advanced_networking=adv_networking,
-                private_address = options.get('private_ip_address') or None
+                private_address=options.get('private_ip_address') or None
             )
             nic_cfg = {'id': nic.id} # XXX 'primary': True
             body['network_profile']['network_interfaces'].append(nic_cfg)
@@ -1295,6 +1295,9 @@ class Service(ServiceBase):
         cluster.availability_set = None
         cluster.role = None
 
+        if not all([cluster.mgmt_ip, cluster.mgmt_netmask, cluster.cluster_ip_start, cluster.cluster_ip_end]):
+            raise vFXTConfigurationException("Cluster networking configuration is incomplete")
+
         machine_type    = cluster.machine_type
         if machine_type not in self.MACHINE_DEFAULTS:
             raise vFXTConfigurationException('{} is not a valid instance type'.format(machine_type))
@@ -1302,6 +1305,8 @@ class Service(ServiceBase):
         cluster_size    = int(options.get('size', machine_defs['node_count']))
         subnets         = options.get('subnets') or self.subnets
         subnets         = [subnets] if isinstance(subnets, basestring) else subnets
+        cluster.subnets = [subnets[0]] # first node subnet
+        cluster.network_security_group = options.get('network_security_group') or self.network_security_group
 
         # disk sizing
         root_image        = options.get('root_image')      or self._get_default_image()
@@ -1317,55 +1322,17 @@ class Service(ServiceBase):
         if data_disk_count > machine_defs['max_data_disk_count']:
             raise vFXTConfigurationException('{} exceeds the maximum allowed disk count of {}'.format(data_disk_count, machine_defs['max_data_disk_count']))
 
-        log.info('Creating cluster configuration')
-
-        multiplier = 1 if 'instance_addresses' in options else 2
-        ip_count = (cluster_size * multiplier) + (1 if not options.get('management_address') else 0)
-        custom_ip_config_reqs = ['address_range_start', 'address_range_end', 'address_range_netmask']
-        if all([options.get(_) for _ in custom_ip_config_reqs]):
-            log.debug("Using overrides for cluster management and address range")
-            mask = options.get('address_range_netmask')
-            avail = Cidr.expand_address_range(options.get('address_range_start'), options.get('address_range_end'))
-
-            if len(avail) < ip_count:
-                # if our addresses are outside of the subnet, allow with dynamic assigned private addresses
-                if len(avail) == cluster_size and not self._cidr_overlaps_network('{}/32'.format(avail[0])):
-                    # for private addresses add None entries
-                    for _ in xrange(cluster_size):
-                        avail.insert(0, None)
-                else:
-                    raise vFXTConfigurationException("Not enough addresses provided, require {}".format(ip_count))
-        else:
-            mgmt_requested = options.get('management_address') or None
-            in_use = [mgmt_requested] if mgmt_requested else None
-            if 'instance_addresses' in options:
-                if not in_use:
-                    in_use = options['instance_addresses']
-                else:
-                    in_use.extend(options['instance_addresses'])
-            avail, mask = self.get_available_addresses(count=ip_count, contiguous=True, in_use=in_use)
-
-        cluster.mgmt_ip = options.get('management_address') or avail.pop(0)
-        private_ips     = avail[0:cluster_size]
-        cluster_ips     = avail[cluster_size:]
-        cluster.network_security_group = options.get('network_security_group') or self.network_security_group
-
+        instance_addresses = cluster.instance_addresses
         subnet = self.connection('network').subnets.get(self.network_resource_group, self.network, subnets[0])
-        if not Cidr(subnet.address_prefix).contains(cluster_ips[0]):
+        if not Cidr(subnet.address_prefix).contains(cluster.cluster_ip_start):
             # if we are NOT inside the subnet range we will need a route table
             if not subnet.route_table:
                 raise vFXTConfigurationException("Subnet {} does not have an associated route table".format(subnets[0]))
             # we must not assign the private addresses that are not part of the subnet range
-            private_ips = [None] * cluster_size
+            instance_addresses = [None] * cluster_size
 
-        # store for cluster config
-        cluster.mgmt_netmask     = mask
-        cluster.cluster_ip_start = cluster_ips[0]
-        cluster.cluster_ip_end   = cluster_ips[-1]
-        cluster.subnets = [subnets[0]] # first node subnet
-
+        log.info('Creating cluster configuration')
         cfg = cluster.cluster_config(expiration=options.get('config_expiration', None))
-
         log.debug("Generated cluster config: {}".format(cfg.replace(cluster.admin_password, '[redacted]')))
 
         try:
@@ -1385,10 +1352,6 @@ class Service(ServiceBase):
             availability_set = options.get('availability_set') or '{}-availability_set'.format(cluster.name)
             cluster.availability_set = self._create_availability_set(availability_set)
             options['availability_set'] = availability_set
-
-            instance_addresses = options.pop('instance_addresses', private_ips)
-            if len(instance_addresses) != cluster_size:
-                raise vFXTConfigurationException("Not enough instance addresses provided, require {}".format(cluster_size))
 
             # create the initial node
             name = '{}-{:02}'.format(cluster.name, 1)
@@ -1458,8 +1421,8 @@ class Service(ServiceBase):
         instance_addresses = options.pop('instance_addresses', [None] * count)
         if len(instance_addresses) != count:
             raise vFXTConfigurationException("Not enough instance addresses provided, require {}".format(count))
-        # our instance addresses musts always reside within the subnet
-        if instance_addresses[0]:
+        # our instance addresses must always reside within the subnet
+        if instance_addresses[0]: # must be defined, not None
             subnet = self.connection('network').subnets.get(self.network_resource_group, self.network, subnets[0])
             if not Cidr(subnet.address_prefix).contains(instance_addresses[0]) and not subnet.route_table:
                 log.debug("Resetting instance addresses to be provided via the backend service")

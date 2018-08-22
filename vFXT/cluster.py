@@ -158,6 +158,7 @@ class Cluster(object):
         self.node_rename      = True
         self.first_node_error = None
         self.timezone         = None
+        self.instance_addresses = None
 
         if self.proxy:
             self.proxy = validate_proxy(self.proxy) # imported from vFXT.service
@@ -196,7 +197,7 @@ class Cluster(object):
                 timezone (str, optional): Set cluster timezone
                 join_instance_address (bool, optional): Join cluster using instance rather than management address (defaults to True)
                 skip_node_renaming (bool optional): Do not automatically configure and enforce node naming convention (defaults to False)
-                size (int, optional): size of cluster (node count)
+                size (int, optional): size of cluster (node count), defaults to 3
                 root_image (str, optional): root disk image name
                 skip_cleanup (bool, optional): do not clean up on failure
                 address_range_start (str, optional): The first of a custom range of addresses to use for the cluster
@@ -218,15 +219,18 @@ class Cluster(object):
             c.proxy = validate_proxy(c.proxy) # imported from vFXT.service
         if options.get('skip_node_renaming'):
             c.node_rename = False
+        if not options.get('size'):
+            options['size'] = 3
+        cluster_size = int(options['size'])
 
         if not name:
             raise vFXTConfigurationException("A cluster name is required")
         if not cls.valid_cluster_name(name):
             raise vFXTConfigurationException("{} is not a valid cluster name".format(name))
         if options.get('management_address'):
-            requested_mgmt_ip = options.get('management_address')
-            if service.in_use_addresses('{}/32'.format(requested_mgmt_ip)):
-                raise vFXTConfigurationException("The requested management address {} is already in use".format(requested_mgmt_ip))
+            c.mgmt_ip = options.get('management_address')
+            if service.in_use_addresses('{}/32'.format(c.mgmt_ip)):
+                raise vFXTConfigurationException("The requested management address {} is already in use".format(c.mgmt_ip))
 
         # Need to validate if instance_addresses passed in are already in use before creating the cluster
         if options.get('instance_addresses'):
@@ -236,12 +240,23 @@ class Cluster(object):
                     if service.in_use_addresses('{}/32'.format(address)):
                         already_in_use.append(address)
                 if already_in_use:
-                    raise vFXTConfigurationException("The requested instance addresses {} are already in use".format(already_in_use))
+                    raise vFXTConfigurationException("The requested instance addresses are already in use: {}".format(', '.join(already_in_use)))
+
+                if len(options['instance_addresses']) != cluster_size:
+                    raise vFXTConfigurationException("Not enough instance addresses provided, require {}".format(cluster_size))
+
             except vFXTConfigurationException:
                 raise
             except Exception as e:
                 log.debug(e)
                 raise vFXTConfigurationException("Invalid instance addresses: {}".format(options['instance_addresses']))
+            c.instance_addresses = options['instance_addresses']
+
+        # determine how many addresses we need
+        instance_count = cluster_size if (service.ALLOCATE_INSTANCE_ADDRESSES and not c.instance_addresses) else 0
+        management_count = 0 if options.get('management_address') else 1
+        ip_count = cluster_size + instance_count + management_count
+
         if all([options.get(_) for _ in ['address_range_start', 'address_range_end', 'address_range_netmask']]):
             try:
                 already_in_use = []
@@ -250,12 +265,38 @@ class Cluster(object):
                     if c.service.in_use_addresses('{}/32'.format(address)):
                         already_in_use.append(address)
                 if already_in_use:
-                    raise vFXTConfigurationException("The requested instance addresses {} are already in use".format(already_in_use))
+                    raise vFXTConfigurationException("The requested instance addresses are already in use: {}".format(', '.join(already_in_use)))
+
+                if len(cluster_range) < ip_count:
+                    raise vFXTConfigurationException("Not enough addresses provided, require {}".format(ip_count))
+
+                log.debug("Using overrides for cluster management and address range")
+                if management_count:
+                    c.mgmt_ip = cluster_range[0]
+                if instance_count:
+                    c.instance_addresses = cluster_range[management_count:instance_count + management_count]
+                c.cluster_ip_start = cluster_range[management_count + instance_count]
+                c.cluster_ip_end = cluster_range[-1]
+                c.mgmt_netmask = options['address_range_netmask']
             except vFXTConfigurationException:
                 raise
             except Exception as e:
                 log.debug(e)
                 raise vFXTConfigurationException("Invalid instance addresses: {}".format(options['instance_addresses']))
+        else:
+            in_use_addresses = []
+            if c.mgmt_ip:
+                in_use_addresses.append(c.mgmt_ip)
+            if c.instance_addresses:
+                in_use_addresses.extend(c.instance_addresses)
+            avail, mask = service.get_available_addresses(count=ip_count, contiguous=True, in_use=in_use_addresses)
+            if management_count:
+                c.mgmt_ip = avail[0]
+            if instance_count:
+                c.instance_addresses = avail[management_count:instance_count + management_count]
+            c.cluster_ip_start = avail[management_count + instance_count]
+            c.cluster_ip_end = avail[-1]
+            c.mgmt_netmask = mask
 
         # machine type is validated by service create_cluster
 
@@ -880,6 +921,9 @@ class Cluster(object):
                             existing.append(address)
                 if existing:
                     raise vFXTConfigurationException("Instance addresses are already in use: {}".format(existing))
+
+                if len(options['instance_addresses']) < count:
+                    raise vFXTConfigurationException("Not enough instance addresses provided, require {}".format(count))
             except vFXTConfigurationException:
                 raise
             except Exception as e:
@@ -906,7 +950,7 @@ class Cluster(object):
                     if self.service.in_use_addresses('{}/32'.format(address)):
                         existing.append(address)
                 if existing:
-                    raise vFXTConfigurationException("Instance addresses are already in use: {}".format(existing))
+                    raise vFXTConfigurationException("Cluster addresses are already in use: {}".format(existing))
             else:
                 avail_ips, mask = self.service.get_available_addresses(count=ip_count, contiguous=True, in_use=in_use_addrs)
 

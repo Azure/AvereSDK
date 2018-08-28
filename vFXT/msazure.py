@@ -262,6 +262,7 @@ class Service(ServiceBase):
         self.subnets         = options.get('subnet') or []
         self.subnets         = [self.subnets] if isinstance(self.subnets, basestring) else self.subnets
         self.private_range   = options.get('private_range') or None
+        self.source_address  = options.get('source_address') or None
 
         self.proxy_uri       = options.get('proxy_uri') or None
         if self.proxy_uri:
@@ -392,7 +393,7 @@ class Service(ServiceBase):
             if connection_type not in connection_types:
                 raise vFXTConfigurationException("Unknown connection type: {}".format(connection_type))
             if self.on_instance and not hasattr(self.local, 'instance_data'):
-                self.local.instance_data = self.get_instance_data()
+                self.local.instance_data = self.get_instance_data(source_address=self.source_address)
             log.debug("Creating connection of type {}".format(connection_type))
 
             # cloudstorage connections are just returned (not cached) since they are tied to a storage account

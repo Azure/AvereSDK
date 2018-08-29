@@ -160,6 +160,7 @@ class ServiceBase(object):
         self.local = threading.local()
         self.proxy_uri = None
         self.proxy = None
+        self.source_address = None
 
     def connection_test(self):
         raise NotImplementedError()

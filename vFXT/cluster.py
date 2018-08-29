@@ -992,9 +992,9 @@ class Cluster(object):
 
             # book keeping... may have to wait for a node to update image
             wait = int(options.get('join_wait', 500 + (500 * math.log(count))))
-            self.allow_node_join(retries=wait, xmlrpc=xmlrpc)
+            self.allow_node_join(retries=wait)
             self.wait_for_nodes_to_join(retries=wait)
-            self.allow_node_join(enable=False, retries=wait, xmlrpc=xmlrpc)
+            self.allow_node_join(enable=False, retries=wait)
             self.refresh()
             self.enable_ha()
             if not options.get('skip_node_renaming'):

@@ -229,6 +229,7 @@ class Service(ServiceBase):
         self.proxy_uri            = options.get('proxy_uri', None)
         self.security_groups      = options.get('security_groups', None)
         self.on_instance          = options.get('on_instance') or False
+        self.source_address       = options.get('source_address') or False
 
         if not self.subnets:
             raise vFXTConfigurationException("You must provide at least one subnet")
@@ -464,7 +465,7 @@ class Service(ServiceBase):
                           subnet=subnet_id, security_token=token, arn=arn, iam_host=iam_host,
                           no_connection_test=no_connection_test, proxy_uri=proxy_uri,
                           security_groups=security_groups, on_instance=True,
-                          skip_load_defaults=options.get('skip_load_defaults'))
+                          skip_load_defaults=options.get('skip_load_defaults'), source_address=source_address)
             srv.local.instance_data = instance_data
             return srv
         except (vFXTServiceFailure, vFXTServiceConnectionFailure) as e:
@@ -595,7 +596,7 @@ class Service(ServiceBase):
         if not self.local.connections.get(connection_type, False):
             # if we are on instance, get most up to date
             if self.on_instance:
-                instance_data            = self.get_instance_data()
+                instance_data            = self.get_instance_data(source_address=self.source_address)
                 if instance_data['iam'].get('security-credentials'):
                     creds                    = instance_data['iam']['security-credentials'].values()[0]
                     self.local.instance_data = instance_data

@@ -160,7 +160,7 @@ class Service(ServiceBase):
                  s3_secret_access_key=None, private_range=None, proxy_uri=None,
                  no_connection_test=False, subnetwork_id=None, on_instance=False,
                  use_environment_for_auth=False, skip_load_defaults=False,
-                 network_project_id=None):
+                 network_project_id=None, source_address=None):
         '''Constructor
 
             This performs an initial connection test and downloads the default
@@ -210,6 +210,7 @@ class Service(ServiceBase):
         self.proxy_uri     = proxy_uri
         self.on_instance   = on_instance
         self.use_environment_for_auth = use_environment_for_auth
+        self.source_address = source_address
 
         if not any([key_file, key_data, access_token, use_environment_for_auth]):
             raise vFXTConfigurationException("You must provide a keyfile or auth token")
@@ -454,7 +455,7 @@ class Service(ServiceBase):
                           project_id=project_id, zone=zone_id,
                           access_token=access_token, no_connection_test=no_connection_test,
                           proxy_uri=proxy_uri, on_instance=True, skip_load_defaults=kwargs.get('skip_load_defaults'),
-                          network_project_id=network_project_id)
+                          network_project_id=network_project_id, source_address=source_address)
             srv.local.instance_data = instance_data
             region      = srv._zone_to_region(zone_id)
             # no subnetwork in metadata... figure out which subnetwork owns our address
@@ -626,7 +627,7 @@ class Service(ServiceBase):
         connection_sig = '{}_{}'.format(connection_type, version)
         if not self.local.connections.get(connection_sig, False):
             if self.access_token:
-                self.local.instance_data = self.get_instance_data()
+                self.local.instance_data = self.get_instance_data(source_address=self.source_address)
                 self.local.access_token = self.local.instance_data['access_token']
 
             log.debug("Creating new {} connection object".format(connection_type))

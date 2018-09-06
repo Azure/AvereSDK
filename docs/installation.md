@@ -1,34 +1,19 @@
-# Creating and managing vFXT clusters - About the vfxt.py script
 
-The vfxt.py script is a command-line tool for creating and managing Avere clusters in cloud-based virtual computing environments. The script can create new Avere clusters - including creating the vFXT nodes that make up the cluster and establishing cloud storage as core filers; destroy existing clusters (including the vFXT nodes); create and add new nodes to a cluster; and do basic cluster configuration tasks. 
-
-For ongoing cluster administration, use the Avere Control Panel. Read the Avere Cluster [Configuration Guide](<http://library.averesystems.com/#operations>) for more details. 
-
-The vfxt.py script can be used with any of the cloud computing providers that Avere OS supports. Environment setup requirements are different for the different platforms, and the exact commands available vary by cloud computing provider.
-
-This document gives a basic overview of the vfxt.py script and its options. It includes information about commands specific to Microsoft Azure, Amazon Web Services, and Google Compute Project cloud services. However, setting up a cloud project and configuring it to provide an Avere vFXT cluster includes many more steps than are documented here. Project creation, identity and access management, networking, quota and billing concerns, security, and many other topics are explained in detail in the Avere vFXT Installation Guide customized for your cloud provider. Read the complete details here: 
-
-* [vFXT Installation Guide for Amazon Web Services](<http://library.averesystems.com/#vfxt>) 
-* [vFXT Installation Guide for Google Cloud Platform](<http://library.averesystems.com/#vfxt>)
-* vFXT Installation Guide for Microsoft Azure – coming soon; read current online documentation [here](<http://aka.ms/averedocs>). 
-
-The command `vfxt.py --help` gives a full list of command options, including provider-specific functionality. 
-
-## Installing and Setting Up the vfxt.py Script
+# Installing and Setting Up the vfxt.py Script
 
 You can run vfxt.py from any UNIX-style console environment that has access to your cloud computing resources. The simplest option is to create a Linux instance within the cloud environment, and install vfxt.py in that virtual machine. Alternatively, you can use a console from a remote Linux or Mac OS environment, as long as it has IP connectivity to your cloud instances. 
 
 > Tip: For Microsoft Azure, a preconfigured Cluster Controller Node virtual machine image is available in the Azure Marketplace. Search for “Avere” to find the image. This image is preconfigured with required software to create and manage Microsoft Avere vFXT clusters.  
 
-### Cloud Console Setup
+## Cloud Console Setup
 
 If setting up a Linux instance in the cloud, follow these guidelines. 
 
 * Create a VM instance of any size.
 * The instance must have the privileges to create other instances. Read the requirements for your cloud provider to learn how to configure the VM that provides your vfxt.py console. 
-* Install a recent Linux distribution from GNU, Debian, Red Hat, or CentOS. Follow the instructions in [vfxt.py Software Requirements](#vfxt.py-software-requirements), below, for installing additional required packages. 
+* Install a recent Linux distribution from GNU, Debian, or Red Hat. Follow the instructions in [vfxt.py Software Requirements](#vfxt.py-software-requirements), below, for installing additional required packages. 
 
-### Remote Console Setup 
+## Remote Console Setup 
 
 If using a console from a system outside the cloud environment, make sure it can access the instances within your cloud environment. Read your cloud provider’s documentation to learn how to use a VPN or other utility to provide IP connectivity to your cloud instances. 
 
@@ -53,7 +38,7 @@ In this step, make sure that the software needed to run vfxt.py is installed and
   sudo apt-get install python-pip
   ```
 
-* If using Red Hat Enterprise Linux or CentOS: 
+* If using Red Hat Enterprise Linux: 
 
   ```bash
   sudo wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm

@@ -56,6 +56,8 @@ class Base(unittest.TestCase):
             self.azure['application_id']                = test_config['azure']['application_id']
             self.azure['application_secret']            = test_config['azure']['application_secret']
             self.azure['tenant_id']                     = test_config['azure']['tenant_id']
+            self.azure['storage_resource_group']        = test_config['azure']['storage_resource_group']
+            self.azure['network_resource_group']        = test_config['azure']['network_resource_group']
             self.azure['resource_group']                = test_config['azure']['resource_group']
             self.azure['location']                      = test_config['azure']['location']
             self.azure['network']                       = test_config['azure']['network']
@@ -99,6 +101,8 @@ class Base(unittest.TestCase):
             application_id=self.azure['application_id'],
             application_secret=self.azure['application_secret'],
             tenant_id=self.azure['tenant_id'],
+            storage_resource_group=self.azure['storage_resource_group'],
+            network_resource_group=self.azure['network_resource_group'],
             resource_group=self.azure['resource_group'],
             location=self.azure['location'],
             network=self.azure['network'],

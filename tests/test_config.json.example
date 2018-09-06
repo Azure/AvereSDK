@@ -7,6 +7,8 @@
         "application_id": "",
         "application_secret": "",
         "tenant_id": "",
+        "storage_resource_group": "",
+        "network_resource_group": "",
         "resource_group": "",
         "location": "",
         "network": "",

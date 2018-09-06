@@ -8,16 +8,19 @@ This documentation set gives a basic overview of the vfxt.py script and its opti
 
 [About vfxt.py](about_vfxt_py.md)
 
-[Installing and Setting Up the vfxt.py Script](creating.md)
+[Installing and Setting Up the vfxt.py Script](installation.md)
 
 [Using vftx.py](using_vfxt_py.md)
 
 [Command Syntax and Options](syntax.md)
 
-* [AWS options](aws_options.md)
-* [Azure options](azure_options.md)
-* [GCE options](gce_options.md)
-* [All options](all_options.md)
+[AWS-only options](aws_options.md)
+
+[Azure-only options](azure_options.md)
+
+[GCE-only options](gce_options.md)
+
+[All options](all_options.md)
 
 [Quick Reference - Using vfxt.py with Amazon Web Services](aws_reference.md)
 

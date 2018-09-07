@@ -103,23 +103,10 @@ class Azure_test(tests.vFXTTestCase.Base):
             self.assertTrue(instance.fqdn())
             self.assertTrue(instance.status())
 
-            # get a free address
-            addrs, _ = service.get_available_addresses(count=1, addr_range='172.16.16.0/24')
-            addr = addrs[0]
-
-            instance.add_address(addr)
-            instance.refresh()
-            self.assertTrue(addr in instance.in_use_addresses())
-            # duplicate failure
-            self.assertRaises(vFXT.service.vFXTConfigurationException, instance.add_address, addr)
-            instance.remove_address(addr)
-            instance.refresh()
-            self.assertFalse(addr in instance.in_use_addresses())
-
             # use ip configurations for addresses within the subnet
             subnet = service._instance_subnet(instance.instance)
-            addrs, _ = service.get_available_addresses(count=1, addr_range=subnet.address_prefix)
-            addr = addrs[0]
+            addrs, _ = service.get_available_addresses(count=30, addr_range=subnet.address_prefix)
+            addr = addrs[-10]
             instance.add_address(addr)
             instance.refresh()
             self.assertTrue(addr in instance.in_use_addresses())
@@ -211,8 +198,8 @@ class Azure_test(tests.vFXTTestCase.Base):
             i1 = ServiceInstance.create(service, self.azure['instance_type'], 'vfxttest-dup-route-1-{}'.format(uniq), self.azure['image'])
             i2 = ServiceInstance.create(service, self.azure['instance_type'], 'vfxttest-dup-route-2-{}'.format(uniq), self.azure['image'])
 
-            addrs, _ = service.get_available_addresses(addr_range='172.16.0.0/16')
-            addr = addrs[0]
+            addrs, _ = service.get_available_addresses(count=30)
+            addr = addrs[-1]
             i1.add_address(addr)
             i2.add_address(addr)
             i1.refresh()

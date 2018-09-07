@@ -179,10 +179,21 @@ class Service(ServiceBase):
         'actions': [
             'Microsoft.Compute/virtualMachines/read',
             'Microsoft.Network/networkInterfaces/read',
+            'Microsoft.Network/networkInterfaces/write',
             'Microsoft.Network/virtualNetworks/subnets/read',
+            'Microsoft.Network/virtualNetworks/subnets/join/action',
             'Microsoft.Network/routeTables/read',
             'Microsoft.Network/routeTables/routes/*',
-            'Microsoft.Resources/subscriptions/resourceGroups/read']
+            'Microsoft.Resources/subscriptions/resourceGroups/read',
+            'Microsoft.Storage/storageAccounts/blobServices/containers/delete',
+            'Microsoft.Storage/storageAccounts/blobServices/containers/read',
+            'Microsoft.Storage/storageAccounts/blobServices/containers/write',
+        ],
+        'data_actions': [
+            'Microsoft.Storage/storageAccounts/blobServices/containers/blobs/delete',
+            'Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read',
+            'Microsoft.Storage/storageAccounts/blobServices/containers/blobs/write',
+        ],
     }]
     WAIT_FOR_SUCCESS = 2400 # override ServiceBase.WAIT_FOR_SUCCESS
     WAIT_FOR_START = 2400 # override ServiceBase.WAIT_FOR_START

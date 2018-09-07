@@ -182,8 +182,6 @@ class Service(ServiceBase):
             'Microsoft.Network/networkInterfaces/write',
             'Microsoft.Network/virtualNetworks/subnets/read',
             'Microsoft.Network/virtualNetworks/subnets/join/action',
-            'Microsoft.Network/routeTables/read',
-            'Microsoft.Network/routeTables/routes/*',
             'Microsoft.Resources/subscriptions/resourceGroups/read',
             'Microsoft.Storage/storageAccounts/blobServices/containers/delete',
             'Microsoft.Storage/storageAccounts/blobServices/containers/read',
@@ -1337,11 +1335,7 @@ class Service(ServiceBase):
         instance_addresses = cluster.instance_addresses
         subnet = self.connection('network').subnets.get(self.network_resource_group, self.network, subnets[0])
         if not Cidr(subnet.address_prefix).contains(cluster.cluster_ip_start):
-            # if we are NOT inside the subnet range we will need a route table
-            if not subnet.route_table:
-                raise vFXTConfigurationException("Subnet {} does not have an associated route table".format(subnets[0]))
-            # we must not assign the private addresses that are not part of the subnet range
-            instance_addresses = [None] * cluster_size
+            raise vFXTConfigurationException("Cluster addresses must reside within subnet {}".format(subnets[0]))
 
         log.info('Creating cluster configuration')
         cfg = cluster.cluster_config(expiration=options.get('config_expiration', None))
@@ -1436,9 +1430,8 @@ class Service(ServiceBase):
         # our instance addresses must always reside within the subnet
         if instance_addresses[0]: # must be defined, not None
             subnet = self.connection('network').subnets.get(self.network_resource_group, self.network, subnets[0])
-            if not Cidr(subnet.address_prefix).contains(instance_addresses[0]) and not subnet.route_table:
-                log.debug("Resetting instance addresses to be provided via the backend service")
-                instance_addresses = [None] * count
+            if not Cidr(subnet.address_prefix).contains(instance_addresses[0]):
+                raise vFXTConfigurationException("Cluster addresses must reside within subnet {}".format(subnets[0]))
 
         try:
             if instance.os_profile.linux_configuration.ssh and 'admin_ssh_data' not in options:
@@ -1972,7 +1965,7 @@ class Service(ServiceBase):
             raise vFXTConfigurationException("Check that the subnet or specified address range has enough free addresses: {}".format(e))
 
     def add_instance_address(self, instance, address, **options):
-        '''Add a new route to the instance
+        '''Add a new address to the instance
 
             Arguments:
                 instance: backend instance
@@ -1993,59 +1986,31 @@ class Service(ServiceBase):
             ipcfg_name = '{}-{}'.format(self.name(instance), addr.address.replace('.', '-')) # XXX this is a convention
 
             # address in subnet range, we use IP configurations
-            if Cidr(subnet.address_prefix).contains(address):
+            if not Cidr(subnet.address_prefix).contains(address):
+                raise vFXTConfigurationException("Address {} is does not fall within subnet {}".format(address, subnet.name))
 
-                # check for existing
-                existing = self._who_has_ip(address)
-                if existing:
-                    if not options.get('allow_reassignment', True):
-                        raise vFXTConfigurationException("Address {} already assigned to {}".format(address, existing.name))
-                    self.remove_instance_address(existing, address)
+            # check for existing
+            existing = self._who_has_ip(address)
+            if existing:
+                if not options.get('allow_reassignment', True):
+                    raise vFXTConfigurationException("Address {} already assigned to {}".format(address, existing.name))
+                self.remove_instance_address(existing, address)
 
-                nic = self._instance_primary_nic(instance)
-                nic_data = nic.serialize()
-                new_ip = {
-                    'properties': {
-                        'subnet': {'id': subnet.id},
-                        'privateIPAllocationMethod': 'static',
-                        'privateIPAddress': address,
-                    },
-                    'name': ipcfg_name,
-                }
-                nic_data['properties']['ipConfigurations'].append(new_ip)
+            nic = self._instance_primary_nic(instance)
+            nic_data = nic.serialize()
+            new_ip = {
+                'properties': {
+                    'subnet': {'id': subnet.id},
+                    'privateIPAllocationMethod': 'static',
+                    'privateIPAddress': address,
+                },
+                'name': ipcfg_name,
+            }
+            nic_data['properties']['ipConfigurations'].append(new_ip)
 
-                nic_rsg = nic.id.split('/')[4]
-                op = conn.network_interfaces.create_or_update(nic_rsg, nic.name, nic_data)
-                self._wait_for_operation(op, retries=self.WAIT_FOR_IPCONFIG, msg='{} to be assigned to {}'.format(address, nic.name))
-
-            # otherwise we use routes
-            else:
-                if not subnet.route_table:
-                    raise vFXTConfigurationException("Subnet {} does not have an associated route table".format(subnet.name))
-
-                subnet_resource_group = subnet.id.split('/')[4]
-                route_table = subnet.route_table.id.split('/')[-1]
-                rt = conn.route_tables.get(subnet_resource_group, route_table)
-                for route in rt.routes:
-                    if route.next_hop_type != 'VirtualAppliance':
-                        continue
-                    if route.address_prefix != dest:
-                        continue
-                    if not options.get('allow_reassignment', True):
-                        raise vFXTConfigurationException("Route already assigned for {}".format(dest))
-                    log.debug("Removing existing route {}".format(route.name))
-                    op = conn.routes.delete(subnet_resource_group, route_table, route.name)
-                    self._wait_for_operation(op, msg='route to be removed')
-
-                # add the route
-                body = {
-                    'address_prefix': dest,
-                    'next_hop_type': 'VirtualAppliance',
-                    'next_hop_ip_address': self.ip(instance)
-                }
-                op = conn.routes.create_or_update(subnet_resource_group, route_table, ipcfg_name, body)
-                self._wait_for_operation(op, msg='route to be created')
-
+            nic_rsg = nic.id.split('/')[4]
+            op = conn.network_interfaces.create_or_update(nic_rsg, nic.name, nic_data)
+            self._wait_for_operation(op, retries=self.WAIT_FOR_IPCONFIG, msg='{} to be assigned to {}'.format(address, nic.name))
         except vFXTConfigurationException:
             raise
         except Exception as e:
@@ -2053,7 +2018,7 @@ class Service(ServiceBase):
             raise vFXTServiceFailure("Failed to add address {} to {}: {}".format(address, self.name(instance), e))
 
     def remove_instance_address(self, instance, address):
-        '''Remove an instance route address
+        '''Remove an instance address
 
             Arguments:
                 instance: backend instance
@@ -2069,39 +2034,17 @@ class Service(ServiceBase):
 
         try:
             # address in subnet range, we use IP configurations
-            if Cidr(subnet.address_prefix).contains(address):
-                nic = self._instance_primary_nic(instance)
-                nic_data = nic.serialize()
-                ip_configurations = nic_data['properties']['ipConfigurations']
-                nic_data['properties']['ipConfigurations'] = [_ for _ in ip_configurations if _['properties']['privateIPAddress'] != address]
+            if not Cidr(subnet.address_prefix).contains(address):
+                raise vFXTConfigurationException("Address {} is does not fall within subnet {}".format(address, subnet.name))
 
-                nic_rsg = nic.id.split('/')[4]
-                op = conn.network_interfaces.create_or_update(nic_rsg, nic.name, nic_data)
-                self._wait_for_operation(op, retries=self.WAIT_FOR_IPCONFIG, msg='{} to be removed from {}'.format(address, nic.name))
+            nic = self._instance_primary_nic(instance)
+            nic_data = nic.serialize()
+            ip_configurations = nic_data['properties']['ipConfigurations']
+            nic_data['properties']['ipConfigurations'] = [_ for _ in ip_configurations if _['properties']['privateIPAddress'] != address]
 
-            # otherwise we use routes
-            else:
-                if not subnet.route_table:
-                    raise vFXTConfigurationException("Subnet {} does not have an associated route table".format(subnet.name))
-
-                resource_group = subnet.id.split('/')[4]
-                primary_ip = self.ip(instance)
-                route_table = subnet.route_table.id.split('/')[-1]
-                rt = conn.route_tables.get(resource_group, route_table)
-                to_remove = []
-                for route in rt.routes:
-                    if route.next_hop_type != 'VirtualAppliance':
-                        continue
-                    if route.next_hop_ip_address != primary_ip:
-                        continue
-                    route_addr = Cidr(route.address_prefix).address
-                    if route_addr == address:
-                        to_remove.append(route)
-                if to_remove:
-                    for route in to_remove:
-                        op = conn.routes.delete(resource_group, route_table, route.name)
-                        self._wait_for_operation(op, msg='route to be removed')
-
+            nic_rsg = nic.id.split('/')[4]
+            op = conn.network_interfaces.create_or_update(nic_rsg, nic.name, nic_data)
+            self._wait_for_operation(op, retries=self.WAIT_FOR_IPCONFIG, msg='{} to be removed from {}'.format(address, nic.name))
         except Exception as e:
             log.debug(e)
             raise vFXTServiceFailure("Failed to remove address {} from {}: {}".format(address, self.name(instance), e))

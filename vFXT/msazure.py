@@ -2123,36 +2123,45 @@ class Service(ServiceBase):
                 if c.contains(addr):
                     addresses.add(addr)
 
-        for rt in conn.route_tables.list_all(): # all resource groups
-            for route in rt.routes:
-                if route.next_hop_type != 'VirtualAppliance':
-                    continue
-                addr = Cidr(route.address_prefix).address
-                if c.contains(addr):
-                    addresses.add(addr)
+        try:
+            for rt in conn.route_tables.list_all(): # all resource groups
+                for route in rt.routes:
+                    if route.next_hop_type != 'VirtualAppliance':
+                        continue
+                    addr = Cidr(route.address_prefix).address
+                    if c.contains(addr):
+                        addresses.add(addr)
+        except Exception as e:
+            log.debug("Ignoring route lookup failure: {}".format(e))
 
-        for gw in conn.application_gateways.list_all():
-            for ipconfig in gw.frontend_ip_configurations:
-                addr = ipconfig.private_ip_address
-                if addr and c.contains(addr):
-                    addresses.add(addr)
+        try:
+            for gw in conn.application_gateways.list_all():
+                for ipconfig in gw.frontend_ip_configurations:
+                    addr = ipconfig.private_ip_address
+                    if addr and c.contains(addr):
+                        addresses.add(addr)
+        except Exception as e:
+            log.debug("Ignoring application gateway lookup failure: {}".format(e))
 
-        for lb in conn.load_balancers.list_all():
-            for ipconfig in lb.frontend_ip_configurations:
-                addr = ipconfig.private_ip_address
-                if addr and c.contains(addr):
-                    addresses.add(addr)
+        try:
+            for lb in conn.load_balancers.list_all():
+                for ipconfig in lb.frontend_ip_configurations:
+                    addr = ipconfig.private_ip_address
+                    if addr and c.contains(addr):
+                        addresses.add(addr)
+        except Exception as e:
+            log.debug("Ignoring load balancer lookup failure: {}".format(e))
 
-        for ss in self.connection('compute').virtual_machine_scale_sets.list_all():
-            try:
+        try:
+            for ss in self.connection('compute').virtual_machine_scale_sets.list_all():
                 ss_rg = ss.id.split('/')[4]
                 for nic in conn.network_interfaces.list_virtual_machine_scale_set_network_interfaces(ss_rg, ss.name):
                     for ipconfig in nic.ip_configurations:
                         addr = ipconfig.private_ip_address
                         if addr and c.contains(addr):
                             addresses.add(addr)
-            except Exception as e:
-                log.debug('in_use_addresses scale set check failed: {}'.format(e))
+        except Exception as e:
+            log.debug('Ignoring scale set lookup failure: {}'.format(e))
 
         return list(addresses)
 
@@ -2197,13 +2206,16 @@ class Service(ServiceBase):
             primary_ip = self.ip(instance)
             subnet = self._instance_subnet(instance)
             if subnet.route_table:
-                network_resource_group = subnet.id.split('/')[4] # XXX no subnet.resource_group
-                rt = conn.route_tables.get(network_resource_group, subnet.route_table.id.split('/')[-1])
-                for route in rt.routes:
-                    if route.next_hop_type != 'VirtualAppliance':
-                        continue
-                    if route.next_hop_ip_address == primary_ip:
-                        addresses.add(Cidr(route.address_prefix).address)
+                try:
+                    network_resource_group = subnet.id.split('/')[4] # XXX no subnet.resource_group
+                    rt = conn.route_tables.get(network_resource_group, subnet.route_table.id.split('/')[-1])
+                    for route in rt.routes:
+                        if route.next_hop_type != 'VirtualAppliance':
+                            continue
+                        if route.next_hop_ip_address == primary_ip:
+                            addresses.add(Cidr(route.address_prefix).address)
+                except Exception as e:
+                    log.debug('Ignoring route table lookup failure: {}'.format(e))
 
         return list(addresses)
 
@@ -2401,20 +2413,23 @@ class Service(ServiceBase):
 
         # clean up routes pointing to this nic
         primary_ip = nic.ip_configurations[0].private_ip_address
-        for rt in netconn.route_tables.list_all():
-            for route in rt.routes:
-                if route.next_hop_type != 'VirtualAppliance':
-                    continue
-                if route.next_hop_ip_address != primary_ip:
-                    continue
-                try:
-                    route_rg = route.id.split('/')[4]
-                    table_name = route.id.split('/')[-3]
-                    route_name = route.id.split('/')[-1]
-                    op = netconn.routes.delete(route_rg, route_table_name=table_name, route_name=route_name)
-                    # skip self._wait_for_operation(op, msg='route to be deleted')
-                except Exception as e:
-                    log.error("Failed to delete route for nic {}: {}".format(name, e))
+        try:
+            for rt in netconn.route_tables.list_all():
+                for route in rt.routes:
+                    if route.next_hop_type != 'VirtualAppliance':
+                        continue
+                    if route.next_hop_ip_address != primary_ip:
+                        continue
+                    try:
+                        route_rg = route.id.split('/')[4]
+                        table_name = route.id.split('/')[-3]
+                        route_name = route.id.split('/')[-1]
+                        op = netconn.routes.delete(route_rg, route_table_name=table_name, route_name=route_name)
+                        # skip self._wait_for_operation(op, msg='route to be deleted')
+                    except Exception as route_del_e:
+                        log.error("Failed to delete route for nic {}: {}".format(name, route_del_e))
+        except Exception as e:
+            log.error("Failed to clean up routes for nic {}: {}".format(name, e))
 
     def _create_role(self, name, **options):
         '''Create an Azure role

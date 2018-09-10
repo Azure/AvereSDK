@@ -1,8 +1,8 @@
 # Using vfxt.py 
 
-This section describes the syntax and options available when using vfxt.py as a command-line interface to create and modify Avere clusters. 
+This section describes the syntax for using vfxt.py. It explains frequently used options when performing basic operations like creating or modifying Avere vFXT clusters. 
 
-Frequently used options are described in detail in this section; additional options are explained in the [vfxt.py Command Syntax and Options](syntax.md) document and in the platform-specific documents for [Azure](azure_options.md), [AWS](aws_options.md), and [GCE](gce_options.md). 
+Additional options are explained in the [vfxt.py Command Syntax and Options](syntax.md) document and in the platform-specific documents for [Azure](azure_options.md), [AWS](aws_options.md), and [GCE](gce_options.md). 
 
 ## Basic Syntax 
 

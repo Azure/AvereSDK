@@ -2,21 +2,22 @@
 
 This section describes the syntax and options available when using vfxt.py as a command-line interface to create and modify Avere clusters. 
 
-Frequently used options are described in detail in this section, but all options are explained in the vfxt.py Command Syntax and Options section at the end of this document. 
+Frequently used options are described in detail in this section; additional options are explained in the [vfxt.py Command Syntax and Options](syntax.md) document and in the platform-specific documents for [Azure](azure_options.md), [AWS](aws_options.md), and [GCE](gce_options.md). 
 
 ## Basic Syntax 
 
 The basic form for a vfxt.py command is this: 
+
 `vfxt.py --cloud-type type <authentication> <environment options> --<action>`
 
 Each vfxt.py command (except for information queries like `--help`) must include:
 
-* The cloud provider parameter – for example, azure for Azure, aws for Amazon, or gce for Google.
-* Authentication credentials for accessing the cloud API. The syntax is different depending on the cloud provider and authentication method you are using; read the setup section for Azure, Amazon Web Services, or Google Cloud Platform for details. 
+* The cloud provider parameter – for example, `azure` for Azure, `aws` for Amazon, or `gce` for Google.
+* Authentication credentials for accessing the cloud API. The syntax is different depending on the cloud provider and authentication method you are using; read the setup section for [Azure](azure_reference.md), [Amazon Web Services](aws_reference.md), or [Google Cloud Platform](gcp_reference.md) for details. 
 * The environment options for the cloud network or project (depending on the cloud provider). 
 * An action to perform – for example, `--create` to create a new vFXT cluster.
 
-Note that similar commands have different names if they are restricted to one type of cloud provider. For example, the option to set an Amazon location is region and the option for setting a Google location is zone. This difference serves as a check that the correct cloud service was specified. 
+Note that similar commands have different names if they are restricted to one type of cloud provider. For example, the option to set an Amazon location is `region` and the option for setting a Google location is `zone`. This difference serves as a check that the correct cloud service was specified. 
 
 Actions include things like creating or destroying a cluster, adding nodes, and stopping or starting the cluster. The command `vfxt.py --help` lists all options.
 
@@ -63,11 +64,11 @@ Use these options with the create command to set up the basic parameters for you
 
 * `--data-disk-type` *volume_type* - The kind of data volume to use as vFXT node disks. Values depend on the cloud provider type: 
 
-  * For GCE, options are pd-ssd, or local-ssd  
-  * For AWS EC2, options are gp2 (the default), or io1
-  * For Azure, this term is not used because only one storage type is supported: premium LRS
+  * For GCE, options are `pd-ssd`, or `local-ssd`  
+  * For AWS EC2, options are `gp2` (the default), or `io1`
+  * For Azure, this term is not used because only one storage type is supported: `premium LRS`
 
-* `--cluster-proxy-uri` *cluster_proxy_URL* - Address of a proxy server to set for the cluster. (Avere does not require using a proxy server.) Use the format http://username:password@proxy_IP address:port/ The port value is optional.
+* `--cluster-proxy-uri` *cluster_proxy_URL* - Address of a proxy server to set for the cluster. (Avere does not require using a proxy server.) Use the format http://*username*:*password*@*proxy_IP address*:*port*/ The port value is optional.
 
   Example: `--cluster-proxy-uri http://admin1:myGo0dpw42@203.0.113.29:8080/ `
 
@@ -75,7 +76,7 @@ Use these options with the create command to set up the basic parameters for you
 
 * `--cluster-range` *IP_range* - An IP address range, in CIDR notation, that the cluster will use for client-facing IP addresses and for cluster management.  
 
-* `--vserver` *vserver_name* - The name to use for the cluster vserver. If not specified, the default name is "vserver".  The vfxt.py create command gives one vserver per cluster. If you want to add vservers, use the Avere Control Panel or the XML-RPC API after creating the cluster. 
+* `--vserver` *vserver_name* - The name to use for the cluster vserver. If not specified, the default name is "vserver".  The vfxt.py create command gives one vserver per cluster. If you want to add vservers, use the Avere Control Panel or the XML-RPC API after creating the cluster. (Read [Creating and Working with VServers](http://library.averesystems.com/ops_guide/4_7/settings_overview.html#creating-and-working-with-vservers) in the cluster Configuration Guide to learn more about vservers, junctions, and the global namespace.)
 
 * `--core-filer` *core_filer_name* - The name to use for creating a new cloud core filer as part of the cluster creation. If not specified, the default name is the name of the cloud service type (aws, azure, or gce), or nfs if you specified an NFS core filer. 
 
@@ -198,7 +199,7 @@ vfxt.py	--cloud-type type
 
 ```
 
-If the cluster is offline, you must provide the node instance identifiers since they cannot be discovered from the cluster configuration. You do not need to provide the management address and password for an offline cluster. See Specifying Which Cluster To Modify for more information on identifying your cluster node instances. 
+If the cluster is offline, you must provide the node instance identifiers since they cannot be discovered from the cluster configuration. You do not need to provide the management address and password for an offline cluster. See [Specifying Which Cluster To Modify](#specifying-which-cluster-to-modify) for more information on identifying your cluster node instances. 
 
 > CAUTION: Using the `--quick-destroy` option can cause data loss. 
 
@@ -220,6 +221,7 @@ vfxt.py	--cloud-type type
 ```
 
 ### Start a Cluster
+
 Restart a stopped cluster with the option `--start`. 
 
 The system cannot query a stopped cluster for the node list, so you must provide a list of instance identifiers for the cluster nodes. 
@@ -262,7 +264,7 @@ vfxt.py	--cloud-type type
 
 ```
 
-Specify the proxy server in this format:  http://username:password@address:port_number
+Specify the proxy server in this format:  http://*username*:*password*@*address*:*port_number*
 
 You can use either an IP address or a hostname in the API proxy address value. (For the cluster proxy address, an IP address is preferred to avoid reliance on a domain name lookup service.)
 
@@ -283,16 +285,16 @@ vfxt.py	--cloud-type type
 
 ```
 
-Specify the proxy server in this format:  http://username:password@IP_address:port_number 
+Specify the proxy server in this format:  http://*username*:*password*@*IP_address*:*port_number* 
 Example: `--cluster-proxy-uri http://vfxtcluster:goodpw@203.0.113.76:8080/` 
 
 ### Update Software
 
 Use the `--upgrade` option to update the cluster’s Avere OS software. 
 
-> Note: The cluster must have SSL access to the Avere software download site, https://download.averesystems.com, to obtain the new distribution. Make sure that cluster has outbound and inbound access to this URL. Typically, ports 443 and 22 must be open to allow this; refer to the appendix of the vFXT installation guide for your cloud provider to learn more about required ports and whitelisted URLs.  
+> Note: The cluster must have SSL access to the Avere software download site, https<!-- -->://download.averesystems.com, to obtain the new distribution. Make sure that cluster has outbound and inbound access to this URL. Typically, ports 443 and 22 must be open to allow this; refer to the appendix of the vFXT installation guide for your cloud provider to learn more about required ports and whitelisted URLs.  
 
-The `--upgrade-url` element is required. Supply the URL for downloading the software image (for example, https://download.averesystems.com). Optionally, use `--upgrade-non-ha` to do the upgrade in parallel instead of one node at a time – note that this option has a higher impact on customer-facing latency than the standard upgrade does.  
+The `--upgrade-url` element is required. Supply the URL for downloading the software image (for example, https<!-- -->://download.averesystems.com). Optionally, use `--upgrade-non-ha` to do the upgrade in parallel instead of one node at a time – note that this option has a higher impact on customer-facing latency than the standard upgrade does.  
 
 ```python
 

@@ -30,7 +30,7 @@ These options do not require any other parameters.
 
 These arguments affect how vfxt.py behaves.
 
-| | | 
+| <img width=1500 /> | | 
 | ---------- | ------------------ |
 | `-d`, `--debug` | Give verbose feedback |
 | `--interact` | Use Python interactive mode |
@@ -45,7 +45,7 @@ These arguments affect how vfxt.py behaves.
 
 These options make up the basic actions for cluster creation and maintenance.
 
-| | |
+| <img width=900 /> | |
 | ---------- | ------------------ |
 | `--check` | Test API authentication credentials and check the account quota. Issues warnings if any required resources are at more than 80% utilization. |
 | `--create`  | Create a new cluster. Read [Creating a Cluster](using_vfxt_py.md#creating-a-cluster) for details. |
@@ -60,7 +60,7 @@ These options make up the basic actions for cluster creation and maintenance.
 
 These options are used with the commands above.
 
-| | |
+| <img width=900 /> | |
 | ---------- | ------------------ |
  `--quick-destroy` | When used with `--destroy`, this option skips flushing changed data from the cluster cache. **CAUTION: Using this option can cause data loss.** |
  `--upgrade-url` *URL* | Specifies the URL for downloading the software update. This value is required when using `--upgrade`. |
@@ -73,7 +73,7 @@ These options apply to any supported cloud provider.
 
 ### Authentication and Environment Options
 
-| | |
+| <img width=1500 /> | |
 | ---------- | ------------------ |
 | `--on-instance`        | Query the cloud environment for instance credentials. Use this option when running vfxt.py in a cloud instance instead of passing authentication credentials. Read the setup information for your cloud platform to learn more. |
 | `--from-environment` | Query the local host configuration for service credentials. Use this option when running vfxt.py from a non-cloud host where you have installed your cloud provider's custom command-line tool (that is, Azure [az](<https://docs.microsoft.com/en-us/cli/azure/?view=azure-cli-latest>), Google [gcloud](<https://cloud.google.com/sdk/gcloud/>), or Amazon [aws](<https://aws.amazon.com/cli/>) and configured it with the appropriate credentials. Read the CLI setup information for your cloud platform (linked in the tool names above) to learn more. |
@@ -85,7 +85,7 @@ These options apply to any supported cloud provider.
 
 ### Miscellaneous Cluster Options
 
-| | |
+| <img width=1000 /> | |
 | ---------- | ------------------ |
 | `--cluster-name` *cluster_name* | Name for the cluster (also used to tag resources). This name should be compatible with DNS, since some cloud providers process it into a DNS hostname. |
 | `--cluster-range` *IP_range* | IP address range (CIDR format) for the cluster. This range is assigned to the cluster to use for client traffic and cluster management tasks.  |
@@ -100,7 +100,7 @@ These options apply to any supported cloud provider.
 
 ### Node and Node Cache Options
 
-| | |
+| <img width=1200 /> | |
 | ---------- | ------------------ |
 | `--nodes` *number_of_nodes*     | Number of nodes to create or add to the cluster. |
 | `--node-cache-size` *size_in_GB* | Size of the data cache space for each node (in GB). Use this to automatically set `--data-disk-count` and `--data-disk-size`, or use those two settings to set each manually. All nodes will have identical storage capacity. Read [Initial Configuration for the New Cluster](using_vfxt_py.md#initial-configuration-for-the-new-cluster) for additional information. |
@@ -114,7 +114,7 @@ These options apply to any supported cloud provider.
 
 ### Core Filer Options
 
-| | |
+| <img width=1000 /> | |
 | ---------- | ------------------ |
 | `--core-filer` *core_filer_name* | Name for the core filer that will be created with the cluster. |
 | `--bucket` *s3_bucket_name* <br/> or <br/> `--azurecontainer` *blob_container_name* | Name of an existing, empty cloud storage container to use as the core filer. <br/> • For AWS or GCE, use `--bucket` to specify an S3 bucket <br/> • For Azure, use `--azurecontainer` to specify a blob container |

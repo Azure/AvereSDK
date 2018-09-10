@@ -3,6 +3,7 @@
 vfxt.py - Create an Create an Avere vFXT cluster
 
 usage:
+
 ```
 vfxt.py [-h] [-d] [-v]
 (--create|--destroy|--stop|--start|--add-nodes|--upgrade|--check|--telemetry|--interact)
@@ -18,8 +19,6 @@ vfxt.py [-h] [-d] [-v]
 [--subnet SUBNET [SUBNET ...]] 
 [--aws-tag AWS_TAG] [--govcloud] 
 [--no-disk-encryption] [--no-ebs-optimized]
-
-
 [--client-email CLIENT_EMAIL]
 [--project PROJECT] [--network-project NETWORK_PROJECT]
 [--zone ZONE [ZONE ...]] [--network NETWORK] [--subnetwork SUBNETWORK]
@@ -29,25 +28,18 @@ vfxt.py [-h] [-d] [-v]
 [--scopes SCOPES [SCOPES ...]]
 [--instance-addresses INSTANCE_ADDRESSES [INSTANCE_ADDRESSES ...]]
 [--storage-class STORAGE_CLASS]
-
 [--subscription-id SUBSCRIPTION_ID] [--storage-account STORAGE_ACCOUNT]
 [--application-id AD_APPLICATION_ID] 
 [--application-secret APPLICATION_SECRET]
-
-    [--tenant-id TENANT_ID] [--resource-group RESOURCE_GROUP]
-    [--network-resource-group NETWORK_RESOURCE_GROUP]
-    [--storage-resource-group STORAGE_RESOURCE_GROUP]
-
+[--tenant-id TENANT_ID] [--resource-group RESOURCE_GROUP]
+[--network-resource-group NETWORK_RESOURCE_GROUP]
+[--storage-resource-group STORAGE_RESOURCE_GROUP]
 [--network-security-group NETWORK_SECURITY_GROUP] xxx not described? xxx 
-
 [--azure-role AZURE_ROLE] [--location LOCATION] 
-
-    [--azurecontainer STORAGE ]   xxx not in help xxx 
-
+[--azurecontainer STORAGE ]  
 [--azure-network AZURE_NETWORK] [--azure-subnet AZURE_SUBNET] 
 [--azure-tag AZURE_TAG]
 [--azure-instance-addresses INSTANCE_ADDRESSES [INSTANCE_ADDRESSES ...]]
-
 [--enable-boot-diagnostics]
 [--root-disk-caching {ReadOnly,ReadWrite}]
 [--data-disk-caching {ReadOnly,ReadWrite}]

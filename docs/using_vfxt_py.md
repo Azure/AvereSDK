@@ -8,7 +8,7 @@ Additional options are explained in the [vfxt.py Command Syntax and Options](syn
 
 The basic form for a vfxt.py command is this: 
 
-`vfxt.py --cloud-type type <authentication> <environment options> --<action>`
+    vfxt.py --cloud-type type <authentication> <environment options> --<action>
 
 Each vfxt.py command (except for information queries like `--help`) must include:
 
@@ -25,7 +25,7 @@ Actions include things like creating or destroying a cluster, adding nodes, and 
 
 Use the `--create` action to instantiate a new vFXT cluster. 
 
-```
+```bash
 vfxt.py	--cloud-type type             \
 	<authentication options>      \
 	<environment options>         \
@@ -90,7 +90,8 @@ This section describes additional options that can be useful when creating a new
 
 If there is an error, vfxt.py rolls back what was done. In some situations, you might want to prevent this rollback - for example, during troubleshooting. The `--skip-cleanup` option leaves nodes, buckets, routes, roles, and other entities in the state they had when the error occurred. Anything created during the operation is not removed.
 
-```
+```bash
+
 vfxt.py	--cloud-type type         \
 	<authentication options>  \
 	<environment options>     \
@@ -104,7 +105,8 @@ vfxt.py can skip the creation of a bucket and the associated cloud core filer co
 
 > Note: If you use the `--nfs-mount` option, vfxt.py does not attempt to create a cloud core filer. 
 
-```
+```bash
+
 vfxt.py	--cloud-type type           \
 	<authentication options>    \
 	<environment options>       \
@@ -116,7 +118,7 @@ vfxt.py	--cloud-type type           \
 
 vfxt.py can configure an NFS core filer at cluster creation time by providing the NFS mount point in the host:/path format. Note that if you specify an NFS core filer, vfxt.py does not create a cloud core filer.  If your storage appliance type is one of the values in `--nfs-type` you can use that option here to set it. (If you don’t set the `--nfs-type` option it defaults to other.)  
 
-```
+```bash
 vfxt.py	--cloud-type type         \
 	<authentication options>  \
 	<environment options>     \
@@ -129,7 +131,7 @@ vfxt.py	--cloud-type type         \
 
 Data disks for the vFXT cache sizes can be configured independently with `--data-disk-size` and `--data-disk-count` at cluster creation time. A convenience option, `--node-cache-size`, automatically sizes these based on the given cache size (in GB).
 
-```
+```bash
 vfxt.py	--cloud-type type           \
 	<authentication options>    \
 	<environment options>       \
@@ -163,7 +165,8 @@ The `--add-nodes` option extends the cluster.
 
 Use the `--nodes` option to specify how many nodes to add. The cluster must be online. 
 
-```
+```bash
+
 vfxt.py	--cloud-type type                \
 	<authentication options>         \
 	<environment options>            \
@@ -187,7 +190,7 @@ Read Initial Configuration for the New Cluster for details about these options.
 
 The `--destroy` option permanently removes a cluster. 
 
-```
+```bash
 
 vfxt.py	--cloud-type type                 \
 	<authentication options>          \
@@ -209,7 +212,7 @@ A normal destroy action includes writing any remaining changed data in the clust
 
 The `--stop` option takes a cluster out of service. A stopped cluster does not serve client requests or update stored data. Stopping the cluster also stops its cloud virtual machines so that they do not incur usage charges; however, disk usage and storage charges can still accumulate. 
 
-```
+```bash
 
 vfxt.py	--cloud-type type           \
 	<authentication options>    \
@@ -226,7 +229,7 @@ Restart a stopped cluster with the option `--start`.
 
 The system cannot query a stopped cluster for the node list, so you must provide a list of instance identifiers for the cluster nodes. 
 
-```
+```bash
 
 vfxt.py	--cloud-type type         \
 	<authentication options>  \
@@ -254,7 +257,7 @@ This section describes the `--proxy-uri` option, which affects API commands.
 
 To configure vfxt.py to issue cloud API calls through a proxy server, use the `--proxy-uri` setting. The proxy argument must be used on each command that you want to send over the proxy. 
 
-```
+```bash
 
 vfxt.py	--cloud-type type            \
 	<authentication options>     \
@@ -275,7 +278,7 @@ There are two different proxy configuration options in vfxt.py:
 * `--cluster-proxy-uri` to set the vFXT cluster's proxy server 
 This section describes the `--cluster-proxy-uri` option, which affects the configuration of the vFXT cluster. 
 
-```
+```bash
 
 vfxt.py	--cloud-type type          \
 	<authentication options>   \
@@ -297,7 +300,7 @@ Use the `--upgrade` option to update the cluster’s Avere OS software.
 
 The `--upgrade-url` element is required. Supply the URL for downloading the software image (for example, https<!-- -->://download.averesystems.com). Optionally, use `--upgrade-non-ha` to do the upgrade in parallel instead of one node at a time – note that this option has a higher impact on customer-facing latency than the standard upgrade does.  
 
-```
+```bash
 
 vfxt.py	--cloud-type type          \
 	<authentication options>   \
@@ -311,7 +314,7 @@ vfxt.py	--cloud-type type          \
 
 The vfxt.py script can be used in a Python interactive session by passing the `--interact` parameter. Interactive mode can be useful for API testing, or for validating authentication and environment options. The `--interact` option is a simple command-line switch that initializes a service object with the vfxt.py command-line options and allows you to inspect it or run code within an interactive session. 
 
-```
+```bash
 
 vfxt.py	--cloud-type type          \
 	<authentication options>   \
@@ -322,7 +325,7 @@ vfxt.py	--cloud-type type          \
 
 An example session:
 
-```
+```bash
 
 # ./vfxt.py --cloud-type gce --on-instance --interact
 

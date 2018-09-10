@@ -337,4 +337,4 @@ An example session:
 
 ## Next Step: Additional Command Options
 
-Read [Command Syntax and Options](sytax.md) for more optional arguments.  
+Read [Command Syntax and Options](syntax.md) for more optional arguments.  

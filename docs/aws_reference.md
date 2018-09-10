@@ -26,7 +26,8 @@ The instance must be created with the IAM role for cluster creation. Read [Creat
 ## Install the AWS SDK for Python 
 
 On the system where you will run vfxt.py, install the Python Boto library. 
-    `pip install -–upgrade --user boto`
+
+    pip install -–upgrade --user boto
 
 ## Create the Cluster Management Role
 
@@ -116,7 +117,7 @@ Detailed instructions for creating an instance with the cluster manager role are
 
 After creating the instance, you can pass authentication credentials from vfxt.py by querying the instance metadata to obtain an authentication token:
 
-    `vfxt.py --cloud-type aws --on-instance`
+    vfxt.py --cloud-type aws --on-instance
 
 ### Remote Console
 
@@ -124,16 +125,16 @@ If using a remote system to run vfxt.py, you must pass user credentials for an a
 
 Use the key pair to authenticate as the user: 
 
-    `vfxt.py --cloud-type aws --access-key access_key --secret-key secret_key` 
+    vfxt.py --cloud-type aws --access-key access_key --secret-key secret_key 
 
 If you have configured the AWS command-line utility (awscli) with your credentials, you can use the `--from-environment` option to import them into vfxt.py:
 
-    `vfxt.py --cloud-type aws --from-environment`
+    vfxt.py --cloud-type aws --from-environment
 
 ## AWS Environment Options
 The region and subnet arguments provide enough information to query the VPC configuration. For cross-availability-zone (XAZ) configurations, you can provide multiple subnets - each in a different zone - separated by spaces.
 
-```python
+```
 vfxt.py --cloud-type aws 
         --access-key access_key
         --secret-key secret_key 
@@ -147,18 +148,18 @@ The AWS GovCloud region has custom settings beyond the GovCloud specific region.
 
 Use the option `--govcloud` to set both of these automatically. 
 
-```python
-vfxt.py --cloud-type aws 
-        <authentication options>
-        --region gov_cloud_region 
-        --subnet subnet subnet2 subnet3  
+```
+vfxt.py --cloud-type aws                  \
+        <authentication options>          \
+        --region gov_cloud_region         \
+        --subnet subnet subnet2 subnet3   \
         --govcloud
 ``` 
 
 If you want to set them individually, use the following commands instead of the `--govcloud` option. 
 
-* To set the GovCloud resource name: --arn aws-us-gov 
-* To set the GovCloud endpoint name: --iam-host iam.us-gov.amazonaws.com
+* To set the GovCloud resource name: `--arn aws-us-gov` 
+* To set the GovCloud endpoint name: `--iam-host iam.us-gov.amazonaws.com`
 
 ## Extra AWS Configuration Options
 

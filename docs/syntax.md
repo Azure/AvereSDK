@@ -45,7 +45,7 @@ These arguments affect how vfxt.py behaves.
 
 These options make up the basic actions for cluster creation and maintenance.
 
-| <img width=900 /> | |
+| <img width=200 /> | |
 | ---------- | ------------------ |
 | `--check` | Test API authentication credentials and check the account quota. Issues warnings if any required resources are at more than 80% utilization. |
 | `--create`  | Create a new cluster. Read [Creating a Cluster](using_vfxt_py.md#creating-a-cluster) for details. |
@@ -60,7 +60,7 @@ These options make up the basic actions for cluster creation and maintenance.
 
 These options are used with the commands above.
 
-| <img width=900 /> | |
+| <img width=400 /> | |
 | ---------- | ------------------ |
  `--quick-destroy` | When used with `--destroy`, this option skips flushing changed data from the cluster cache. **CAUTION: Using this option can cause data loss.** |
  `--upgrade-url` *URL* | Specifies the URL for downloading the software update. This value is required when using `--upgrade`. |
@@ -114,7 +114,7 @@ These options apply to any supported cloud provider.
 
 ### Core Filer Options
 
-| <img width=1000 /> | |
+| <img width=800 /> | |
 | ---------- | ------------------ |
 | `--core-filer` *core_filer_name* | Name for the core filer that will be created with the cluster. |
 | `--bucket` *s3_bucket_name* <br/> or <br/> `--azurecontainer` *blob_container_name* | Name of an existing, empty cloud storage container to use as the core filer. <br/> • For AWS or GCE, use `--bucket` to specify an S3 bucket <br/> • For Azure, use `--azurecontainer` to specify a blob container |

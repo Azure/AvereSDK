@@ -57,7 +57,8 @@ Ensure that the Python installation has the latest versions of the API library f
 * Google API client library if using GCE
 
 This command can be used with any of the three cloud providers to install the needed library. 
-`pip install --user --upgrade boto requests google-api-python-client azure`
+
+    pip install --user --upgrade boto requests google-api-python-client azure
 
 > Note: The `azure` package is a meta-package that downloads a full set of Azure libraries. If you will not be working with Microsoft Azure, you can omit that term from the command. To install only the Azure packages, use `$ pip install –-user azure`
 
@@ -67,14 +68,16 @@ This command can be used with any of the three cloud providers to install the ne
 The vfxt.py script is published in the Python Package Index (PyPI) and also available from the Avere SDK GitHub page. 
 
 The easiest way to install vfxt.py is by using pip to automatically download and install the script and dependencies:
-`pip install --user vFXT`
+
+    pip install --user vFXT
 
 The `--user` option installs vfxt.py in `site.USER_BASE`, which defaults to `~/.local` on most UNIX-style systems. Read the [Python site.py documentation](<https://docs.python.org/2/library/site.html#site.USER_BASE>) to learn more.  
 
-Release archives also are available from <https://github.com/AvereSystems/vFXT.py/releases>. (This is the same release available with pip but in a standalone archive format.)
+Release archives also are available from <https://github.com/Azure/AvereSDK/releases>. (This is the same release available with pip but in a standalone archive format.)
 
 You can test that the script is active by issuing the help command.
-`vfxt.py --help`
+
+    vfxt.py --help
 
 If you see the help text, the test was successful. If you do not see the vfxt.py help text, check the software requirements and try the installation again. 
 

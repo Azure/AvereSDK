@@ -99,4 +99,6 @@ These sections of this documentation also give provider-specific information abo
 * [Quick Reference - Using vfxt.py with Google Cloud Platform](gce_reference.md) 
 * [Quick Reference – Using vfxt.py with Microsoft Azure](azure_reference.md)
 
- 
+ ## Next Step - Basic vfxt.py Syntax 
+ 
+ After you have installed the software on your system, read [Using vfxt.py](using_vfxt_py.md) to learn the basics of issuing commands.

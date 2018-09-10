@@ -1,7 +1,9 @@
 
 # vfxt.py Command Syntax and Options 
 
-This section gives brief descriptions of the vfxt.py command syntax. Note that options might have changed since this document was created in September 2018; use the command `vfxt.py --help` to see accurate options for your version of the script.
+This section gives brief descriptions of vfxt.py command syntax. 
+
+Note that options might have changed since this document was created in September 2018. Use the command `vfxt.py --help` to see accurate options for your version of the script.
 
 ## Required Parameters 
 
@@ -34,7 +36,7 @@ These arguments affect how vfxt.py behaves.
 | ---------- | ------------------ |
 | `-d`, `--debug` | Give verbose feedback |
 | `--interact` | Use Python interactive mode |
-| `--proxy-uri` *URL* | Send vfxt.py calls through this proxy server. Include the username, password, and port - for example, http://user:password@172.16.16.20:8080/ |
+| `--proxy-uri` *URL* | Send vfxt.py calls through this proxy server. Include the username, password, and port - for example, `http://user:password@172.16.16.20:8080/` |
 | `--skip-check` | Do not check quotas during a `--create` action |
 | `--skip-cleanup`  | Do not remove resources (buckets, volumes, instances) created as part of the action when a failure occurs |
 | `--wait-for-state` {`red`\|`yellow`\| `green`}  | After issuing the command, wait until the cluster has reached a particular state when validating success of the action. By default, vfxt.py waits until the cluster has only non-critical alerts (yellow status, based on the alert conventions used in the Avere Control Panel dashboard). The waiting system shows a status message like `INFO - Waiting for cluster healthcheck.` You should use this option only when troubleshooting a problem under the guidance of support staff.  |
@@ -76,7 +78,7 @@ These options apply to any supported cloud provider.
 | <img width=1500 /> | |
 | ---------- | ------------------ |
 | `--on-instance`        | Query the cloud environment for instance credentials. Use this option when running vfxt.py in a cloud instance instead of passing authentication credentials. Read the setup information for your cloud platform to learn more. |
-| `--from-environment` | Query the local host configuration for service credentials. Use this option when running vfxt.py from a non-cloud host where you have installed your cloud provider's custom command-line tool (that is, Azure [az](<https://docs.microsoft.com/en-us/cli/azure/?view=azure-cli-latest>), Google [gcloud](<https://cloud.google.com/sdk/gcloud/>), or Amazon [aws](<https://aws.amazon.com/cli/>) and configured it with the appropriate credentials. Read the CLI setup information for your cloud platform (linked in the tool names above) to learn more. |
+| `--from-environment` | Query the local host configuration for service credentials. Use this option when running vfxt.py from a non-cloud host where you have installed your cloud provider's custom command-line tool (that is, Azure [az](<https://docs.microsoft.com/en-us/cli/azure/?view=azure-cli-latest>), Google [gcloud](<https://cloud.google.com/sdk/gcloud/>), or Amazon [aws](<https://aws.amazon.com/cli/>)) and configured it with the appropriate credentials. Read the CLI setup information for your cloud platform (linked in the tool names above) to learn more. |
 | `--admin-password` *cluster_password* | Administrator password for cluster management. This option serves two functions: <br/> • When creating a cluster, this option sets the password for the admin login account. <br/> • When modifying an online cluster, use this option to supply the password in order to authenticate to the cluster. <br/> **Note:** You cannot use this option as a command to change an existing password. Use the Avere Control Panel web interface or the XML-RPC command-line API to change a cluster’s administrator password. |
 | `--management-address` *cluster_mgmt_IP* | The cluster's management address. <br/>• When creating a cluster, this option sets the management IP address. <br/> • When modifying an online cluster, use this option to specify which cluster is being modified. |
 | `--instances` *instance1_ID* *instance2_ID* *instance3_ID*  | Instance identifiers for the cluster nodes - use this to specify an offline cluster. Read [Specifying Which Cluster To Modify](using_vfxt_py.md#specifying-which-cluster-to-modify) for more information. |
@@ -89,12 +91,12 @@ These options apply to any supported cloud provider.
 | ---------- | ------------------ |
 | `--cluster-name` *cluster_name* | Name for the cluster (also used to tag resources). This name should be compatible with DNS, since some cloud providers process it into a DNS hostname. |
 | `--cluster-range` *IP_range* | IP address range (CIDR format) for the cluster. This range is assigned to the cluster to use for client traffic and cluster management tasks.  |
-| `--cluster-proxy-uri` *URL* | Proxy resource for the cluster - for example, http://user:pass@172.16.16.20:8080/. **Note:** Use the IP address rather than hostname in case DNS becomes unreachable. |
+| `--cluster-proxy-uri` *URL* | Proxy resource for the cluster - for example, `http://user:pass@172.16.16.20:8080/`. **Note:** Use the IP address rather than hostname in case DNS becomes unreachable. |
 | `--junction` *vserver_junction_path* | Sets the GNS path for the vserver's junction. The path must start with `/`. If not set, the default value is the cloud provider name (`/gce` , `/azure`, or `/aws`), or the last segment of the NFS export path (/smithj for an NFS export with the path /files/smithj)  |
 | `--labels` *key*:*value*  | Specify a key:value pair label for the cluster. Specify one label at a time; you can use as many label statements as needed. |
 | `--no-vserver` | Skips automatically creating a vserver with the cluster |
 | `--root-size` *boot_disk_size_in_GB* | Use this to specify the size of each node's boot disk, in GB. <br/> **Note:** This setting might not be honored by some cloud providers. |
-| `--timezone` *zone* | Cluster time zone (in TZ database format - for example, --timezone America/Puerto_Rico) |
+| `--timezone` *zone* | Cluster time zone (in TZ database format - for example, `--timezone America/Puerto_Rico`) |
 | `--trace-level` *level* | Trace level for the created cluster |
 | `--vserver` *vserver_name* | Name for the vserver that will be created with the cluster |
 
@@ -108,7 +110,7 @@ These options apply to any supported cloud provider.
 |`--data-disk-size` *size_in_GB* | Size of data disk volumes to create for the vFXT cluster. This option can be used with `--create` or with `--add-nodes`. <br/>You can use `--node-cache-size` to set this automatically. Read [Initial Configuration for the New Cluster](using_vfxt_py.md#initial-configuration-for-the-new-cluster) for additional information.     |
 | `--data-disk-type` *volume_type* | Type of storage volumes to create for the vFXT cluster cache. Values depend on the cloud provider; AWS values are `gp2` (default), `io1`, or `standard`. GCE values are `pd-ssd` (default), or `local-ssd`. Azure supports only one disk type (premium LRS) and does not use this option. |
 |`--instance-type` *instance_type* | Type of instance to use when creating nodes. This is required for creating a cluster or when adding nodes to a cluster. Read [Creating a Cluster](using_vfxt_py.md#creating-a-cluster) for details. |
-| `--image-id` *image_ID_or_URI* | Optionally, use this parameter to specify an image instead of using the default image when creating the cluster. Consult support for guidance before using this advanced option. <br/>The image ID or URL should match what your cloud provider uses. <br/> • AWS image ID example: ami-ff6e9c9f <br/> • GCE image URL example: https://www.googleapis.com/compute/v1/projects/tribal-parsec-845/global/images/avere-vfxt-4625 <br/> • Azure URN example: microsoft-avere:vfxt-preview:avere-vfxt-node:latest |
+| `--image-id` *image_ID_or_URI* | Optionally, use this parameter to specify an image instead of using the default image when creating the cluster. Consult support for guidance before using this advanced option. <br/>The image ID or URL should match what your cloud provider uses. <br/> • AWS image ID example: ami-ff6e9c9f <br/> • GCE image URL example: https<!-- -->://www.googleapis.<!-- -->com/compute/v1/projects/tribal-parsec-845/global/images/avere-vfxt-4625 <br/> • Azure URN example: microsoft-avere:vfxt-preview:avere-vfxt-node:latest |
 | `--join-instance-address` | Join nodes using the instance address rather than the management address |
 | `--join-wait wait_time` | Set a custom time (in seconds) to wait for nodes to join the cluster. This is a troubleshooting option that should only be used when recommended by support staff. |
 

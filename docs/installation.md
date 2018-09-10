@@ -90,13 +90,13 @@ Regardless of whether you use vfxt.py on a virtual machine inside your cloud env
 
 The details vary greatly by cloud provider. Read the detailed Avere vFXT Installation Guide for your cloud compute provider for complete information about setting up projects, network configuration, security and privileges, and other vital information before attempting to use vfxt.py. 
 
-* vFXT Installation Guide for Amazon Web Services 
-* vFXT Installation Guide for Google Cloud Platform
-* vFXT Installation Guide for Microsoft Azure (coming soon)
+* [vFXT Installation Guide for Amazon Web Services](<http://library.averesystems.com/#vfxt>)
+* [vFXT Installation Guide for Google Cloud Platform](<http://library.averesystems.com/#vfxt>)
+* vFXT Installation Guide for Microsoft Azure (coming soon, read current documentation [here](<https://github.com/Azure/Avere/blob/master/README.md>))
 
-These appendixes also give provider-specific information about using vfxt.py on particular cloud systems. 
-* Quick Reference - Using vfxt.py with Amazon Web Services 
-* Quick Reference - Using vfxt.py with Google Cloud Platform 
-* Quick Reference – Using vfxt.py with Microsoft Azure 
+These sections of this documentation also give provider-specific information about using vfxt.py on particular cloud systems. 
+* [Quick Reference - Using vfxt.py with Amazon Web Services](aws_reference.md)
+* [Quick Reference - Using vfxt.py with Google Cloud Platform](gce_reference.md) 
+* [Quick Reference – Using vfxt.py with Microsoft Azure](azure_reference.md)
 
  

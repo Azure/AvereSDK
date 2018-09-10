@@ -2,7 +2,7 @@
 
 The vfxt.py script is a command-line tool for creating, managing, and decommissioning Avere vFXT clusters in cloud-based virtual computing environments. 
 
-This documentation set gives a basic overview of the vfxt.py script and its options. For a more comprehensive explanation of how to set up a cloud project and configure the necessary infrastructure for running a vFXT cluster on a specific cloud platform, read the customized vFXT installation guide for your cloud provider. Links are below in [Additional documentation](#additional-documentation), below.
+This documentation set gives a basic overview of the vfxt.py script and its options. For a more comprehensive explanation of how to set up a cloud project and configure the necessary infrastructure for running a vFXT cluster on a specific cloud platform, read the customized vFXT installation guide for your cloud provider. Links are below in [Additional documentation](#additional-documentation).
 
 ## Contents
 
@@ -38,4 +38,4 @@ These installation guides give more complete information about how to configure 
 * [vFXT Installation Guide for Google Cloud Platform](<http://library.averesystems.com/#vfxt>)
 * vFXT Installation Guide for Microsoft Azure – coming soon; read current online documentation [here](<http://aka.ms/averedocs>) 
 
-The [Configuration Guide and Dashboard Guide](<http://library.averesystems.com/#ops_guide>) explain cluster settings and operation from the Avere Control Panel. 
+After creating the cluster, use the Avere Control Panel web interface to adjust settings. The Cluster Configuration Guide and Dashboard Guide available from [library.averesystems.com](<http://library.averesystems.com/#ops_guide>) explain cluster configuration and monitoring. 

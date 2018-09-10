@@ -4,7 +4,7 @@ These options can be used only if the `--cloud-type` value is `azure`.
 
 ## Azure Authentication Options 
 
-| | |
+|<img width=300/> | |
 | ---------- | ------------------ |
 | `--subscription-id` *ID* | Azure subscription identifier |
 | `--application-id` *ID* | UUID for the service principal |
@@ -15,7 +15,7 @@ Use the generic option `--on-instance` for local console commands.
 
 ## Azure Environment Options
 
-| | |
+| <img width=500/>  | |
 | ---------- | ------------------ |
 | `--azure-network` *vnet_name* | Virtual network that houses the cluster nodes |
 | `--azure-subnet` *subnet_name* | One or more subnet in the virtual network subnet (one or more) |
@@ -30,7 +30,7 @@ Use the generic option `--on-instance` for local console commands.
 
 ## Additional Azure-Specific Options 
 
-| | |
+| <img width=600/>  | |
 | ---------- | ------------------ |
 | `--azurecontainer` [*storage_acct*/*container_name*] | Specify an existing container to use instead of creating a new one. The container must be empty. |
 | `--azure-instance-addresses` *instance1_ID* *instance2_ID* *instance3_ID* [*... instanceN_ID*] | Specific instance addresses to use rather than assigning them dynamically – separate addresses with spaces. |

@@ -2,7 +2,7 @@
 
 The vfxt.py script is a command-line tool for creating, managing, and decommissioning Avere vFXT clusters in cloud-based virtual computing environments. It is supported on Microsoft Azure, Amazon Web Services, and Google Cloud Platform.
 
-This documentation set gives a basic overview of the vfxt.py script and its options. For a more comprehensive explanation of how to set up a cloud project and configure the necessary infrastructure for running a vFXT cluster on a specific cloud platform, read the customized vFXT installation guide for your cloud provider, linked [below](#additional-documentation).
+This documentation set gives a basic overview of the vfxt.py script and its options. For a more comprehensive explanation of how to set up a cloud project and configure the necessary infrastructure for running a vFXT cluster on a specific cloud platform, read the customized vFXT installation guide for your cloud provider, linked [below](#guides).
 
 ## Getting started
 
@@ -49,7 +49,7 @@ For ongoing cluster administration, use the Avere Control Panel. Read the Avere 
 
 The vfxt.py script can be used with any of the cloud computing providers that Avere OS supports. Environment setup requirements are different for the different platforms, and the exact commands available vary by cloud computing provider.
 
-This document gives a basic overview of the vfxt.py script and its options. It includes information about commands specific to Microsoft Azure, Amazon Web Services, and Google Compute Project cloud services. However, setting up a cloud project and configuring it to provide an Avere vFXT cluster includes many more steps than are documented here. Project creation, identity and access management, networking, quota and billing concerns, security, and many other topics are explained in detail in the Avere vFXT Installation Guide customized for your cloud provider. Read the complete details here: 
+<a name="guides"></a>This document gives a basic overview of the vfxt.py script and its options. It includes information about commands specific to Microsoft Azure, Amazon Web Services, and Google Compute Project cloud services. However, setting up a cloud project and configuring it to provide an Avere vFXT cluster includes many more steps than are documented here. Project creation, identity and access management, networking, quota and billing concerns, security, and many other topics are explained in detail in the Avere vFXT Installation Guide customized for your cloud provider. Read the complete details here: 
 
 * [vFXT Installation Guide for Amazon Web Services](<http://library.averesystems.com/#vfxt>) 
 * [vFXT Installation Guide for Google Cloud Platform](<http://library.averesystems.com/#vfxt>)

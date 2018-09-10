@@ -37,17 +37,17 @@ The command `vfxt.py --help` gives a full list of command options, including pro
 
 Microsoft Azure: 
 * [Quick reference - Using vfxt.py with Microsoft Azure](azure_reference.md)
-* [Azure-only command options](azure_options.md)
+* [Azure-specific command options](azure_options.md)
 
 Amazon Web Services: 
 
 * [Quick reference - Using vfxt.py with Amazon Web Services](aws_reference.md)
-* [AWS-only options](aws_options.md)
+* [AWS-specific command options](aws_options.md)
 
 Google Cloud Platform: 
 
 * [Quick reference - Using vfxt.py with Google Cloud Platform](gce_reference.md)
-* [GCE-only options](gce_options.md)
+* [GCE-specific command options](gce_options.md)
 
 ## Getting help
 

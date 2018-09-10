@@ -11,13 +11,13 @@ If setting up a Linux instance in the cloud, follow these guidelines.
 
 * Create a VM instance of any size.
 * The instance must have the privileges to create other instances. Read the requirements for your cloud provider to learn how to configure the VM that provides your vfxt.py console. 
-* Install a recent Linux distribution from GNU, Debian, or Red Hat. Follow the instructions in [vfxt.py Software Requirements](#vfxt.py-software-requirements), below, for installing additional required packages. 
+* Install a recent Linux distribution from GNU, Debian, or Red Hat. Follow the instructions in [vfxt.py Software Requirements](#vfxtpy-software-requirements), below, for installing additional required packages. 
 
 ## Remote Console Setup 
 
 If using a console from a system outside the cloud environment, make sure it can access the instances within your cloud environment. Read your cloud provider’s documentation to learn how to use a VPN or other utility to provide IP connectivity to your cloud instances. 
 
-Install the software described in [vfxt.py Software Requirements](#vfxt.py-software-requirements), below. 
+Install the software described in [vfxt.py Software Requirements](#vfxtpy-software-requirements), below. 
 
 ## vfxt.py Software Requirements
 

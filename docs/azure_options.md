@@ -40,3 +40,7 @@ Use the generic option `--on-instance` for local console commands.
 | `--network-security-group` *group_name* |  Name of the network security group (if needed) |
 | `--root-disk-caching` {`ReadOnly`,`ReadWrite`} | Azure root disk caching mode (defaults to `ReadOnly`) |
 | `--storage-account` *account_ID* | Storage account for Blob-backed core filer and boot diagnostics |
+
+## Additional Azure Information
+
+Read [Quick Reference - Using vfxt.py with Microsoft Azure](azure_reference.md) for more Azure-specific information.  

@@ -25,7 +25,9 @@ Before using vfxt.py, make sure that your Linux environment includes all of the 
 
 ### 1. Check security prerequisites and Python version
 
-The vfxt.py script requires Python version 2.7.9 or later. Also, check that the system used for creating and managing the vFXT cluster meets the software requirements for securely administering an Avere cluster, as described in the appendix of the Avere OS Configuration Guide.
+The vfxt.py script requires Python version 2.7.9 or later. 
+
+Also, the system used for creating and managing the vFXT cluster must meet the software security requirements for administering an Avere cluster, as described in the [appendix of the Avere OS Configuration Guide](<http://library.averesystems.com/ops_guide/4_7/security_prereqs.html>).
 
 ### 2. Update system dependencies 
 

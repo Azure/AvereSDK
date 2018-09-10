@@ -73,18 +73,6 @@ These options apply to any supported cloud provider.
 
 ### Authentication and Environment Options
 
-xxx test table: 
-
-+---------------+---------------+--------------------+
-| Fruit         | Price         | Advantages         |
-+===============+===============+====================+
-| Bananas       | $1.34         | - built-in wrapper |
-|               |               | - bright color     |
-+---------------+---------------+--------------------+
-| Oranges       | $2.10         | - cures scurvy     |
-|               |               | - tasty            |
-+---------------+---------------+--------------------+
-
 | | |
 | ---------- | ------------------ |
 | `--on-instance`        | Query the cloud environment for instance credentials. Use this option when running vfxt.py in a cloud instance instead of passing authentication credentials. Read the setup information for your cloud platform to learn more. |
@@ -135,3 +123,10 @@ xxx test table:
 | `--nfs-type` {`NetappNonClustered`\| `NetappClustered`\|`EmcIsilon`} | Specify the type of appliance used as the core filer in the `--nfs-mount` argument. This type is important for correct SMB operation and cannot be easily detected. |
 | `--subdir` *path_under_mountpoint* | Use this option with `--nfs-mount` to mount a subdirectory on the NFS storage system. |
 
+## Provider-specific Options
+
+Read the linked articles to learn about vfxt.py arguments that apply only to specific cloud providers: 
+
+* [Azure-specific command options](azure_options.md)
+* [AWS-specific command options](aws_options.md)
+* [GCE-specific command options](gce_options.md)

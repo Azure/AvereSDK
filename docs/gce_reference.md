@@ -1,6 +1,6 @@
 # Quick Reference – Using vfxt.py with Google Cloud Platform
 
-This section gives an overview of how to configure a vfxt.py installation to be able to create Avere clusters in a Google Compute Engine (part of Google Cloud) environment.
+This section gives an overview of how to configure a vfxt.py installation to be able to create Avere clusters in a Google Compute Engine  environment. (Note that vfxt.py terms use GCE to indicate Google services and not "GCP", which is a reference to the full Google Cloud Platform product family.)
 
 >Note: Read the [vFXT Installation Guide for Google Cloud Platform](<http://library.averesystems.com/#vfxt>) for complete information about the configuration required to create vFXT clusters in the Amazon cloud computing environment. 
 
@@ -25,7 +25,7 @@ On the system where you will run vfxt.py, install the Google API Python Client L
 
 `    pip install –-upgrade --user google-api-python-client`
 
-## GCE Authentication Options
+## GCE authentication options
 
 When issuing a vfxt.py command on a Google Cloud system, you must include the appropriate parameters to authenticate the system running vfxt.py to your Google Cloud Project.
 

@@ -1,4 +1,4 @@
-# Cloud cluster management with vfxt.py
+# Cloud Cluster Management with vfxt.py
 
 The vfxt.py script is a command-line tool for creating and managing Avere clusters in cloud-based virtual computing environments. 
 
@@ -21,11 +21,11 @@ This document gives a basic overview of the vfxt.py script and its options. It i
 
 The command `vfxt.py --help` gives a full list of command options, including provider-specific functionality. 
 
-## Getting started
+## Getting Started
 
 [Installing and Setting Up the vfxt.py Script](installation.md)
 
-## Syntax and options
+## Syntax and Options
 
 [Using vftx.py](using_vfxt_py.md)
 
@@ -33,7 +33,7 @@ The command `vfxt.py --help` gives a full list of command options, including pro
 
 [All options](all_options.md)
 
-## Platform-specific information
+## Platform-Specific Information
 
 Microsoft Azure: 
 * [Quick reference - Using vfxt.py with Microsoft Azure](azure_reference.md)
@@ -49,7 +49,7 @@ Google Cloud Platform:
 * [Quick reference - Using vfxt.py with Google Cloud Platform](gce_reference.md)
 * [GCE-specific command options](gce_options.md)
 
-## Getting help
+## Getting Help
 
 [Troubleshooting and support](troubleshooting.md)
 

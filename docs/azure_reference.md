@@ -11,7 +11,7 @@ Configuring the Azure environment to allow vfxt.py access includes the following
 * Before creating a cluster make sure you have configured the following infrastructure: 
 
   * Check your subscription’s resource quotas and request an increase if needed
-  * Create a role for the cluster nodes. **Note:** You must specify the role filename when creating the cluster, as described [below](#creating-the-avere-runtime-role-in-azure-active-directory).
+  * Create a role for the cluster nodes. (You must specify the role name when creating the cluster, as described [below](#creating-the-avere-runtime-role-in-azure-active-directory).)
   * Set up a storage account for the cluster cache and, optionally, for cloud-based backend data storage
 
 Note that many of these steps require ownership privileges for the subscription that will host the cluster.
@@ -43,7 +43,7 @@ There are two basic steps to set up this authentication option:
 1. Create an instance that has managed service identity enabled
 2. Change the role for the instance’s service principal from contributor to owner
 
-When creating the instance, turn on the Managed Service Identity optional feature (read more in the [Azure Managed Service Identity documentation](<https://docs.microsoft.com/en-us/azure/app-service/app-service-managed-service-identity>)). This option creates a service principal (SP) in Azure AD for the instance. However, the default role for these instances is contributor, which is insufficient for creating and managing an Avere vFXT cluster, so you need to change it to have the role owner. 
+When creating the instance, turn on the Managed Service Identity optional feature (read more in the [Azure Managed Service Identity documentation](<https://docs.microsoft.com/en-us/azure/app-service/app-service-managed-service-identity>)). This option creates a service principal (SP) in Azure AD for the instance. However, the default role for these instances is Contributor, which is insufficient for creating and managing an Avere vFXT cluster, so you need to change it to have the role Owner. 
 
 To assign an owner role to the service principal, follow these steps: 
 
@@ -110,7 +110,7 @@ vfxt.py --cloud-type azure
         --storage-account account 
         --location location 
         --azure-network network 
-        --azure-subnet [subnet subnet2 subnet3] 
+        --azure-subnet subnet
 ```
 
 ## Extra Azure Configuration Options
@@ -139,13 +139,14 @@ This table shows example values that can be used when creating an Avere vFXT clu
 
 ## Creating the Avere Runtime Role in Azure Active Directory
 
-Before creating a cluster you need to set up a role to assign privileges to the cluster nodes. Refer to the [vFXT Installation Guide for Microsoft Azure](<http://library.averesystems.com/#vfxt>) for more complete information. 
+Before creating a cluster you need to set up a role to assign privileges to the cluster nodes. Refer to the [vFXT Installation Guide for Microsoft Azure](http://aka.ms/averedocs) <!-- <http://library.averesystems.com/#vfxt> --> for more complete information. 
 
 The Avere vFXT system uses role-based access control to give vFXT cluster nodes the privileges they need to operate. For example, each cluster node needs the ability to access other vFXT nodes, to manage network infrastructure, and to modify storage resources.  
 
 Create a custom role for the cluster nodes and scope it to the subscription that you will use for the cluster.
 
 Copy the lines in this example, substituting your subscription ID in the `AssignableScopes` statement. Save the role in a .json file (for example, averecluster.json). 
+<!-- remove routes lines at GA -->
 
 ```
 {
@@ -160,6 +161,9 @@ Copy the lines in this example, substituting your subscription ID in the `Assign
         "Microsoft.Network/networkInterfaces/write",
         "Microsoft.Network/virtualNetworks/subnets/read",
         "Microsoft.Network/virtualNetworks/subnets/join/action",
+        "Microsoft.Network/networkSecurityGroups/join/action",
+        "Microsoft.Network/routeTables/read",
+        "Microsoft.Network/routeTables/routes/*",
         "Microsoft.Resources/subscriptions/resourceGroups/read"
         "Microsoft.Storage/storageAccounts/blobServices/containers/delete",
         "Microsoft.Storage/storageAccounts/blobServices/containers/read",
@@ -181,8 +185,6 @@ Example:
 `az role definition create --role-definition averecluster.json`
 
 When you issue the vfxt.py `--create` command, you must pass the role name (from the `Name` value in the .json file)in the `--avere-role` argument.
-
-    /\  xxx filename or role name (avere-cluster)??? xxx 
 
 Example: 
 

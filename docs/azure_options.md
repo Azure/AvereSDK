@@ -18,7 +18,7 @@ Use the generic option `--on-instance` for local console commands.
 | <img width=500/>  | |
 | ---------- | ------------------ |
 | `--azure-network` *vnet_name* | Virtual network that houses the cluster nodes |
-| `--azure-subnet` *subnet_name* | One or more subnet in the virtual network subnet (one or more) |
+| `--azure-subnet` *subnet_name* | Subnet in the virtual network  |
 | `--azure-role` *role_name* | Existing Azure role for the cluster. If not supplied, a role will be created, or cluster creation will fail if permissions are insufficient to create the role. |
 | `--location` *location_shortname*    | Azure geographic location |
 | `--network-resource-group` *group_name* | Network resource group (if different from the resource group used for the cluster VMs) |

@@ -13,9 +13,9 @@ Common errors include the following situations:
 
 The `--debug` option can be added to any vfxt.py command. It gives verbose feedback that can help you to identify useful status messages or detect problems in backend interaction that come about during the script's execution. 
 
-To simplify output collection, you can use the `tee` command to direct the standard error and output streams to a log file: 
+You also can use the `--log` option to direct the standard error and output streams to a log file: 
 
-`vfxt.py` \<script arguments\> `2>&1 | tee` *logfile.txt* 
+    vfxt.py --log logfilename.txt --debug <main vfxt.py commands and options> 
 
 Save the debugging output from any unresolved situations to send along with your support request. 
 

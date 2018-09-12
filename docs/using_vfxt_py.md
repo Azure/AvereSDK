@@ -58,7 +58,7 @@ Use these options with the create command to set up the basic parameters for you
 
     These options let you specify the number of virtual data storage disks to create for each node (count) and the size of each disk (size). 
 
-    > Note: If using Google Cloud, be careful not to exceed your storage quota or other limits, which can cause the create command to return an error. 
+    > Note: Be careful not to exceed your storage quota or other limits, which can cause the create command to return an error. 
 
     Each node in the cluster will have the same number of data disks, and each disk will be the same size. 
 

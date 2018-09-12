@@ -8,9 +8,9 @@ all supported cloud environments.
 
 Licensed under the MIT License.
 
-You can find the user guide here:
+# User Guide
 
-https://download.averesystems.com/software/avere_vfxt.py_usage_guide.pdf
+You can find the user documentation in this repository under [docs](/docs/README.md). External link:  [https://github.com/Azure/AvereSDK/blob/master/docs/README.md](https://github.com/Azure/AvereSDK/blob/master/docs/README.md)
 
 
 # Installation
@@ -23,18 +23,15 @@ From source (see python setup.py install --help options for customization)
 
 ```python setup.py install```
 
-#### Authentication requirements specific for each service backend.
+## Authentication requirements - specific for each service backend
 
 - AWS: requires the access key/secret access key pair
-- GCE: requires a service account with the JSON key file
 - Azure: requires an AD application/service principal
-
+- GCE: requires a service account with the JSON key file
 
 # vFXT Library
 
-
-#### AWS Example:
-
+## AWS example:
 
     from vFXT.cluster import Cluster
     from vFXT.aws import Service
@@ -53,9 +50,23 @@ From source (see python setup.py install --help options for customization)
     # via ServiceInstance which calls the backend .create_instance()
     client = ServiceInstance.create(aws, 'c3.xlarge', 'client1', 'ami-b9faad89', key_name="aws_ssh_keyname")
 
+## Azure example:
 
+    from vFXT.cluster import Cluster
+    from vFXT.msazure import Service
 
-#### GCE Example:
+    azure = Service(subscription_id='', tenant_id='',
+        application_id='', application_secret='',
+        resource_group='', storage_account='',
+        location='', network='', subnet='',
+    )
+    cluster = Cluster.create(azure, 'Standard_D16s_v3', 'avereclustaer', 'adminpass')
+
+    with open('/home/user/.ssh/id_rsa.pub','r') as f: # must be rsa
+        sshpubkey = f.read()
+    client = ServiceInstance.create(azure, 'Standard_DS1', 'client1', 'credativ:Debian:9:latest', admin_ssh_data=sshpubkey)
+
+## GCE example:
 
     from vFXT.cluster import Cluster
     from vFXT.gce import Service
@@ -75,23 +86,7 @@ From source (see python setup.py install --help options for customization)
 
     client_instance.destroy()
 
-#### Azure Example
-
-    from vFXT.cluster import Cluster
-    from vFXT.msazure import Service
-
-    azure = Service(subscription_id='', tenant_id='',
-        application_id='', application_secret='',
-        resource_group='', storage_account='',
-        location='', network='', subnet='',
-    )
-    cluster = Cluster.create(azure, 'Standard_D16s_v3', 'avereclustaer', 'adminpass')
-
-    with open('/home/user/.ssh/id_rsa.pub','r') as f: # must be rsa
-        sshpubkey = f.read()
-    client = ServiceInstance.create(azure, 'Standard_DS1', 'client1', 'credativ:Debian:9:latest', admin_ssh_data=sshpubkey)
-
-#### General example
+## General example:
 
 To load an existing, running cluster:
 
@@ -121,7 +116,7 @@ To serialize a cluster:
     service_data = service.export()
     service = Service(**service_data)
 
-#### Testing
+# Testing
 
 Run the unit test suite
 
@@ -131,49 +126,15 @@ Or run one test at a time
 
     python setup.py test -s tests.GCE_test
 
-The unittest configuration is found in tests/test_config.json.  Setup credentials and existing infrastructure to verify against in the configuration prior to running.
+The unittest configuration is found in tests/test_config.json.  Set up credentials and existing infrastructure to verify against in the configuration prior to running.
 
-# Example vfxt.py utility invocation:
+# Example vfxt.py utility invocation
 
 The first part of the invocations are the cloud-type and the authentication options.  Following those, the action and any related action options.
 
-#### GCE create a cluster
+##  AWS examples
 
-    vfxt.py --cloud-type gce \
-    --key-file=service-account.json \
-    --project fine-volt-704 --zone us-central1-b --network gce1 \
-    \
-    --create                                \
-    --image-id vfxt-4614                    \
-    --admin-password adminpass              \
-    --cluster-name averecluster  \
-    --nodes 3                               \
-    --gce-tag use-nat                       \
-    --instance-type 'n1-highmem-8'
-
-#### GCE destroy a cluster
-
-    vfxt.py --cloud-type gce \
-    --key-file=service-account.json \
-    --project fine-volt-704 --zone us-central1-b --network gce1 \
-    \
-    --destroy                         \
-    --management-address 10.52.16.103 \
-    --admin-password adminpass
-
-#### GCE add nodes
-
-    vfxt.py --cloud-type gce \
-    --key-file=service-account.json \
-    --network gce1 \
-    --project fine-volt-704 --zone us-central1-a \
-    \
-    --add-nodes                       \
-    --nodes 3                         \
-    --management-address 10.52.16.115 \
-    --admin-password 'adminpass'
-
-#### AWS create a cluster
+### AWS create a cluster
 
     vfxt.py --cloud-type aws --region us-west-2 --access-key 'X' \
     --secret-key 'X' --subnet subnet-f99a618e \
@@ -185,7 +146,7 @@ The first part of the invocations are the cloud-type and the authentication opti
     --nodes 3                               \
     --instance-type 'r4.2xlarge'
 
-#### AWS destroy a cluster
+### AWS destroy a cluster
 
     vfxt.py --cloud-type aws --region us-west-2 --access-key 'X' \
     --secret-key 'X' --subnet subnet-f66a618e \
@@ -195,7 +156,7 @@ The first part of the invocations are the cloud-type and the authentication opti
     --management-address 10.50.248.50 \
     --admin-password adminpass
 
-#### AWS add nodes
+### AWS add nodes
 
     vfxt.py --cloud-type aws --region us-west-2 --access-key 'X' \
     --secret-key 'X' --subnet subnet-f99a618e \
@@ -205,6 +166,8 @@ The first part of the invocations are the cloud-type and the authentication opti
     --nodes 3                         \
     --management-address 10.50.248.50 \
     --admin-password adminpass
+
+## Azure examples
 
 ### Azure create a cluster
 
@@ -222,6 +185,44 @@ The first part of the invocations are the cloud-type and the authentication opti
     --nodes 3                               \
     --instance-type 'Standard_D16s_v3' \
     --azure-role "avere-cluster"
+
+## GCE examples
+
+### GCE create a cluster
+
+    vfxt.py --cloud-type gce \
+    --key-file=service-account.json \
+    --project fine-volt-704 --zone us-central1-b --network gce1 \
+    \
+    --create                                \
+    --image-id vfxt-4614                    \
+    --admin-password adminpass              \
+    --cluster-name averecluster  \
+    --nodes 3                               \
+    --gce-tag use-nat                       \
+    --instance-type 'n1-highmem-8'
+
+### GCE destroy a cluster
+
+    vfxt.py --cloud-type gce \
+    --key-file=service-account.json \
+    --project fine-volt-704 --zone us-central1-b --network gce1 \
+    \
+    --destroy                         \
+    --management-address 10.52.16.103 \
+    --admin-password adminpass
+
+### GCE add nodes
+
+    vfxt.py --cloud-type gce \
+    --key-file=service-account.json \
+    --network gce1 \
+    --project fine-volt-704 --zone us-central1-a \
+    \
+    --add-nodes                       \
+    --nodes 3                         \
+    --management-address 10.52.16.115 \
+    --admin-password 'adminpass'
 
 # Contributing
 

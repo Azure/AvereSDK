@@ -11,7 +11,7 @@ If setting up a Linux instance in the cloud, follow these guidelines.
 
 * Create a VM instance of any size.
 * The instance must have the privileges to create other instances. Read the requirements for your cloud provider to learn how to configure the VM that provides your vfxt.py console. 
-* Install a recent Linux distribution from GNU, Debian, or Red Hat. Follow the instructions in [vfxt.py Software Requirements](#vfxtpy-software-requirements), below, for installing additional required packages. 
+* Install a recent Linux distribution from GNU, Debian, or a similar provider. Follow the instructions in [vfxt.py Software Requirements](#vfxtpy-software-requirements), below, for installing additional required packages. 
 
 ## Remote Console Setup 
 
@@ -23,6 +23,8 @@ Install the software described in [vfxt.py Software Requirements](#vfxtpy-softwa
 
 Before using vfxt.py, make sure that your Linux environment includes all of the necessary software packages. 
 
+> Note that recent distributions of Red Hat/CentOS do not include [required security packages](<http://library.averesystems.com/ops_guide/4_7/security_prereqs.html>). 
+
 ### 1. Check security prerequisites and Python version
 
 The vfxt.py script requires Python version 2.7.9 or later. 
@@ -31,22 +33,23 @@ Also, the system used for creating and managing the vFXT cluster must meet the s
 
 ### 2. Update system dependencies 
 
-In this step, make sure that the software needed to run vfxt.py is installed and configured in the shell system. Python, SSL, and a foreign function interface (FFI) package are required. The steps are different depending on the Linux distribution:
+In this step, make sure that the software needed to run vfxt.py is installed and configured in the shell system. Python, SSL, and a foreign function interface (FFI) package are required. The steps are different depending on the Linux distribution; consult your Linux documentation for details. 
 
-* If using Ubuntu or another Debian-based Linux distribution:
+For Ubuntu or another Debian-based Linux distribution, run these commands:
 
   ```bash
   sudo apt-get update 
   sudo apt-get install python-pip
   ```
 
-* If using Red Hat Enterprise Linux: 
+<!-- * If using Red Hat Enterprise Linux or CentOS:       #RHEL/CentOS unsupported as of 9/2018
 
   ```bash
   sudo wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
   sudo rpm -ivh epel-release-latest-7.noarch.rpm
   sudo yum install -y python-pip
   ```
+--> 
 
 ### 3. Update Python dependencies
 

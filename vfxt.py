@@ -30,6 +30,12 @@ def _validate_url(url):
         return url
     raise argparse.ArgumentTypeError("malformed URL: {}".format(url))
 
+def _validate_ascii(s):
+    try:
+        return s.encode('ascii',errors='ignore')
+    except Exception:
+        raise argparse.ArgumentTypeError("Value must be ASCII: {}".format(s))
+
 def _get_user_shelveable(service, user):#pylint: disable=unused-argument
     raise NotImplementedError()
 
@@ -253,28 +259,20 @@ def main():
     cluster_opts.add_argument("--cluster-name", help="Name for the cluster (also used to tag resources)")
     cluster_opts.add_argument("--instances", nargs="+", help="Instance IDs of cluster nodes (required by --start or if the cluster is offline)", type=str)
     cluster_opts.add_argument("--instance-type", help="Type of instances used to instantiate nodes")
-    cluster_opts.add_argument("--admin-password", help="Admin password for cluster",
-                        default=None)
-    cluster_opts.add_argument("--management-address", metavar="IP_ADDR",
-                        help="IP address for management of the cluster",
-                        type=_validate_ip)
+    cluster_opts.add_argument("--admin-password", help="Admin password for cluster", default=None, type=_validate_ascii)
+    cluster_opts.add_argument("--management-address", metavar="IP_ADDR", help="IP address for management of the cluster", type=_validate_ip)
     cluster_opts.add_argument("--nodes", help="Number of nodes to create in the cluster (minimum of 3 for create)", type=int)
     cluster_opts.add_argument("--node-cache-size", help="Size of data cache per node (in GB).  This defines data-disk-count and data-disk-size optimally with the provided cache size.", default=0, type=int)
-    cluster_opts.add_argument("--data-disk-count", help="Number of data disk volumes per node to create for the vFXT cluster",
-                        default=None, type=int)
+    cluster_opts.add_argument("--data-disk-count", help="Number of data disk volumes per node to create for the vFXT cluster", default=None, type=int)
     cluster_opts.add_argument("--data-disk-type", help="Type of volumes to create for the vFXT cluster cache.  AWS values are gp2 (default), io1, or standard.  GCE values are pd-standard, pd-ssd, or local-ssd.", default=None)
-    cluster_opts.add_argument("--data-disk-iops", help="Number of sustained IOPS (for volume type io1)",
-                    default=None, type=int)
+    cluster_opts.add_argument("--data-disk-iops", help="Number of sustained IOPS (for volume type io1)", default=None, type=int)
     cluster_opts.add_argument("--data-disk-nvme", help="Use the NVME interface instead of SCSI (GCE local-ssd only)", action='store_true')
-    cluster_opts.add_argument("--data-disk-size", help="Size of the cache data disk (in GB)",
-                        default=None, type=int)
-    cluster_opts.add_argument("--root-size", help="Total size of the boot disk (in GB)",
-                        default=None, type=int)
+    cluster_opts.add_argument("--data-disk-size", help="Size of the cache data disk (in GB)", default=None, type=int)
+    cluster_opts.add_argument("--root-size", help="Total size of the boot disk (in GB)", default=None, type=int)
     cluster_opts.add_argument("--configuration-expiration", help=argparse.SUPPRESS, default=Cluster.CONFIGURATION_EXPIRATION, type=int) # Number of minutes until the cluster.cfg file should expire
     cluster_opts.add_argument('--upgrade-url', help="Url to an AvereOS upgrade package")
     cluster_opts.add_argument('--upgrade-non-ha', help="Perform a non-HA upgrade", action="store_true")
-    cluster_opts.add_argument('--cluster-range', help='IP address range (cidr format) to use for addressing', default=None,
-                        type=lambda x: str(Cidr(x)))
+    cluster_opts.add_argument('--cluster-range', help='IP address range (cidr format) to use for addressing', default=None, type=lambda x: str(Cidr(x)))
     cluster_opts.add_argument('--cluster-proxy-uri', help='Proxy resource for the cluster configuration, example http://user:pass@172.16.16.20:8080/.  NOTE: using the address rather than hostname is preferred in the event DNS is not reachable.', metavar="URL", type=_validate_url)
     cluster_opts.add_argument('--public-address', help=argparse.SUPPRESS, action='store_true')
     cluster_opts.add_argument('--trace-level', help='Trace level for the created cluster', default='', type=str)

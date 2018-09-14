@@ -2030,6 +2030,8 @@ class Service(ServiceBase):
         '''
         if address not in self.instance_in_use_addresses(instance):
             raise vFXTConfigurationException("{} is not assigned to {}".format(address, self.name(instance)))
+        if address == self.ip(instance):
+            raise vFXTConfigurationException("The primary address {} can not be removed from {}".format(address, self.name(instance)))
 
         conn = self.connection('network')
         subnet = self._instance_subnet(instance)

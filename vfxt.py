@@ -289,11 +289,11 @@ def main():
     cluster_opts.add_argument("--no-corefiler", help="Skip creating core filer", action='store_true')
     cluster_opts.add_argument("--no-vserver", help="Skip creating default virtual server", action='store_true')
     cluster_opts.add_argument("--bucket", "--azurecontainer", help="S3 bucket, Google Storage bucket, Azure storageaccount/container to use as the core filer (must be empty), otherwise one will be created", metavar='STORAGE')
-    cluster_opts.add_argument("--bucket-not-empty", help=argparse.SUPPRESS, action='store_true') # Existing bucket has data in it
-    cluster_opts.add_argument("--disable-bucket-encryption", help=argparse.SUPPRESS, action='store_true') # Disable the use of encryption for files in the bucket
-    cluster_opts.add_argument("--disable-bucket-compression", help=argparse.SUPPRESS, action='store_true') # Disable the use of compression for files in the bucket
-    cluster_opts.add_argument("--disable-bucket-https", help=argparse.SUPPRESS, action='store_true') # Disable the use of HTTPS for bucket communication
-    cluster_opts.add_argument("--disable-bucket-https-verify", help=argparse.SUPPRESS, action='store_true') # Disable HTTPS certificate verification for bucket communication
+    cluster_opts.add_argument("--bucket-not-empty", "--averecontainer-not-empty", action='store_true', help="Existing storage endpoint has data in it")
+    cluster_opts.add_argument("--disable-bucket-encryption", "--disable-azurecontainer-encryption", action='store_true', help="Disable the use of encryption for objects written to the storage endpoint")
+    cluster_opts.add_argument("--disable-bucket-compression", "--disable-azurecontainer-compression", action='store_true', help="Disable the use of compression for objects written to the storage endpoint")
+    cluster_opts.add_argument("--disable-bucket-https", "--disable-azurecontainer-https", action='store_true', help="Disable the use of HTTPS for storage endpoint communication")
+    cluster_opts.add_argument("--disable-bucket-https-verify", "--disable-azurecontainer-https-verify", action='store_true', help="Disable HTTPS certificate verification for storage endpoint communication")
     cluster_opts.add_argument("--nfs-mount", help="NFS mountpoint to use as the core filer (host:/path)")
     cluster_opts.add_argument("--nfs-type", help="NFS server type", choices=['NetappNonClustered', 'NetappClustered', 'EmcIsilon'], default=None)
     cluster_opts.add_argument("--core-filer", help="Name of the core filer to create")

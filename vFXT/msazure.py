@@ -456,6 +456,7 @@ class Service(ServiceBase):
                 source_address (str, optional): source address for data request
                 token_resource (str, optional): resource scope for returned token
                                        defaults to management, ie: 'http://management.azure.com/'
+                                       other values include storage, 'https://storage.azure.com/'
 
             This only works when running on an Azure instance.
 
@@ -971,6 +972,7 @@ class Service(ServiceBase):
                 azure_role (str, optional): Azure role name to assign to the system provided identity
                 identity (str, optional): ARM resource identity reference (full path)
                 storage_account_type (str, optional): Storage account type for managed disks
+                user_data (bytes, optional): Custom data for the instance CustomData field
         '''
         if not self.valid_instancename(name):
             raise vFXTConfigurationException("{} is not a valid instance name".format(name))

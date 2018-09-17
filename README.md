@@ -10,7 +10,7 @@ Licensed under the MIT License.
 
 # User Guide
 
-You can find the user documentation in this repository under [docs](/docs/README.md). External link:  [https://github.com/Azure/AvereSDK/blob/master/docs/README.md](https://github.com/Azure/AvereSDK/blob/master/docs/README.md)
+You can find the user documentation in this repository under [docs](/docs/README.md).
 
 
 # Installation

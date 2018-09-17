@@ -1,6 +1,6 @@
 # All Options
 
-vfxt.py - Create an Create an Avere vFXT cluster
+vfxt.py - Create an Create an Avere vFXT cluster    
 
 usage:
 

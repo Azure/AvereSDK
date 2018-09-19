@@ -27,7 +27,7 @@ The command `vfxt.py --help` gives a full list of command options, including pro
 
 ## Syntax and Options
 
-[Using vftx.py](using_vfxt_py.md)
+[Using vfxt.py](using_vfxt_py.md)
 
 [Command Syntax and Options](syntax.md)
 

@@ -571,6 +571,10 @@ def main():
             logger.error("You must specify a storage account for cloud corefilers")
             parser.exit(1)
 
+        if args.add_nodes:
+            if args.nodes > 3:
+                logger.error("Adding more than 3 cluster nodes is not supported")
+                parser.exit(1)
 
     # generic service options
     service.POLLTIME = args.poll_time

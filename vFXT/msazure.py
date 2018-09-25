@@ -2498,9 +2498,9 @@ class Service(ServiceBase):
             'principal_id': principal
         }
 
-        association_id = str(uuid.uuid4())
         retries = options.get('retries') or self.NEW_ROLE_FETCH_RETRY
         while True:
+            association_id = str(uuid.uuid4())
             try:
                 scope = self._resource_group_scope()
                 # if we span resource groups, the scope must be on the subscription

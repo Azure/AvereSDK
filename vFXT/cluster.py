@@ -1428,7 +1428,7 @@ class Cluster(object):
             self._sleep()
 
         if options.get('crypto_mode') != 'DISABLED':
-            log.info("Generating master key for {}".format(corefiler))
+            log.info("Generating master key for {} using the admin pass phrase".format(corefiler))
             retries = self.service.XMLRPC_RETRIES
             while True:
                 try:
@@ -1443,16 +1443,12 @@ class Cluster(object):
                 retries -= 1
                 self._sleep()
 
-            log.info("Activating master key for {}".format(corefiler))
+            log.info("Activating master key {} (signature {}) for {}".format(key['keyId'], key['signature'], corefiler))
             response = self._xmlrpc_do(xmlrpc.corefiler.activateMasterKey, corefiler, key['keyId'], key['recoveryFile'])
             if response != 'success':
                 _cleanup()
                 raise vFXTConfigurationException('Failed to activate master key for {}: {}'.format(corefiler, response))
 
-            log.info("*** IT IS STRONGLY RECOMMENDED THAT YOU CREATE A NEW CLOUD ENCRYPTION KEY AND SAVE THE")
-            log.info("*** KEY FILE (AND PASSWORD) BEFORE USING YOUR NEW CLUSTER.  WITHOUT THESE, IT WILL NOT")
-            log.info("*** BE POSSIBLE TO RECOVER YOUR DATA AFTER A FAILURE")
-            log.info("Do this at https://{}/avere/fxt/cloudFilerKeySettings.php".format(self.mgmt_ip))
             return key
 
     def attach_corefiler(self, corefiler, networkname, **options):

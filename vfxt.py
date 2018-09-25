@@ -36,6 +36,17 @@ def _validate_ascii(s):
     except Exception:
         raise argparse.ArgumentTypeError("Value must be ASCII: {}".format(s))
 
+def _validate_writeable_path(p):
+    f = None
+    try:
+        f = open(p, 'wb')
+        return p
+    except Exception as e:
+        raise argparse.ArgumentTypeError("Invalid file {}: {}".format(p, e))
+    finally:
+        if f:
+            f.close()
+
 def _get_user_shelveable(service, user):#pylint: disable=unused-argument
     raise NotImplementedError()
 
@@ -135,17 +146,34 @@ def _add_bucket_corefiler(cluster, logger, args):
     if tags:
         bucket_opts['tags'] = tags
 
+    key = None # encryption key data
     if not args.bucket:
         logger.info("Creating corefiler {} with new cloud storage: {}".format(corefiler, bucketname))
         if args.govcloud:
             cluster.service.create_bucket(bucketname, storage_class=args.storage_class)
-            cluster.attach_bucket(corefiler, '{}:{}'.format(bucketname, cluster.service.region), **bucket_opts)
+            key = cluster.attach_bucket(corefiler, '{}:{}'.format(bucketname, cluster.service.region), **bucket_opts)
         else:
-            cluster.make_test_bucket(bucketname=bucketname, corefiler=corefiler, storage_class=args.storage_class, **bucket_opts)
+            key = cluster.make_test_bucket(bucketname=bucketname, corefiler=corefiler, storage_class=args.storage_class, **bucket_opts)
     else: # existing bucket
         logger.info("Attaching an existing cloud storage {} to corefiler {}".format(bucketname, corefiler))
         bucket_opts['existing_data'] = args.bucket_not_empty
-        cluster.attach_bucket(corefiler, bucketname, master_password=args.admin_password, **bucket_opts)
+        key = cluster.attach_bucket(corefiler, bucketname, master_password=args.admin_password, **bucket_opts)
+
+    if key and args.core_filer_key_file:
+        try:
+            with open(args.core_filer_key_file, 'wb') as f:
+                f.write(key['recoveryFile'].decode('base64'))
+            logger.info("Saved encryption key for {} to {}".format(bucketname, args.core_filer_key_file))
+        except Exception as e:
+            if args.debug:
+                logger.exception(e)
+            logger.error("Failed to save key file to {}: {}".format(args.core_filer_key_file, e))
+    elif key: # we only get a key if crypto mode is enabled... so if we didn't save it emit a warning
+        logger.warn("*** IT IS STRONGLY RECOMMENDED THAT YOU CREATE A NEW CLOUD ENCRYPTION KEY AND SAVE THE")
+        logger.warn("*** KEY FILE (AND PASSWORD) BEFORE USING YOUR NEW CLUSTER.  WITHOUT THESE, IT WILL NOT")
+        logger.warn("*** BE POSSIBLE TO RECOVER YOUR DATA AFTER A FAILURE")
+        logger.warn("Do this at https://{}/avere/fxt/cloudFilerKeySettings.php".format(cluster.mgmt_ip))
+
     return corefiler
 
 def main():
@@ -297,6 +325,7 @@ def main():
     cluster_opts.add_argument("--nfs-mount", help="NFS mountpoint to use as the core filer (host:/path)")
     cluster_opts.add_argument("--nfs-type", help="NFS server type", choices=['NetappNonClustered', 'NetappClustered', 'EmcIsilon'], default=None)
     cluster_opts.add_argument("--core-filer", help="Name of the core filer to create")
+    cluster_opts.add_argument("--core-filer-key-file", help="File path to save the encryption key (if encryption is not disabled)", type=_validate_writeable_path, default=None)
     cluster_opts.add_argument("--subdir", help="NFS Export subdirectory (if / is the only export)", type=str, default='')
     cluster_opts.add_argument("--junction", help="Path of the vserver junction (must start with /, defaults to /nfs for NFS exports or cloud vendor name)", type=str, default='')
     cluster_opts.add_argument("--vserver", help="Name of the vserver to create (defaults to vserver)", default='vserver')

@@ -231,7 +231,7 @@ def main():
     gce_opts = parser.add_argument_group('GCE specific options', 'Options applicable for --cloud-type gce')
     gce_opts.add_argument("--client-email", help="OATH2 Client email if using the p12 key file", default='default')
     gce_opts.add_argument("--project", help="Project name", default=None)
-    gce_opts.add_argument("--network-project", help="Project name for XPN host", default=None)
+    gce_opts.add_argument("--network-project", help="Project name for XPN host project", default=None)
     gce_opts.add_argument("--zone", nargs="+", help="One or more zone names (us-central1-a)", type=str, default=None)
     gce_opts.add_argument("--network", help="Network name", default=None)
     gce_opts.add_argument("--subnetwork", help="Subnetwork name", default=None)

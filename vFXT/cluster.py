@@ -199,7 +199,6 @@ class Cluster(object):
                 skip_node_renaming (bool optional): Do not automatically configure and enforce node naming convention (defaults to False)
                 size (int, optional): size of cluster (node count), defaults to 3
                 root_image (str, optional): root disk image name
-                skip_cleanup (bool, optional): do not clean up on failure
                 address_range_start (str, optional): The first of a custom range of addresses to use for the cluster
                 address_range_end (str, optional): The last of a custom range of addresses to use for the cluster
                 address_range_netmask (str, optional): cluster address range netmask

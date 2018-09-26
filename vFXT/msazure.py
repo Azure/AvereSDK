@@ -125,47 +125,47 @@ class Service(ServiceBase):
     NTP_SERVERS = ['time.windows.com']
     DNS_SERVERS = ['168.63.129.16']
     MACHINE_DEFAULTS = {
-        'Standard_A4': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_A7': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_A8': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_A9': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_A10': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_A11': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_D4': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_D4_v2': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_D5_v2': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_D13': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4},
-        'Standard_D13_v2': {'data_disk_size': 512, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4},
-        'Standard_D14': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4},
-        'Standard_D14_v2': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4},
-        'Standard_DS1': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_DS4': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_DS4_v2': {'data_disk_size': 128, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_DS5_v2': {'data_disk_size': 128, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_D2s_v3': {'data_disk_size': 128, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_D4s_v3': {'data_disk_size': 128, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 8},
-        'Standard_D8s_v3': {'data_disk_size': 128, 'data_disk_count': 4, 'node_count': 0, 'max_data_disk_count': 16},
-        'Standard_D16s_v3': {'data_disk_size': 128, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
-        'Standard_D32s_v3': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
-        'Standard_D64s_v3': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
-        'Standard_DS13': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 32},
-        'Standard_DS13_v2': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 32},
-        'Standard_DS14': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 64},
-        'Standard_DS14_v2': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 64},
-        'Standard_DS15_v2': {'data_disk_size': 512, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 64},
-        'Standard_E2s_v3': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4},
-        'Standard_E4s_v3': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 8},
-        'Standard_E8s_v3': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 16},
-        'Standard_E16s_v3': {'data_disk_size': 256, 'data_disk_count': 4, 'node_count': 3, 'max_data_disk_count': 32},
-        'Standard_E32s_v3': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
-        'Standard_E64s_v3': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
-        'Standard_E64is_v3': {'data_disk_size': 512, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
-        'Standard_G3': {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_G4': {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_G5': {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_GS3': {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_GS4': {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_GS5': {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_A4':      {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_A7':      {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_A8':      {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_A9':      {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_A10':     {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_A11':     {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_D4':      {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_D4_v2':   {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_D5_v2':   {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_D13':     {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_D13_v2':  {'data_disk_size': 512, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_D14':     {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_D14_v2':  {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_DS1':     {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_DS4':     {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_DS4_v2':  {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_DS5_v2':  {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_D2s_v3':  {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 3200, 'max_localdisk_mbps': 48},
+        'Standard_D4s_v3':  {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 8, 'max_localdisk_iops': 6400, 'max_localdisk_mbps': 96},
+        'Standard_D8s_v3':  {'data_disk_size': 128, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 16, 'max_localdisk_iops': 12800, 'max_localdisk_mbps': 192},
+        'Standard_D16s_v3': {'data_disk_size': 128, 'data_disk_count': 4, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 25600, 'max_localdisk_mbps': 384},
+        'Standard_D32s_v3': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_D64s_v3': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_DS13':    {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_DS13_v2': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 25600, 'max_localdisk_mbps': 384},
+        'Standard_DS14':    {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 64, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_DS14_v2': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 64, 'max_localdisk_iops': 51200, 'max_localdisk_mbps': 768},
+        'Standard_DS15_v2': {'data_disk_size': 512, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 64, 'max_localdisk_iops': 64000, 'max_localdisk_mbps': 960},
+        'Standard_E2s_v3':  {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4, 'max_localdisk_iops': 3200, 'max_localdisk_mbps': 48},
+        'Standard_E4s_v3':  {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 8, 'max_localdisk_iops': 6400, 'max_localdisk_mbps': 96},
+        'Standard_E8s_v3':  {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 16, 'max_localdisk_iops': 12800, 'max_localdisk_mbps': 192},
+        'Standard_E16s_v3': {'data_disk_size': 256, 'data_disk_count': 4, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 25600, 'max_localdisk_mbps': 384},
+        'Standard_E32s_v3': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 51200, 'max_localdisk_mbps': 768},
+        'Standard_E64s_v3': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 80000, 'max_localdisk_mbps': 1200},
+        'Standard_E64is_v3':{'data_disk_size': 512, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 80000, 'max_localdisk_mbps': 1200},
+        'Standard_G3':      {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_G4':      {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_G5':      {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
+        'Standard_GS3':     {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 20000, 'max_localdisk_mbps': 500},
+        'Standard_GS4':     {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 40000, 'max_localdisk_mbps': 1000},
+        'Standard_GS5':     {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 80000, 'max_localdisk_mbps': 2000},
     }
     # managed also supports 32 and 64
     # 256 mentioned here: https://docs.microsoft.com/en-us/azure/virtual-machines/windows/managed-disks-overview
@@ -174,6 +174,19 @@ class Service(ServiceBase):
     BLOB_HOST = 'blob.core.windows.net'
     BLOB_URL_FMT = 'https://{}.{}/{}/{}' # account, host, container, blob
     DEFAULT_STORAGE_ACCOUNT_TYPE = 'Premium_LRS'
+    STORAGE_ACCOUNT_TYPES = ['Standard_LRS', 'StandardSSD_LRS', 'Premium_LRS', 'UltraSSD_LRS']
+    ULTRASSD_CAPS = {
+        None: {'iops': 500, 'mbps': 8},
+        128: {'iops': 38400, 'mbps': 2000},
+        256: {'iops': 76800, 'mbps': 2000},
+        512: {'iops': 80000, 'mbps': 2000},
+        1024: {'iops': 160000, 'mbps': 2000},
+        2048: {'iops': 160000, 'mbps': 2000},
+        4095: {'iops': 160000, 'mbps': 2000},
+        8192: {'iops': 160000, 'mbps': 2000},
+        16348: {'iops': 160000, 'mbps': 2000},
+        32767: {'iops': 160000, 'mbps': 2000},
+    }
     AZURE_INSTANCE_HOST = '169.254.169.254'
     AZURE_ENDPOINT_HOST = 'management.azure.com'
     INSTANCENAME_RE = re.compile(r'[a-zA-Z][-a-z0-9A-Z_]*$')
@@ -1102,6 +1115,12 @@ class Service(ServiceBase):
             _ = self._get_role(role_name) # validate
 
         # https://docs.microsoft.com/en-us/rest/api/compute/virtualmachines/createorupdate
+        storage_account_type = options.get('storage_account_type') or self.DEFAULT_STORAGE_ACCOUNT_TYPE
+        if storage_account_type not in self.STORAGE_ACCOUNT_TYPES:
+            raise vFXTConfigurationException("{} is not a valid storage account type".format(storage_account_type))
+        root_disk_caching = options.get('root_disk_caching') or 'None'
+        if root_disk_caching not in self.VALID_CACHING_OPTIONS:
+            raise vFXTConfigurationException("{} is not a valid caching type".format(root_disk_caching))
         body = {
             'name': name,
             'location': location,
@@ -1111,9 +1130,9 @@ class Service(ServiceBase):
             'storage_profile': {
                 'data_disks': other_disks,
                 'os_disk': {
-                    'caching': options.get('root_disk_caching') or 'None',
+                    'caching': root_disk_caching,
                     'name': root_disk_name,
-                    'managed_disk': {'storage_account_type': options.get('storage_account_type') or self.DEFAULT_STORAGE_ACCOUNT_TYPE},
+                    'managed_disk': {'storage_account_type': storage_account_type},
                     'create_option': 'FromImage',
                     #'disk_size_gb': options.get('root_size') or None,
                 },
@@ -1244,6 +1263,12 @@ class Service(ServiceBase):
                 'storage_uri': 'https://{}.{}'.format(boot_diagnostics_storage_account, blob_host)
             }}
 
+        # UltraSSD needs to be advertised
+        if options.get('ultrassd_enabled'):
+            body['additional_capabilities'] = {
+                'ultra_ssd_enabled': True
+            }
+
         # base64 encoded user data
         user_data = options.get('user_data') or None
         if user_data:
@@ -1368,30 +1393,53 @@ class Service(ServiceBase):
                 node_opts include:
                     data_disk_size (int): size of data disks
                     data_disk_count (int): number of data disks
-                    data_disk_caching (str, optional): None, ReadOnly, ReadWrite (defaults to ReadOnly)
+                    data_disk_caching (str, optional): None, ReadOnly, ReadWrite (defaults to DEFAULT_CACHING_OPTION)
+                    data_disk_type (str, optional): type of data disks (defaults DEFAULT_STORAGE_ACCOUNT_TYPE)
+                    data_disk_iops (int, optional): IOPS of data disks (only valid for UltraSSD_LRS)
+                    data_disk_mbps (int, optional): MBps of data disks (only valid for UltraSSD_LRS)
                     machine_type (str): machine type
                     root_image (str): VHD ID
 
         '''
         if self.get_instance(node_name):
             raise vFXTNodeExistsException("Node {} exists".format(node_name))
+        machine_defs = self.MACHINE_DEFAULTS[node_opts['machine_type']]
 
         machine_type    = node_opts['machine_type']
         machine_defs    = self.MACHINE_DEFAULTS[machine_type]
         data_disk_disks = []
-        data_disk_caching = node_opts.get('data_disk_caching') or 'ReadOnly'
+        data_disk_caching = node_opts.get('data_disk_caching') or self.DEFAULT_CACHING_OPTION
+        data_disk_type = node_opts.get('data_disk_type') or self.DEFAULT_STORAGE_ACCOUNT_TYPE
+        data_disk_size = node_opts.get('data_disk_size') or machine_defs['data_disk_size']
         data_disk_count = node_opts.get('data_disk_count', machine_defs['data_disk_count'])
+        data_disk_iops = node_opts.get('data_disk_iops') or machine_defs.get('max_localdisk_iops')
+        data_disk_mbps = node_opts.get('data_disk_mbps') or machine_defs.get('max_localdisk_mbps')
+        if data_disk_type not in self.STORAGE_ACCOUNT_TYPES:
+            raise vFXTConfigurationException("{} is not a valid storage account type".format(data_disk_type))
+        if data_disk_caching not in self.VALID_CACHING_OPTIONS:
+            raise vFXTConfigurationException("{} is not a valid caching type".format(data_disk_caching))
+        data_disk_zone = instance_options.get('zone') or None
+
+        if data_disk_type == 'UltraSSD_LRS':
+            perf_caps = self.ULTRASSD_CAPS.get(data_disk_size) or self.ULTRASSD_CAPS.get(None)
+            if data_disk_iops > perf_caps.get('iops') or data_disk_mbps > perf_caps.get('mbps'):
+                raise vFXTConfigurationException("IOPS/MBps must not be higher than {}/{} for disk size {}".format(perf_caps.get('iops'), perf_caps.get('mbps'), data_disk_size))
+
         for idx in range(data_disk_count):
             disk_name = '{}-data_disk-{}-{}'.format(node_name, idx, int(time.time()))
             data_disk = {
                 'name': disk_name,
-                'disk_size_gb': node_opts['data_disk_size'],
+                'disk_size_gb': data_disk_size,
                 'create_option': 'Empty',
                 'caching': data_disk_caching,
-                'managed_disk': {'storage_account_type': self.DEFAULT_STORAGE_ACCOUNT_TYPE},
+                'managed_disk': {'storage_account_type': data_disk_type},
                 'lun': str(idx),
-                'zone': [instance_options.get('zone') or None],
+                'zone': [data_disk_zone],
             }
+            if data_disk_type == 'UltraSSD_LRS':
+                data_disk['diskIOPSReadWrite'] = data_disk_iops
+                data_disk['diskMBpsReadWrite'] = data_disk_mbps
+                instance_options['ultrassd_enabled'] = True
             data_disk_disks.append(data_disk)
 
         log.info("Creating node {}".format(node_name))
@@ -1415,8 +1463,11 @@ class Service(ServiceBase):
                 cluster (vFXT.cluster.Cluster): cluster object
                 size (int, optional): size of cluster (node count)
                 root_image (str, optional): root disk image name
+                data_disk_type (str, optional): type of data disk (defaults to DEFAULT_STORAGE_ACCOUNT_TYPE)
                 data_disk_size (int, optional): size of data disk (or machine type default)
                 data_disk_count (int, optional): number of data disks (or machine type default)
+                data_disk_iops (int, optional): IOPS of data disks (only valid for UltraSSD_LRS)
+                data_disk_mbps (int, optional): MBps of data disks (only valid for UltraSSD_LRS)
                 data_disk_caching (str, optional): None, ReadOnly, ReadWrite (defaults to DEFAULT_CACHING_OPTION)
                 root_disk_caching (str, optional): None, ReadOnly, ReadWrite (defaults to DEFAULT_CACHING_OPTION)
                 wait_for_state (str, optional): red, yellow, green cluster state (defaults to yellow)
@@ -1457,6 +1508,7 @@ class Service(ServiceBase):
 
         # disk sizing
         root_image        = options.get('root_image') or self._get_default_image()
+        data_disk_type    = options.get('data_disk_type') or self.DEFAULT_STORAGE_ACCOUNT_TYPE
         data_disk_size    = options.get('data_disk_size') or machine_defs['data_disk_size']
         data_disk_count   = options.get('data_disk_count', machine_defs['data_disk_count'])
         data_disk_caching = options.get('data_disk_caching') or self.DEFAULT_CACHING_OPTION
@@ -1497,7 +1549,8 @@ class Service(ServiceBase):
             # create the initial node
             name = '{}-{:02}'.format(cluster.name, 1)
             opts = {'data_disk_count': data_disk_count, 'data_disk_size': data_disk_size, 'data_disk_caching': data_disk_caching,
-                    'machine_type': machine_type, 'root_image': root_image,
+                    'data_disk_type': data_disk_type, 'machine_type': machine_type, 'root_image': root_image,
+                    'data_disk_mbps': options.get('data_disk_mbps'), 'data_disk_iops': options.get('data_disk_iops'),
                     }
             options['subnet'] = subnets[0] # first node subnet
             options['zone'] = zones[0] if zones else None # first node zone
@@ -1561,6 +1614,7 @@ class Service(ServiceBase):
 
         # look at cluster.nodes[0].instance
         instance          = cluster.nodes[0].instance
+        data_disk_type    = options.get('data_disk_type') or instance.storage_profile.data_disks[0].managed_disk.storage_account_type
         data_disk_count   = options.get('data_disk_count', len(instance.storage_profile.data_disks))
         data_disk_size    = options.get('data_disk_size') or instance.storage_profile.data_disks[0].disk_size_gb
         data_disk_caching = options.get('data_disk_caching') or instance.storage_profile.data_disks[0].caching.value
@@ -1613,7 +1667,7 @@ class Service(ServiceBase):
                 raise vFXTConfigurationException("Unable to determine root disk image to use")
 
         opts = {'data_disk_size': data_disk_size, 'data_disk_count': data_disk_count, 'data_disk_caching': data_disk_caching,
-                'machine_type': machine_type, 'root_image': root_image,
+                'data_disk_type': data_disk_type, 'machine_type': machine_type, 'root_image': root_image,
         }
         # overrides
         overrides = ['machine_type', 'root_image', 'data_disk_size']
@@ -1889,6 +1943,9 @@ class Service(ServiceBase):
             data_disk_caching = type_override
 
         data_disks = []
+        storage_account_type = options.get('storage_account_type') or self.DEFAULT_STORAGE_ACCOUNT_TYPE
+        if storage_account_type not in self.STORAGE_ACCOUNT_TYPES:
+            raise vFXTConfigurationException("{} is not a valid storage account type".format(storage_account_type))
         for idx in range(int(data_disk_count)):
             disk_name = '{}-data_disk-{}-{}'.format(self.name(instance), idx, int(time.time()))
             # TODO maybe we could check shelve error for disk, query it exists
@@ -1898,7 +1955,7 @@ class Service(ServiceBase):
                 'diskSizeGB': data_disk_size,
                 'createOption': 'Empty',
                 'caching': data_disk_caching,
-                'managed_disk': {'storage_account_type': options.get('storage_account_type') or self.DEFAULT_STORAGE_ACCOUNT_TYPE},
+                'managed_disk': {'storage_account_type': storage_account_type},
                 'lun': str(idx),
             })
         try:

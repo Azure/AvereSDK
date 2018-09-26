@@ -217,6 +217,7 @@ class Service(ServiceBase):
     COREFILER_TYPE = 'azure'
     COREFILER_CRED_TYPE = 'azure-storage'
     COREFILER_CRED_MSI = 'azure-msi-s'
+    DEFAULT_CACHING_OPTION = 'None'
     VALID_CACHING_OPTIONS = ['ReadOnly', 'ReadWrite', 'None']
     METADATA_FETCH_RETRIES = 5
     TOKEN_RESOURCE = 'https://management.azure.com/'
@@ -1286,8 +1287,8 @@ class Service(ServiceBase):
                 root_image (str, optional): root disk image name
                 data_disk_size (int, optional): size of data disk (or machine type default)
                 data_disk_count (int, optional): number of data disks (or machine type default)
-                data_disk_caching (str, optional): None, ReadOnly, ReadWrite (defaults to ReadOnly)
-                root_disk_caching (str, optional): None, ReadOnly, ReadWrite (defaults to ReadOnly)
+                data_disk_caching (str, optional): None, ReadOnly, ReadWrite (defaults to DEFAULT_CACHING_OPTION)
+                root_disk_caching (str, optional): None, ReadOnly, ReadWrite (defaults to DEFAULT_CACHING_OPTION)
                 wait_for_state (str, optional): red, yellow, green cluster state (defaults to yellow)
                 skip_cleanup (bool, optional): do not clean up on failure
                 azure_role (str, optional): Azure role name for the service principal (otherwise one is created)
@@ -1324,8 +1325,8 @@ class Service(ServiceBase):
         root_image        = options.get('root_image')      or self._get_default_image()
         data_disk_size    = options.get('data_disk_size')  or machine_defs['data_disk_size']
         data_disk_count   = options.get('data_disk_count') or machine_defs['data_disk_count']
-        data_disk_caching = options.get('data_disk_caching') or 'ReadOnly'
-        options.setdefault('root_disk_caching', 'ReadOnly')
+        data_disk_caching = options.get('data_disk_caching') or self.DEFAULT_CACHING_OPTION
+        options.setdefault('root_disk_caching', self.DEFAULT_CACHING_OPTION)
 
         # verify our data_disk_size is in self.VALID_DATA_DISK_SIZES
         if data_disk_size not in self.VALID_DATA_DISK_SIZES:

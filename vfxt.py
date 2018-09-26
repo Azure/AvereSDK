@@ -280,6 +280,7 @@ def main():
     azure_opts.add_argument("--azure-environment", help="Set the defaults (endpoint base URL and storage suffix) for the Azure environment", choices=['public', 'usgovernment', 'china', 'germany'], default="public")
     azure_opts.add_argument("--azure-endpoint-base-url", help="The base URL of the API endpoint (if non-public Azure)", type=_validate_url, default=None)
     azure_opts.add_argument("--azure-storage-suffix", help="The storage service suffix (if non-public Azure)", default=None)
+    azure_opts.add_argument("--ultra-ssd", help="Use UltraSSD disks for cache", action="store_true")
 
     # optional arguments
     parser.add_argument('--version', action='version', version=vFXT.__version__)
@@ -310,7 +311,8 @@ def main():
     cluster_opts.add_argument("--node-cache-size", help="Size of data cache per node (in GB).  This defines data-disk-count and data-disk-size optimally with the provided cache size.", default=0, type=int)
     cluster_opts.add_argument("--data-disk-count", help="Number of data disk volumes per node to create for the vFXT cluster", default=None, type=int)
     cluster_opts.add_argument("--data-disk-type", help="Type of volumes to create for the vFXT cluster cache.  AWS values are gp2 (default), io1, or standard.  GCE values are pd-standard, pd-ssd, or local-ssd.", default=None)
-    cluster_opts.add_argument("--data-disk-iops", help="Number of sustained IOPS (for volume type io1)", default=None, type=int)
+    cluster_opts.add_argument("--data-disk-iops", help="Number of sustained IOPS (for volume type io1 or UltraSSD_LRS)", default=None, type=int)
+    cluster_opts.add_argument("--data-disk-mbps", help="Number of MBps (for volume type UltraSSD_LRS)", default=None, type=int)
     cluster_opts.add_argument("--data-disk-size", help="Size of the cache data disk (in GB)", default=None, type=int)
     cluster_opts.add_argument("--root-size", help="Total size of the boot disk (in GB)", default=None, type=int)
     cluster_opts.add_argument("--configuration-expiration", help=argparse.SUPPRESS, default=Cluster.CONFIGURATION_EXPIRATION, type=int) # Number of minutes until the cluster.cfg file should expire
@@ -646,6 +648,9 @@ def main():
         if args.enable_bucket_encryption:
             args.disable_bucket_encryption = False
 
+        if args.ultra_ssd:
+            args.data_disk_type = 'UltraSSD_LRS'
+
         if args.azure_tag:
             args.azure_tag = {n.split(':')[0]: (n.split(':')[1] or '') for n in args.azure_tag if len(n.split(':')) > 1}
 
@@ -694,6 +699,7 @@ def main():
             'data_disk_size': args.data_disk_size,
             'data_disk_type': args.data_disk_type,
             'data_disk_iops': args.data_disk_iops,
+            'data_disk_mbps': args.data_disk_mbps,
             'root_image': args.image_id,
             'root_size': args.root_size,
             'iamrole': args.iam_role,
@@ -930,6 +936,7 @@ def main():
             'data_disk_size': args.data_disk_size,
             'data_disk_type': args.data_disk_type,
             'data_disk_iops': args.data_disk_iops,
+            'data_disk_mbps': args.data_disk_mbps,
             'tags': args.aws_tag or args.gce_tag or args.azure_tag,
             'metadata': args.metadata,
             'skip_cleanup': args.skip_cleanup,

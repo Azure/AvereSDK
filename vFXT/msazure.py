@@ -170,6 +170,7 @@ class Service(ServiceBase):
     BLOB_URL_FMT = 'https://{}.blob.core.windows.net/{}/{}' # account, container, blob
     DEFAULT_STORAGE_ACCOUNT_TYPE = 'Premium_LRS'
     AZURE_INSTANCE_HOST = '169.254.169.254'
+    AZURE_ENDPOINT_HOST = 'management.azure.com'
     INSTANCENAME_RE = re.compile(r'[a-zA-Z][-a-z0-9A-Z_]*$')
     CONTAINER_NAME_RE = re.compile(r'[a-zA-Z0-9][-a-zA-Z0-9]*$')
     SYSTEM_CONTAINER = 'system'
@@ -255,6 +256,8 @@ class Service(ServiceBase):
                 proxy_uri (str, optional): URI of proxy resource (e.g. http://user:pass@172.16.16.20:8080)
                 no_connection_test (bool, optional): skip connection test
 
+                endpoint_base_url (str, optional): A custom endpoint URL
+
             If an access token is provided it is used in place of the application ID/secret pair
             for API authentication.
         '''
@@ -274,6 +277,7 @@ class Service(ServiceBase):
         self.subnets         = [self.subnets] if isinstance(self.subnets, basestring) else self.subnets
         self.private_range   = options.get('private_range') or None
         self.source_address  = options.get('source_address') or None
+        self.endpoint_base_url = options.get('endpoint_base_url') or None
 
         self.proxy_uri       = options.get('proxy_uri') or None
         if self.proxy_uri:
@@ -442,12 +446,26 @@ class Service(ServiceBase):
                         if retries == 0:
                             raise
             else:
+                cloud_environment = msrestazure.azure_cloud.get_cloud_from_metadata_endpoint(self.endpoint_base_url) if self.endpoint_base_url else None
                 if self.on_instance:
-                    creds = msrestazure.azure_active_directory.AADTokenCredentials(self.local.instance_data['access_token'])
+                    if cloud_environment:
+                        creds = msrestazure.azure_active_directory.AADTokenCredentials(self.local.instance_data['access_token'], cloud_environment=cloud_environment)
+                    else:
+                        creds = msrestazure.azure_active_directory.AADTokenCredentials(self.local.instance_data['access_token'])
                 else:
-                    creds = azure.common.credentials.ServicePrincipalCredentials(self.application_id, self.application_secret, tenant=self.tenant_id)
+                    if cloud_environment:
+                        creds = azure.common.credentials.ServicePrincipalCredentials(self.application_id, self.application_secret, tenant=self.tenant_id, cloud_environment=cloud_environment)
+                    else:
+                        creds = azure.common.credentials.ServicePrincipalCredentials(self.application_id, self.application_secret, tenant=self.tenant_id)
 
-                connection_args = {'subscription_id': self.subscription_id} if connection_settings['pass_subscription'] else {}
+                connection_args = {}
+                if options.get('api_version'):
+                    connection_args['api_version'] = options.get('api_version')
+                if self.endpoint_base_url:
+                    connection_args['base_url'] = self.endpoint_base_url
+                if connection_settings['pass_subscription']:
+                    connection_args['subscription_id'] = self.subscription_id
+
                 newconn = connection_cls(creds, **connection_args)
             # Add our proxy configuration, we do it here so we can support all cred types.
             # Some cred types support passing proxies, but some credential factories do
@@ -481,7 +499,7 @@ class Service(ServiceBase):
             cluster_cfg (str): cluster configuration
         '''
         source_address = options.get('source_address') or None
-        token_resource = options.get('token_resource') or cls.TOKEN_RESOURCE
+        token_resource = options.get('token_resource')
         instance_data = {}
         try:
             if source_address:
@@ -513,8 +531,35 @@ class Service(ServiceBase):
                     # reconnect on failure
                     conn = httplib.HTTPConnection(connection_host, connection_port, source_address=source_address, timeout=CONNECTION_TIMEOUT)
 
+            # endpoint metadata
+            attempts = 0
+            endpoint_conn = httplib.HTTPSConnection(cls.AZURE_ENDPOINT_HOST, source_address=source_address, timeout=CONNECTION_TIMEOUT)
+            while True:
+                try:
+                    endpoint_conn.request('GET', '/metadata/endpoints?api-version=2017-12-01')
+                    response = endpoint_conn.getresponse()
+                    if response.status == 200:
+                        endpoint_data = json.loads(response.read())
+                        for endpoint_name in endpoint_data['cloudEndpoint']:
+                            endpoint = endpoint_data['cloudEndpoint'][endpoint_name]
+                            if instance_data['compute']['location'] in endpoint['locations']:
+                                instance_data['endpoint'] = endpoint
+                                instance_data['token_resource'] = 'https://{}'.format(endpoint['endpoint']) # Always assume URL format
+                        break
+                    raise vFXTServiceFailure("Failed to fetch endpoint data: {}".format(response.reason))
+                except Exception as e:
+                    log.debug(e)
+                    attempts += 1
+                    if attempts == cls.METADATA_FETCH_RETRIES:
+                        raise
+                    time.sleep(backoff(attempts))
+                    # reconnect on failure
+                    endpoint_conn = httplib.HTTPSConnection(cls.AZURE_ENDPOINT_HOST, source_address=source_address, timeout=CONNECTION_TIMEOUT)
+
             # token metadata
             attempts = 0
+            if not token_resource:
+                token_resource = instance_data.get('token_resource') or cls.TOKEN_RESOURCE
             while True:
                 try:
                     url_path = '/metadata/identity/oauth2/token?api-version=2018-02-01&resource={}'.format(token_resource)
@@ -590,6 +635,7 @@ class Service(ServiceBase):
                               subnet=subnet, network=network,
                               access_token=instance_data.get('access_token'),
                               on_instance=True, skip_load_defaults=skip_load_defaults,
+                              endpoint_base_url=instance_data['token_resource']
             )
             service.local.instance_data = instance_data
 

@@ -269,7 +269,8 @@ def main():
     azure_opts.add_argument("--azure-role", help='Existing Azure role for the cluster (otherwise one is created)', default='Avere Operator')
     azure_opts.add_argument("--location", help='Azure location', default=None)
     azure_opts.add_argument("--azure-network", help='Azure virtual network', default=None)
-    azure_opts.add_argument("--azure-subnet", help='Azure virtual network subnet (one or more)', type=str, default=None)
+    azure_opts.add_argument("--azure-subnet", help='Azure virtual network subnet', type=str, default=None)
+    azure_opts.add_argument("--azure-zones", nargs="+", help='Azure availability zones', type=str, default=None)
     azure_opts.add_argument("--azure-tag", help="Azure instance tag", action='append', default=None)
     azure_opts.add_argument("--network-security-group", help="Network security group name", default=None)
     azure_opts.add_argument("--enable-boot-diagnostics", help="Azure instance boot diagnostics", action="store_true")
@@ -605,6 +606,7 @@ def main():
                 'location': args.location,
                 'network': args.azure_network,
                 'subnet': args.azure_subnet,
+                'zone': args.azure_zones,
                 'proxy_uri': args.proxy_uri,
                 'private_range': args.cluster_range,
                 'no_connection_test': args.skip_check,

@@ -251,6 +251,7 @@ class Service(ServiceBase):
                 access_token (str, optional): Azure access token
 
                 location (str, optional): Azure location
+                zones ([str], optional): list of Azure availability zones
                 network (str, optional): Azure virtual network
                 subnet ([str], optional): list of Azure virtual network subnets
 
@@ -280,6 +281,8 @@ class Service(ServiceBase):
         self.network         = options.get('network') or None
         self.subnets         = options.get('subnet') or []
         self.subnets         = self.subnets if isinstance(self.subnets, list) else [self.subnets]
+        self.zones           = options.get('zone') or []
+        self.zones           = self.zones if isinstance(self.zones, list) else [self.zones]
         self.private_range   = options.get('private_range') or None
         self.source_address  = options.get('source_address') or None
         self.endpoint_base_url = options.get('endpoint_base_url') or None
@@ -693,6 +696,7 @@ class Service(ServiceBase):
                     service.network_resource_group = subnet_id.split('/')[4] # our subnet/network may be in different resource groups
 
             service.tenant_id = instance.identity.tenant_id
+            service.zones = [_ for _ in service._instance_zone(instance) or [] if _]
 
             return service
         except (vFXTServiceFailure, vFXTServiceConnectionFailure) as e:
@@ -983,6 +987,14 @@ class Service(ServiceBase):
         subnet_parts = primary_nic.ip_configurations[0].subnet.id.split('/')
         return conn.subnets.get(resource_group_name=subnet_parts[4], virtual_network_name=subnet_parts[-3], subnet_name=subnet_parts[-1])
 
+    def _instance_zone(self, instance):
+        '''Return the zone of an instance
+
+            Arguments:
+                instance: backend instance
+        '''
+        return instance.zones
+
     def _instance_network(self, instance):
         '''Return the network of the instance'''
         primary_nic = self._instance_primary_nic(instance)
@@ -1053,6 +1065,8 @@ class Service(ServiceBase):
                 admin_password (str, optional): defaults to AvereAdminN0tUsed!
                 admin_ssh_data (str, optional): SSH key data (used in place of the admin password)
                 availability_set (str, optional): availability set name
+                subnet (str, optional): Subnet name
+                zone (str, optional): Zone name
                 network_security_group (str, optional): network security group name
                 location (str, optional): Azure location
                 wait_for_success (int, optional): wait time for the instance to report success (default WAIT_FOR_SUCCESS)
@@ -1065,6 +1079,8 @@ class Service(ServiceBase):
                 identity (str, optional): ARM resource identity reference (full path)
                 storage_account_type (str, optional): Storage account type for managed disks
                 user_data (bytes, optional): Custom data for the instance CustomData field
+
+                Setting availability set and zone is an error.
         '''
         if not self.valid_instancename(name):
             raise vFXTConfigurationException("{} is not a valid instance name".format(name))
@@ -1074,6 +1090,7 @@ class Service(ServiceBase):
         conn           = self.connection()
         network        = options.get('network') or self.network
         subnet         = options.get('subnet') or self.subnets[0]
+        zone           = options.get('zone') or None
         location       = options.get('location') or self.location
         root_disk_name = '{}-root-{}'.format(name, int(time.time()))
         ip_forward     = options.get('enable_ip_forwarding') or False
@@ -1132,12 +1149,16 @@ class Service(ServiceBase):
             body['os_profile']['linux_configuration']['ssh'] = ssh_config
 
         availability_set = options.get('availability_set') or None
+        if zone and availability_set:
+            raise vFXTConfigurationException("Virtual machines cannot be in an availability set and an availability zone")
         if availability_set:
             try:
                 a_set = conn.availability_sets.get(resource_group, availability_set)
                 body['availability_set'] = {'id': a_set.id}
             except Exception as e:
                 raise vFXTServiceFailure("Failed to lookup availability set {}: {}".format(availability_set, e))
+        if zone:
+            body['zones'] = [zone]
 
         identity = options.get('identity') or None
         if identity:
@@ -1236,6 +1257,7 @@ class Service(ServiceBase):
             nic = self._create_nic('{}-1-NIC-{}'.format(name, int(time.time())),
                 network=network,
                 subnet=subnet,
+                zone=zone,
                 resource_group=resource_group, # use compute resource group for NICs
                 network_security_group=network_security_group,
                 enable_ip_forwarding=ip_forward,
@@ -1368,6 +1390,7 @@ class Service(ServiceBase):
                 'caching': data_disk_caching,
                 'managed_disk': {'storage_account_type': self.DEFAULT_STORAGE_ACCOUNT_TYPE},
                 'lun': str(idx),
+                'zone': [instance_options.get('zone') or None],
             }
             data_disk_disks.append(data_disk)
 
@@ -1401,6 +1424,7 @@ class Service(ServiceBase):
                 azure_role (str, optional): Azure role name for the service principal (otherwise DEFAULT_ROLE is used)
                 availability_set (str, optional): existing availability set for the cluster instances
                 subnets ([str], optional): one or more subnets
+                zones ([str], optional): one or more zones
                 location (str, optional): location for availability set
                 management_address (str, optional): management address for the cluster
                 instance_addresses ([], optional): list of instance addresses to use (passed to create_cluster(private_ip_address))
@@ -1425,7 +1449,10 @@ class Service(ServiceBase):
         cluster_size    = int(options.get('size', machine_defs['node_count']))
         subnets         = options.get('subnets') or self.subnets
         subnets         = subnets if isinstance(subnets, list) else [subnets]
+        zones           = options.get('zones') or self.zones
+        zones           = zones if isinstance(zones, list) else [zones]
         cluster.subnets = [subnets[0]] # first node subnet
+        cluster.zones = zones[0] if zones else []
         cluster.network_security_group = options.get('network_security_group') or self.network_security_group
 
         # disk sizing
@@ -1460,10 +1487,12 @@ class Service(ServiceBase):
             cluster.role = self._get_role(role)
             options['azure_role'] = role # pass it along to the nodes
 
-            # availability set (we can keep creating it as it is just an update operation)
-            availability_set = options.get('availability_set') or '{}-availability_set'.format(cluster.name)
-            cluster.availability_set = self._create_availability_set(availability_set)
-            options['availability_set'] = availability_set
+            # if we are not using availability zones, make an availability set
+            if not zones:
+                # not exist check... we can keep creating it as it is just an update operation
+                availability_set = options.get('availability_set') or '{}-availability_set'.format(cluster.name)
+                cluster.availability_set = self._create_availability_set(availability_set)
+                options['availability_set'] = availability_set
 
             # create the initial node
             name = '{}-{:02}'.format(cluster.name, 1)
@@ -1471,6 +1500,7 @@ class Service(ServiceBase):
                     'machine_type': machine_type, 'root_image': root_image,
                     }
             options['subnet'] = subnets[0] # first node subnet
+            options['zone'] = zones[0] if zones else None # first node zone
             options['private_ip_address'] = instance_addresses.pop(0)
             n = self.create_node(name, cfg, node_opts=opts, instance_options=options)
             cluster.nodes.append(ServiceInstance(service=self, instance=n))
@@ -1482,7 +1512,8 @@ class Service(ServiceBase):
                 t.start()
                 threads.append(t)
             options.update(opts)
-            options['subnet'] = subnets if len(subnets) == 1 else subnets[1:]
+            options['subnets'] = subnets if len(subnets) == 1 else subnets[1:]
+            options['zones'] = zones if (not zones or len(zones) == 1) else zones[1:]
             options['instance_addresses'] = instance_addresses
             self.add_cluster_nodes(cluster, cluster_size - 1, **options)
             # do a timeout join to handle KeyboardInterrupts
@@ -1516,11 +1547,17 @@ class Service(ServiceBase):
         '''
         if count < 1: return
 
-        subnets         = options.get('subnets') or cluster.subnets if hasattr(cluster, 'subnets') else self.subnets
-        subnets         = subnets if isinstance(subnets, list) else [subnets]
+        subnets = options.get('subnets') or cluster.subnets if hasattr(cluster, 'subnets') else self.subnets
+        subnets = subnets if isinstance(subnets, list) else [subnets]
         # make sure to use unused subnets first, but account for our cluster subnets
         subnets.extend([s for s in cluster.subnets if s not in subnets])
-        cycle_subnets   = cycle(subnets)
+        cycle_subnets = cycle(subnets)
+
+        zones = options.get('zones') or cluster.zones if hasattr(cluster, 'zones') else self.zones
+        zones = zones if isinstance(zones, list) else [zones]
+        # make sure to use unused zones first, but account for our cluster zones
+        zones.extend([s for s in cluster.zones if s not in zones])
+        cycle_zones = cycle(zones or [None])
 
         # look at cluster.nodes[0].instance
         instance          = cluster.nodes[0].instance
@@ -1609,6 +1646,7 @@ class Service(ServiceBase):
             next_node_num = node_num + 1
             inst_opts = options.copy()
             inst_opts['subnet'] = next(cycle_subnets)
+            inst_opts['zone'] = next(cycle_zones)
             inst_opts['private_ip_address'] = instance_addresses.pop(0)
             t = threading.Thread(target=cb, args=(next_node_num, inst_opts, nodeq, failq,))
             t.setDaemon(True)
@@ -1690,6 +1728,7 @@ class Service(ServiceBase):
 
             # subnet info
             cluster.subnets = list({self._instance_subnet(i).name for i in instances})
+            cluster.zones = list({z for i in instances if i.zones for z in self._instance_zone(i) if z})
 
             # XXX assume all instances have the same settings
             cluster.location         = instances[0].location
@@ -2394,6 +2433,8 @@ class Service(ServiceBase):
             except Exception: pass
         if self.subnets:
             data['subnet'] = self.subnets
+        if self.zones:
+            data['zone'] = self.zones
         return data
 
     def valid_containername(self, name):
@@ -2474,7 +2515,7 @@ class Service(ServiceBase):
             rate_limit += 1
             time.sleep(self.POLLTIME)
 
-    def _create_nic(self, name, network=None, subnet=None, resource_group=None,
+    def _create_nic(self, name, network=None, subnet=None, zone=None, resource_group=None,
                     location=None, private_address=None, enable_ip_forwarding=False, network_security_group=None,
                     enable_public_address=False, advanced_networking=False):
         '''Create a nic
@@ -2512,6 +2553,7 @@ class Service(ServiceBase):
             try:
                 body = {
                     'location': self.location,
+                    'zones': [zone] if zone else None,
                     'public_ip_allocation_method': 'Dynamic'
                 }
                 log.debug("Creating public ip address {}-public-address: {}".format(name, body))

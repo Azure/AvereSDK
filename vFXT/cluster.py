@@ -158,7 +158,7 @@ class Cluster(object):
         self.node_rename      = True
         self.first_node_error = None
         self.timezone         = None
-        self.instance_addresses = None
+        self.instance_addresses = []
 
         if self.proxy:
             self.proxy = validate_proxy(self.proxy) # imported from vFXT.service
@@ -202,6 +202,7 @@ class Cluster(object):
                 address_range_start (str, optional): The first of a custom range of addresses to use for the cluster
                 address_range_end (str, optional): The last of a custom range of addresses to use for the cluster
                 address_range_netmask (str, optional): cluster address range netmask
+                instance_addresses ([str], optional): list of instance IP addresses to assign to the cluster nodes
                 **options: passed to Service.create_cluster()
         '''
 

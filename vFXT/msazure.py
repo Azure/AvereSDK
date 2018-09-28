@@ -1335,10 +1335,15 @@ class Service(ServiceBase):
         if data_disk_count > machine_defs['max_data_disk_count']:
             raise vFXTConfigurationException('{} exceeds the maximum allowed disk count of {}'.format(data_disk_count, machine_defs['max_data_disk_count']))
 
-        instance_addresses = cluster.instance_addresses
+        instance_addresses = cluster.instance_addresses or [None] * cluster_size
         subnet = self.connection('network').subnets.get(self.network_resource_group, self.network, subnets[0])
         if not Cidr(subnet.address_prefix).contains(cluster.cluster_ip_start):
             raise vFXTConfigurationException("Cluster addresses must reside within subnet {}".format(subnets[0]))
+        if not instance_addresses:
+            instance_addresses = cluster.instance_addresses
+        if instance_addresses[0]: # must be defined, not None
+            if not Cidr(subnet.address_prefix).contains(instance_addresses[0]):
+                raise vFXTConfigurationException("Cluster addresses must reside within subnet {}".format(subnets[0]))
 
         log.info('Creating cluster configuration')
         cfg = cluster.cluster_config(expiration=options.get('config_expiration', None))
@@ -1411,6 +1416,8 @@ class Service(ServiceBase):
 
             Raises: exceptions from create_node()
         '''
+        if count < 1: return
+
         subnets         = options.get('subnets') or cluster.subnets if hasattr(cluster, 'subnets') else self.subnets
         subnets         = [subnets] if isinstance(subnets, basestring) else subnets
         # make sure to use unused subnets first, but account for our cluster subnets
@@ -1831,7 +1838,7 @@ class Service(ServiceBase):
 
     def authorize_container(self, cluster, name, retries=ServiceBase.CLOUD_API_RETRIES, xmlrpc=None):
         '''Perform any backend work for the container, and register a credential
-        for it to the cluster
+        for it to the cluster.  Returns the credential name for use with other API calls.
 
             No authorization is currently performed for Azure.
 
@@ -1843,11 +1850,6 @@ class Service(ServiceBase):
 
             Raises: vFXTServiceFailure
         '''
-        # TODO
-        # Azure container acls are only useful for anon/public usage it seems
-        # https://docs.microsoft.com/en-us/rest/api/storageservices/set-container-acl
-        # Revisit if we want to set up restrictions so that only the cluster
-        # service principal can access the container
         container, storage_account = self._container_name(name) # pylint: disable=unused-variable
         conn = self.connection('cloudstorage', storage_account=storage_account)
         blob_srv = conn.create_page_blob_service()

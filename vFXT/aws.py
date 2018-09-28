@@ -1352,7 +1352,7 @@ class Service(ServiceBase):
 
         # if we are going to span multiple subnets we can not assign the private ip address
         instance_addresses = cluster.instance_addresses
-        if len(subnets) > 1:
+        if not instance_addresses or len(subnets) > 1:
             instance_addresses = [None] * cluster_size
 
         # disks
@@ -1456,6 +1456,8 @@ class Service(ServiceBase):
 
             Raises: exceptions from create_node()
         '''
+        if count < 1: return
+
         subnets = options.get('subnet') or cluster.subnets if hasattr(cluster, 'subnets') else self.subnets
         subnets = [subnets] if isinstance(subnets, basestring) else subnets
         # make sure to use unused subnets first, but account for our cluster subnets

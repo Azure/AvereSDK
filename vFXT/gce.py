@@ -1733,7 +1733,7 @@ class Service(ServiceBase):
 
         instance_addresses = cluster.instance_addresses
         # our private addresses must be inside the network ranges
-        if not self._cidr_overlaps_network('{}/32'.format(instance_addresses[0])):
+        if instance_addresses and instance_addresses[0] and not self._cidr_overlaps_network('{}/32'.format(instance_addresses[0])):
             log.debug("Resetting instance addresses to be provided via the backend service")
             instance_addresses = [None] * cluster_size
 
@@ -1791,6 +1791,8 @@ class Service(ServiceBase):
 
             Raises: exceptions from create_node()
         '''
+        if count < 1: return
+
         zones = options.get('zone') or cluster.zones if hasattr(cluster, 'zones') else self.zones
         zones = [zones] if isinstance(zones, basestring) else zones
         # make sure to use unused zones first, but account for our cluster zones

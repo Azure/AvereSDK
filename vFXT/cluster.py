@@ -1991,7 +1991,7 @@ class Cluster(object):
             log.debug("Skipping node naming configuration")
             return
 
-        node_ip_map = {_.ip(): _.name() for _ in self.nodes}
+        node_ip_map = {ip: n.name() for n in self.nodes for ip in n.in_use_addresses()}
 
         # rename nodes with cluster prefix
         log.info("Setting node naming policy")

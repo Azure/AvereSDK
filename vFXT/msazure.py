@@ -64,6 +64,7 @@ serializeme = msazure.export()
 newmsazure = vFXT.msazure.Service(**serializeme)
 
 '''
+import datetime
 import time
 import threading
 import Queue
@@ -93,6 +94,7 @@ import azure.common.client_factory
 import azure.common.credentials
 import azure.mgmt.authorization
 import azure.mgmt.compute
+import azure.mgmt.monitor
 import azure.mgmt.network
 import azure.mgmt.storage
 import azure.mgmt.resource
@@ -110,6 +112,8 @@ from vFXT.service import *
 log = logging.getLogger(__name__)
 
 class ContainerExistsException(Exception): pass
+
+AZ_DATE_FMT = "%Y-%m-%dT%H:%M:%SZ"
 
 class Service(ServiceBase):
     '''Azure service backend'''
@@ -362,6 +366,7 @@ class Service(ServiceBase):
                 cloudstorage
                 compute (default)
                 identity
+                monitor
                 network
                 resource
                 storage
@@ -389,6 +394,7 @@ class Service(ServiceBase):
             'cloudstorage': None, # special handling below
             'compute': {'cls': azure.mgmt.compute.ComputeManagementClient, 'pass_subscription': True},
             'identity': {'cls': azure.mgmt.msi.ManagedServiceIdentityClient, 'pass_subscription': True},
+            'monitor': {'cls': azure.mgmt.monitor.MonitorManagementClient, 'pass_subscription': True},
             'network': {'cls': azure.mgmt.network.NetworkManagementClient, 'pass_subscription': True},
             'resource': {'cls': azure.mgmt.resource.ResourceManagementClient, 'pass_subscription': True},
             'storage': {'cls': azure.mgmt.storage.StorageManagementClient, 'pass_subscription': True},
@@ -2744,3 +2750,34 @@ class Service(ServiceBase):
             if address_cidr.contains(cidr.start_address()):
                 return True
         return False
+
+    def _get_activities(self, resource_group=None, resource_id=None, operation=None, seconds=60):
+        '''Get a list of activities
+
+            Arguments:
+            resource_group (str, optional): limit activity list to named resource group
+            resource_id (str, optional): limit activity list to named resource id
+            operation (str, optional): limit activity list to named operation
+            seconds (int, optional): defaults to 60
+
+
+            Resource ID is in the form of:
+                /subscriptions/<>/resourceGroups/<>/providers/Microsoft.Compute/virtualMachines/<>
+                /subscriptions/<>/resourceGroups/<>/providers/Microsoft.Network/networkInterfaces/<>
+
+            Operation is in the form of:
+                Microsoft.Compute/disks/write
+                Microsoft.Compute/virtualMachines/write
+                Microsoft.Network/networkInterfaces/write
+        '''
+        conn = self.connection('monitor')
+        utc_now = datetime.datetime.utcnow()
+        filter_exp = 'eventTimestamp ge {} and eventTimestamp le {}'.format((utc_now - datetime.timedelta(seconds=seconds)).strftime(AZ_DATE_FMT), utc_now.strftime(AZ_DATE_FMT))
+        if resource_group:
+            filter_exp = "{} and resourceGroupName eq '{}'".format(filter_exp, resource_group)
+        if resource_id:
+            filter_exp = "{} and resourceId eq '{}'".format(filter_exp, resource_id)
+        activities = list(conn.activity_logs.list(filter=filter_exp))
+        if operation:
+            return [_ for _ in activities if _.operation_name.value == operation]
+        return activities

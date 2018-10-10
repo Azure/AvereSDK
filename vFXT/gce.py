@@ -1744,9 +1744,9 @@ class Service(ServiceBase):
 
         metadata    = options.pop('metadata', {})
 
-        instance_addresses = cluster.instance_addresses
+        instance_addresses = cluster.instance_addresses or [None] * cluster_size
         # our private addresses must be inside the network ranges
-        if instance_addresses and instance_addresses[0] and not self._cidr_overlaps_network('{}/32'.format(instance_addresses[0])):
+        if instance_addresses[0] and not self._cidr_overlaps_network('{}/32'.format(instance_addresses[0])):
             log.debug("Resetting instance addresses to be provided via the backend service")
             instance_addresses = [None] * cluster_size
 

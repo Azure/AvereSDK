@@ -1345,8 +1345,6 @@ class Service(ServiceBase):
         subnet = self.connection('network').subnets.get(self.network_resource_group, self.network, subnets[0])
         if not Cidr(subnet.address_prefix).contains(cluster.cluster_ip_start):
             raise vFXTConfigurationException("Cluster addresses must reside within subnet {}".format(subnets[0]))
-        if not instance_addresses:
-            instance_addresses = cluster.instance_addresses
         if instance_addresses[0]: # must be defined, not None
             if not Cidr(subnet.address_prefix).contains(instance_addresses[0]):
                 raise vFXTConfigurationException("Cluster addresses must reside within subnet {}".format(subnets[0]))

@@ -1709,6 +1709,11 @@ class Service(ServiceBase):
         if not all([cluster.mgmt_ip, cluster.mgmt_netmask, cluster.cluster_ip_start, cluster.cluster_ip_end]):
             raise vFXTConfigurationException("Cluster networking configuration is incomplete")
 
+        # if using shared vpc/xpn, we cannot use routes for addressing
+        if self.project_id != self.network_project_id:
+            if not self._cidr_overlaps_network('{}/32'.format(cluster.cluster_ip_start)):
+                raise vFXTConfigurationException("Cluster addresses must reside within the Shared VPC address ranges")
+
         zones = options.get('zones') or self.zones
         zones = [zones] if isinstance(zones, basestring) else zones
         # extend our service zones if necessary

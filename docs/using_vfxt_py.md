@@ -186,6 +186,8 @@ New nodes will be identical to the existing cluster nodes unless you include opt
 
 Read Initial Configuration for the New Cluster for details about these options. 
 
+To *remove* nodes from the cluster, use the Avere Control Panel. Read the [Cluster > FXT Nodes](http://library.averesystems.com/ops_guide/4_7/gui_fxt_nodes.html) settings page documentation in the Avere OS Configuration Guide.
+
 ### Destroy a Cluster
 
 The `--destroy` option permanently removes a cluster. 

@@ -21,7 +21,7 @@ Note that similar commands have different names if they are restricted to one ty
 
 Actions include things like creating or destroying a cluster, adding nodes, and stopping or starting the cluster. The command `vfxt.py --help` lists all options.
 
-## Creating a Cluster
+## Create a Cluster
 
 Use the `--create` action to instantiate a new vFXT cluster. 
 
@@ -184,7 +184,7 @@ New nodes will be identical to the existing cluster nodes unless you include opt
 * `--data-disk-type` *volume_type* 
 * `--instance-type` *type* 
 
-Read Initial Configuration for the New Cluster for details about these options. 
+Read [Initial Configuration for the New Cluster](#initial-configuration-for-the-new-cluster) for details about these options. 
 
 To *remove* nodes from the cluster, use the Avere Control Panel. Read the [Cluster > FXT Nodes](http://library.averesystems.com/ops_guide/4_7/gui_fxt_nodes.html) settings page documentation in the Avere OS Configuration Guide.
 

@@ -27,11 +27,15 @@ The command `vfxt.py --help` gives a full list of command options, including pro
 
 ## Syntax and Options
 
-[Using vfxt.py](using_vfxt_py.md)
+[Using vfxt.py](using_vfxt_py.md) - Detailed explanation of basic syntax and help for common tasks including these: 
 
-[Command Syntax and Options](syntax.md)
+* [Create a cluster](using_vfxt_py.md#creating-a-cluster)
+* [Add nodes to a cluster](using_vfxt_py.md#add-nodes-to-a-cluster)
+* [Destroy a cluster](using_vfxt_py.md#destroy-a-cluster)
 
-[All options](all_options.md)
+[Command Syntax and Options](syntax.md) - Descriptions for all script options
+
+[All options](all_options.md) - Help-style list of options
 
 ## Platform-Specific Information
 

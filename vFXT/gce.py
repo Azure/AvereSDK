@@ -673,7 +673,7 @@ class Service(ServiceBase):
                         break
                 except Exception:
                     break
-            if self.network_project_id:
+            if self.network_project_id != self.project_id:
                 page_token = None
                 while True:
                     try: # try and look at instances in the network project id as well

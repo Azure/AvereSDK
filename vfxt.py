@@ -319,6 +319,7 @@ def main():
     cluster_opts.add_argument("--bucket", "--azurecontainer", help="S3 bucket, Google Storage bucket, Azure storageaccount/container to use as the core filer (must be empty), otherwise one will be created", metavar='STORAGE')
     cluster_opts.add_argument("--bucket-not-empty", "--averecontainer-not-empty", action='store_true', help="Existing storage endpoint has data in it")
     cluster_opts.add_argument("--disable-bucket-encryption", "--disable-azurecontainer-encryption", action='store_true', help="Disable the use of encryption for objects written to the storage endpoint")
+    cluster_opts.add_argument("--enable-bucket-encryption", "--enable-azurecontainer-encryption", action='store_true', help=argparse.SUPPRESS) # "Enable the use of encryption for objects written to the storage endpoint"
     cluster_opts.add_argument("--disable-bucket-compression", "--disable-azurecontainer-compression", action='store_true', help="Disable the use of compression for objects written to the storage endpoint")
     cluster_opts.add_argument("--disable-bucket-https", "--disable-azurecontainer-https", action='store_true', help="Disable the use of HTTPS for storage endpoint communication")
     cluster_opts.add_argument("--disable-bucket-https-verify", "--disable-azurecontainer-https-verify", action='store_true', help="Disable HTTPS certificate verification for storage endpoint communication")
@@ -604,6 +605,11 @@ def main():
             if args.nodes > 3:
                 logger.error("Adding more than 3 cluster nodes is not supported")
                 parser.exit(1)
+
+        # off for Azure unless requested
+        args.disable_bucket_encryption = True
+        if args.enable_bucket_encryption:
+            args.disable_bucket_encryption = False
 
     # generic service options
     service.POLLTIME = args.poll_time

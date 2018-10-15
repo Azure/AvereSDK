@@ -294,7 +294,6 @@ def main():
     cluster_opts.add_argument("--data-disk-count", help="Number of data disk volumes per node to create for the vFXT cluster", default=None, type=int)
     cluster_opts.add_argument("--data-disk-type", help="Type of volumes to create for the vFXT cluster cache.  AWS values are gp2 (default), io1, or standard.  GCE values are pd-standard, pd-ssd, or local-ssd.", default=None)
     cluster_opts.add_argument("--data-disk-iops", help="Number of sustained IOPS (for volume type io1)", default=None, type=int)
-    cluster_opts.add_argument("--data-disk-nvme", help="Use the NVME interface instead of SCSI (GCE local-ssd only)", action='store_true')
     cluster_opts.add_argument("--data-disk-size", help="Size of the cache data disk (in GB)", default=None, type=int)
     cluster_opts.add_argument("--root-size", help="Total size of the boot disk (in GB)", default=None, type=int)
     cluster_opts.add_argument("--configuration-expiration", help=argparse.SUPPRESS, default=Cluster.CONFIGURATION_EXPIRATION, type=int) # Number of minutes until the cluster.cfg file should expire
@@ -650,7 +649,6 @@ def main():
             'data_disk_size': args.data_disk_size,
             'data_disk_type': args.data_disk_type,
             'data_disk_iops': args.data_disk_iops,
-            'data_disk_nvme': args.data_disk_nvme,
             'root_image': args.image_id,
             'root_size': args.root_size,
             'iamrole': args.iam_role,

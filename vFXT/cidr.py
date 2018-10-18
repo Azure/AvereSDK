@@ -124,15 +124,16 @@ class Cidr(object):
                 contiguous (bool): list should be contiguous (defaults True)
                 used (list, optional): list of used addresses to skip
                 honor_reserves (bool, optional): skips first 4 addresses as well as the last
-                    address in the block.  These are commonly reserved by cloud providers.
+                    two address in the block.  These are commonly reserved by cloud providers.
             Returns: list
         '''
         used = set(used or [])
         # reserved addresses
         if honor_reserves:
-            for offset in range(0, 4):
+            for offset in range(0, 4): # network, gateway, default services
                 used.add(self.to_address(self.start() + offset))
-            used.add(self.to_address(self.end()))
+            used.add(self.to_address(self.end() - 1)) # Second-to-last Reservation
+            used.add(self.to_address(self.end())) # broadcast
 
         r = []
         for addr in self.addresses():

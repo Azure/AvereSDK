@@ -1324,21 +1324,27 @@ class Service(ServiceBase):
         return list(addresses)
 
     def _cidr_overlaps_network(self, cidr_range):
+        '''Check if a given cidr range falls within any of the network/subnetwork ranges
+            of the current configuration
+
+            cidr_range (str): IP address range in CIDR notation
+        '''
         cidr = Cidr(cidr_range)
         address = cidr.start_address()
         network = self._get_network()
         if 'subnetworks' in network:
             subnetwork = self._get_subnetwork(self.subnetwork_id)
-            if 'secondaryIpRanges' in subnetwork:
-                r = subnetwork['secondaryIpRanges'][0] # XXX only using the first one (support more than one if avail?)
+            for r in subnetwork.get('secondaryIpRanges', []):
+                if 'ipCidrRange' not in r:
+                    continue
                 secondary_range = Cidr(r['ipCidrRange'])
                 if secondary_range.contains(address):
                     return True
-            else:
+            if 'ipCidrRange' in subnetwork:
                 subnetwork_range = Cidr(subnetwork['ipCidrRange'])
                 if subnetwork_range.contains(address):
                     return True
-        else:
+        else: # legacy
             network_range = Cidr(network['IPv4Range'])
             if network_range.contains(address):
                 return True
@@ -1953,10 +1959,12 @@ class Service(ServiceBase):
                         for n in [xmlrpc.node.get(name)[name]]
                         if 'primaryClusterIP' in n])
 
-        # lookup nodes that have one of our primary IP addresses.. for now we
-        # have to fetch all the instances and search here instead of server side
-        # https://code.google.com/p/google-compute-engine/issues/detail?id=533
-        nodes = [n for n in self.find_instances(all_regions=False) if self.ip(n) in node_ips]
+        # lookup nodes that have one of our primary IP addresses..
+        nodes = []
+        for node_ip in node_ips:
+            node = self._who_has_ip(node_ip)
+            if node:
+                nodes.append(node)
         if nodes:
             cluster.nodes        = [ServiceInstance(self, instance=n) for n in nodes]
             cluster.zones        = list(set([node['zone'].split('/')[-1] for node in nodes]))
@@ -2553,10 +2561,40 @@ class Service(ServiceBase):
             raise vFXTConfigurationException("Failed to find subnetwork {}: {}".format(subnetwork, e))
 
     def _who_has_ip(self, address):
-        instances = self.find_instances(all_regions=False)
-        for i in instances:
-            if address in self.instance_in_use_addresses(i):
-                return i
+        '''Helper to determine which instance owns a particular IP address
+        '''
+        conn = self.connection()
+
+        # NOTE this has to iterate through all of the instances and examine the network interface
+        # ip addresses (or associated routes if the address does not fall within the
+        # network).  Awaiting a better API for this, see
+        # https://issuetracker.google.com/issues/35905011
+        # https://issuetracker.google.com/issues/73455339
+
+        # lookup is instance if the address is not a routeable address, otherwise we also query routes with all
+        category = 'instance' if self._cidr_overlaps_network('{}/32'.format(address)) else 'all'
+
+        # look in all zones in the current region, starting with our current zones
+        zones = [_ for _ in self.zones]
+        for zone in self._zone_names(all_regions=False):
+            if zone not in zones:
+                zones.append(zone)
+        for zone in zones:
+            page_token = None
+            while True:
+                try:
+                    r = _gce_do(conn.instances().list, project=self.project_id, zone=zone, pageToken=page_token)
+                    if not r or 'items' not in r:
+                        break
+                    for instance in r['items']:
+                        if address in self.instance_in_use_addresses(instance, category):
+                            return instance
+                    page_token = r.get('nextPageToken')
+                    if not page_token:
+                        break
+                except Exception as e:
+                    log.debug("_who_has_ip instance fetch failed: {}".format(e))
+                    break
         return None
 
     def _get_network_project(self):

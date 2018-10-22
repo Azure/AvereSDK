@@ -2117,7 +2117,7 @@ class Service(ServiceBase):
         regions = _gce_do(conn.regions().list, project=self.project_id)['items']
         for r in regions:
             zone_url = '{}/{}/zones/{}'.format(self.GCE_URL, self.project_id, zone)
-            if zone_url in r['zones']:
+            if zone_url in r.get('zones', []):
                 return r['name']
         raise vFXTConfigurationException("Invalid zone: {}".format(zone))
 

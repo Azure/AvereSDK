@@ -280,6 +280,7 @@ def main():
     parser.add_argument('--ssh-key', help="SSH key for cluster authentication (path to public key file for GCE and Azure, key name for AWS)", type=str, default=None)
     parser.add_argument("--telemetry-mode", help="Telemetry custom mode", type=str, default='gsimin')
     parser.add_argument("--skip-check", help="Skip initial checks for api access and quotas", action="store_true")
+    parser.add_argument("--skip-load-defaults", help="Skip fetching online default configuration data", action="store_true")
     parser.add_argument("--log", help="Automatically log the output to the provided file name", type=str, default=None)
 
     shelve_opts = parser.add_argument_group()
@@ -368,7 +369,7 @@ def main():
 
         # init our service
         if args.on_instance:
-            service = Service.on_instance_init(proxy_uri=args.proxy_uri, no_connection_test=args.skip_check)
+            service = Service.on_instance_init(proxy_uri=args.proxy_uri, no_connection_test=args.skip_check, skip_load_defaults=args.skip_load_defaults)
             if args.subnet:
                 service.subnets = args.subnet
             if args.cluster_range:
@@ -419,6 +420,7 @@ def main():
                 'security_groups': args.security_group,
                 'private_range': args.cluster_range,
                 'no_connection_test': args.skip_check,
+                'skip_load_defaults': args.skip_load_defaults,
             }
             if args.from_environment:
                 del opts['access_key']
@@ -448,7 +450,7 @@ def main():
         logging.getLogger(Service.__module__).addHandler(log_file)
 
         if args.on_instance:
-            service = Service.on_instance_init(proxy_uri=args.proxy_uri, no_connection_test=args.skip_check)
+            service = Service.on_instance_init(proxy_uri=args.proxy_uri, no_connection_test=args.skip_check, skip_load_defaults=args.skip_load_defaults)
             if args.network:
                 service.network_id = args.network
             if args.zone:
@@ -487,6 +489,7 @@ def main():
                 's3_secret_access_key': args.s3_secret_key,
                 'proxy_uri': args.proxy_uri,
                 'no_connection_test': args.skip_check,
+                'skip_load_defaults': args.skip_load_defaults,
             }
             if args.from_environment:
                 service = Service.environment_init(**opts)
@@ -540,6 +543,7 @@ def main():
                 storage_resource_group=args.storage_resource_group,
                 network=args.azure_network, subnet=args.azure_subnet,
                 no_connection_test=args.skip_check,
+                skip_load_defaults=args.skip_load_defaults,
             )
             if args.storage_account:
                 service.storage_account = args.storage_account
@@ -581,6 +585,7 @@ def main():
                 'proxy_uri': args.proxy_uri,
                 'private_range': args.cluster_range,
                 'no_connection_test': args.skip_check,
+                'skip_load_defaults': args.skip_load_defaults,
             }
             if args.from_environment:
                 service = Service.environment_init(**opts)

@@ -673,19 +673,6 @@ class Service(ServiceBase):
                         break
                 except Exception:
                     break
-            if self.network_project_id != self.project_id:
-                page_token = None
-                while True:
-                    try: # try and look at instances in the network project id as well
-                        r =  _gce_do(conn.instances().list, project=self.network_project_id, filter=search, zone=zone, pageToken=page_token)
-                        if r and 'items' in r:
-                            instances.extend(r['items'])
-                        if r and 'nextPageToken'  in r:
-                            page_token = r['nextPageToken']
-                        if not r or 'nextPageToken' not in r:
-                            break
-                    except Exception:
-                        break
         return instances
 
     def get_instances(self, instance_ids, all_regions=True):

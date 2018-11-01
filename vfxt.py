@@ -6,7 +6,10 @@ import argparse
 import logging
 import urlparse
 import getpass
+import ssl
+import sys
 import uuid
+
 import vFXT
 from vFXT import Cluster
 from vFXT.service import *
@@ -1009,4 +1012,15 @@ def main():
 
 
 if __name__ == '__main__':
+    try:
+        if sys.version_info.major < 2 or sys.version_info.minor < 7 or sys.version_info.micro < 10:
+            raise Exception("vFXT requires 2.7.10 or later")
+        if not hasattr(ssl, 'PROTOCOL_TLSv1_2'):
+            raise Exception("vFXT requires OpenSSL with TLSv1.2 support")
+        if not hasattr(ssl, 'OPENSSL_VERSION_INFO') or ssl.OPENSSL_VERSION_INFO < (1,0,1,7): # at least OpenSSL 1.0.1
+            raise Exception("vFXT requires OpenSSL version 1.0.1 or later")
+    except Exception as e:
+        logging.error(e)
+        sys.exit(-1)
+
     main()

@@ -616,11 +616,13 @@ class Cluster(object):
         while True:
             response = {}
             try:
+                if xmlrpc is None:
+                    xmlrpc = self.xmlrpc()
                 response = xmlrpc.cluster.getActivity(activity)
                 log.debug(response)
             except Exception as e:
                 log.exception("Failed to get activity {}: {}".format(activity, e))
-                xmlrpc = self.xmlrpc()
+                xmlrpc = None
 
             if 'state' in response:
                 if response['state'] == 'success':

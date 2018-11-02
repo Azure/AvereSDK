@@ -528,7 +528,11 @@ class Service(ServiceBase):
         for q in project_quotas:
             usage = int(q.get('usage') or 0)
             limit = int(q.get('limit') or 0)
-            metric = q.get('metric').lower().capitalize().replace('_', ' ')
+            metric = q.get('metric')
+            if not metric:
+                log.error(q)
+                continue
+            metric = metric.lower().capitalize().replace('_', ' ')
             if limit and float(usage) / limit > percentage:
                 log.warn("QUOTA ALERT: Using {} of {} {} for the project".format(usage, limit, metric))
             else:

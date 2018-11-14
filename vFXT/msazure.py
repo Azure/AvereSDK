@@ -232,6 +232,7 @@ class Service(ServiceBase):
     MAX_UPDATE_DOMAIN_COUNT = 20
     ALLOCATE_INSTANCE_ADDRESSES = True
     DEFAULT_MARKETPLACE_URN = 'microsoft-avere:vfxt:avere-vfxt-node:latest'
+    NIC_OPERATIONS_RETRY = 2
 
     def __init__(self, subscription_id=None, application_id=None, application_secret=None,
                        tenant_id=None, resource_group=None, storage_account=None,
@@ -1989,42 +1990,46 @@ class Service(ServiceBase):
         conn = self.connection('network')
         subnet = self._instance_subnet(instance)
 
-        try:
-            dest = '{}/32'.format(address)
-            addr = Cidr(dest) # validate
-            ipcfg_name = '{}-{}'.format(self.name(instance), addr.address.replace('.', '-')) # XXX this is a convention
+        dest = '{}/32'.format(address)
+        addr = Cidr(dest) # validate
+        ipcfg_name = '{}-{}'.format(self.name(instance), addr.address.replace('.', '-')) # XXX this is a convention
 
-            # address in subnet range, we use IP configurations
-            if not Cidr(subnet.address_prefix).contains(address):
-                raise vFXTConfigurationException("Address {} is does not fall within subnet {}".format(address, subnet.name))
+        # address must ber in subnet range since we use IP configurations
+        if not Cidr(subnet.address_prefix).contains(address):
+            raise vFXTConfigurationException("Address {} is does not fall within subnet {}".format(address, subnet.name))
 
-            # check for existing
-            existing = self._who_has_ip(address)
-            if existing:
-                if not options.get('allow_reassignment', True):
-                    raise vFXTConfigurationException("Address {} already assigned to {}".format(address, existing.name))
-                self.remove_instance_address(existing, address)
+        # check for existing
+        existing = self._who_has_ip(address)
+        if existing:
+            if not options.get('allow_reassignment', True):
+                raise vFXTConfigurationException("Address {} already assigned to {}".format(address, existing.name))
+            self.remove_instance_address(existing, address)
 
-            nic = self._instance_primary_nic(instance)
-            nic_data = nic.serialize()
-            new_ip = {
-                'properties': {
-                    'subnet': {'id': subnet.id},
-                    'privateIPAllocationMethod': 'static',
-                    'privateIPAddress': address,
-                },
-                'name': ipcfg_name,
-            }
-            nic_data['properties']['ipConfigurations'].append(new_ip)
+        nic = self._instance_primary_nic(instance)
+        nic_data = nic.serialize()
+        new_ip = {
+            'properties': {
+                'subnet': {'id': subnet.id},
+                'privateIPAllocationMethod': 'static',
+                'privateIPAddress': address,
+            },
+            'name': ipcfg_name,
+        }
+        nic_data['properties']['ipConfigurations'].append(new_ip)
+        nic_rsg = nic.id.split('/')[4]
 
-            nic_rsg = nic.id.split('/')[4]
-            op = conn.network_interfaces.create_or_update(nic_rsg, nic.name, nic_data)
-            self._wait_for_operation(op, retries=self.WAIT_FOR_IPCONFIG, msg='{} to be assigned to {}'.format(address, nic.name))
-        except vFXTConfigurationException:
-            raise
-        except Exception as e:
-            log.debug(e)
-            raise vFXTServiceFailure("Failed to add address {} to {}: {}".format(address, self.name(instance), e))
+        retries = self.NIC_OPERATIONS_RETRY
+        while True:
+            try:
+                op = conn.network_interfaces.create_or_update(nic_rsg, nic.name, nic_data)
+                self._wait_for_operation(op, retries=self.WAIT_FOR_IPCONFIG, msg='{} to be assigned to {}'.format(address, nic.name))
+                break
+            except Exception as e:
+                log.debug(e)
+                if retries == 0:
+                    raise vFXTServiceFailure("Failed to add address {} to {}: {}".format(address, self.name(instance), e))
+            time.sleep(self.POLLTIME)
+            retries -= 1
 
     def remove_instance_address(self, instance, address):
         '''Remove an instance address
@@ -2043,22 +2048,28 @@ class Service(ServiceBase):
         conn = self.connection('network')
         subnet = self._instance_subnet(instance)
 
-        try:
-            # address in subnet range, we use IP configurations
-            if not Cidr(subnet.address_prefix).contains(address):
-                raise vFXTConfigurationException("Address {} is does not fall within subnet {}".format(address, subnet.name))
+        # address must be in subnet range since we use IP configurations
+        if not Cidr(subnet.address_prefix).contains(address):
+            raise vFXTConfigurationException("Address {} is does not fall within subnet {}".format(address, subnet.name))
 
-            nic = self._instance_primary_nic(instance)
-            nic_data = nic.serialize()
-            ip_configurations = nic_data['properties']['ipConfigurations']
-            nic_data['properties']['ipConfigurations'] = [_ for _ in ip_configurations if _['properties']['privateIPAddress'] != address]
+        nic = self._instance_primary_nic(instance)
+        nic_data = nic.serialize()
+        ip_configurations = nic_data['properties']['ipConfigurations']
+        nic_data['properties']['ipConfigurations'] = [_ for _ in ip_configurations if _['properties']['privateIPAddress'] != address]
+        nic_rsg = nic.id.split('/')[4]
 
-            nic_rsg = nic.id.split('/')[4]
-            op = conn.network_interfaces.create_or_update(nic_rsg, nic.name, nic_data)
-            self._wait_for_operation(op, retries=self.WAIT_FOR_IPCONFIG, msg='{} to be removed from {}'.format(address, nic.name))
-        except Exception as e:
-            log.debug(e)
-            raise vFXTServiceFailure("Failed to remove address {} from {}: {}".format(address, self.name(instance), e))
+        retries = self.NIC_OPERATIONS_RETRY
+        while True:
+            try:
+                op = conn.network_interfaces.create_or_update(nic_rsg, nic.name, nic_data)
+                self._wait_for_operation(op, retries=self.WAIT_FOR_IPCONFIG, msg='{} to be removed from {}'.format(address, nic.name))
+                break
+            except Exception as e:
+                log.debug(e)
+                if retries == 0:
+                    raise vFXTServiceFailure("Failed to remove address {} from {}: {}".format(address, self.name(instance), e))
+            time.sleep(self.POLLTIME)
+            retries -= 1
 
     def in_use_addresses(self, cidr_block, **options): #pylint: disable=unused-argument
         '''Return a list of in use addresses within the specified cidr

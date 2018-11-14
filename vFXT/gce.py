@@ -404,12 +404,12 @@ class Service(ServiceBase):
                 """
                 def __init__(self, host, port=None, key_file=None, cert_file=None,
                              strict=None, timeout=None, proxy_info=None,
-                             ca_certs=None, disable_ssl_certificate_validation=False):
+                             ca_certs=None, disable_ssl_certificate_validation=False, **kwargs):
                     log.debug("Making connection to {} from {}".format(host, Service.CONTROL_ADDR))
                     httplib.HTTPSConnection.__init__(self, host, port=port,
                                                      key_file=key_file,
                                                      cert_file=cert_file, strict=strict, timeout=timeout,
-                                                     source_address=(Service.CONTROL_ADDR, 0))
+                                                     source_address=(Service.CONTROL_ADDR, 0), **kwargs)
                     self.timeout = timeout
                     self.proxy_info = proxy_info
                     if ca_certs is None:
@@ -2619,10 +2619,10 @@ def _gce_do(f, retries=ServiceBase.CLOUD_API_RETRIES, **options):
             errors += 1
             time.sleep(backoff(errors))
             if retries == 0:
-                raise vFXTServiceTimeout('{} failed, exhausted retries: {}'.format(f.func_name, e))
+                raise vFXTServiceTimeout('{} failed, exhausted retries: {}'.format(f.__name__, e))
         except Exception as e:
             log.debug("Unknown GCE retry-able function call failure: {}".format(e))
         retries -= 1
         if retries == 0:
-            raise vFXTServiceTimeout('{} failed, exhausted retries: {}'.format(f.func_name, e))
+            raise vFXTServiceTimeout('{} failed, exhausted retries: {}'.format(f.__name__, e))
         time.sleep(Service.POLLTIME)

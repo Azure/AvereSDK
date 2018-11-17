@@ -1999,11 +1999,11 @@ class Service(ServiceBase):
             raise vFXTConfigurationException("Address {} is does not fall within subnet {}".format(address, subnet.name))
 
         # check for existing
-        existing = self._who_has_ip(address)
-        if existing:
+        existing_nic = self._nic_from_ip(address)
+        if existing_nic:
             if not options.get('allow_reassignment', True):
-                raise vFXTConfigurationException("Address {} already assigned to {}".format(address, existing.name))
-            self.remove_instance_address(existing, address)
+                raise vFXTConfigurationException("Address {} already assigned to {}".format(address, existing_nic.name))
+            self._remove_address_from_nic(existing_nic, address)
 
         nic = self._instance_primary_nic(instance)
         nic_data = nic.serialize()
@@ -2045,14 +2045,16 @@ class Service(ServiceBase):
         if address == self.ip(instance):
             raise vFXTConfigurationException("The primary address {} can not be removed from {}".format(address, self.name(instance)))
 
-        conn = self.connection('network')
-        subnet = self._instance_subnet(instance)
-
         # address must be in subnet range since we use IP configurations
+        subnet = self._instance_subnet(instance)
         if not Cidr(subnet.address_prefix).contains(address):
             raise vFXTConfigurationException("Address {} is does not fall within subnet {}".format(address, subnet.name))
 
         nic = self._instance_primary_nic(instance)
+        return self._remove_address_from_nic(nic, address)
+
+    def _remove_address_from_nic(self, nic, address):
+        conn = self.connection('network')
         nic_data = nic.serialize()
         ip_configurations = nic_data['properties']['ipConfigurations']
         nic_data['properties']['ipConfigurations'] = [_ for _ in ip_configurations if _['properties']['privateIPAddress'] != address]
@@ -2067,7 +2069,7 @@ class Service(ServiceBase):
             except Exception as e:
                 log.debug(e)
                 if retries == 0:
-                    raise vFXTServiceFailure("Failed to remove address {} from {}: {}".format(address, self.name(instance), e))
+                    raise vFXTServiceFailure("Failed to remove address {} from {}: {}".format(address, nic.name, e))
             time.sleep(self.POLLTIME)
             retries -= 1
 
@@ -2130,13 +2132,19 @@ class Service(ServiceBase):
 
         return list(addresses)
 
-    def _who_has_ip(self, address):
+    def _nic_from_ip(self, address):
         netconn = self.connection('network')
         for nic in netconn.network_interfaces.list_all():
             for ipconfig in nic.ip_configurations:
                 if address == ipconfig.private_ip_address:
                     if nic.virtual_machine:
                         return self.get_instance(nic.virtual_machine.id.split('/')[-1])
+        return None
+
+    def _who_has_ip(self, address):
+        nic = self._nic_from_ip(address)
+        if nic and nic.virtual_machine:
+            return self.get_instance(nic.virtual_machine.id.split('/')[-1])
         return None
 
     def instance_in_use_addresses(self, instance, category='all'):

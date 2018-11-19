@@ -93,8 +93,8 @@ class Azure_test(tests.vFXTTestCase.Base):
     def test_create_instance(self):
         service = self.mk_azure_service()
         name = 'vfxttest-lg-test-{}'.format(int(time.time()))
-        instance = ServiceInstance.create(service, self.azure['instance_type'], name, boot_disk_image=self.azure['image'], tags={'purpose':'vfxt-test-deleteme'})
-        self.assertTrue(instance.instance.tags['purpose'] == 'vfxt-test-deleteme')
+        instance = ServiceInstance.create(service, self.azure['instance_type'], name, boot_disk_image=self.azure['image'], tags={'purpose':'vfxt-unittest-deleteme'})
+        self.assertTrue(instance.instance.tags['purpose'] == 'vfxt-unittest-deleteme')
 
         try:
             self.assertTrue(instance.name())

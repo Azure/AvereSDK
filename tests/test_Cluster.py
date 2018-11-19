@@ -145,7 +145,7 @@ class Cluster_test(tests.vFXTTestCase.Base):
             self.skipTest("skipping test for Azure")
 
         service = self.mk_azure_service()
-        name = 'vfxt-test-{}'.format(int(time.time()))
+        name = 'vfxt-unittest-{}'.format(int(time.time()))
         cluster = Cluster.create(service, self.azure['instance_type'], name, 'adminpass', root_image=self.azure['vfxt_image'], size=3, wait_for_state='yellow', azure_role=self.azure['role'])
 
         self.assertIsInstance(cluster, Cluster)
@@ -349,7 +349,7 @@ class Cluster_test(tests.vFXTTestCase.Base):
         instances = service.get_instances(self.azure['existing'])
         existing_address = service.ip(instances[0])
 
-        name = 'vfxt-test-{}'.format(int(time.time()))
+        name = 'vfxt-unittest-{}'.format(int(time.time()))
         cluster = Cluster.create(service, self.azure['instance_type'], name, 'adminpass', root_image=self.azure['vfxt_image'], size=3, wait_for_state='yellow', azure_role=self.azure['role'])
         try:
             def _should_fail_instance_in_use():

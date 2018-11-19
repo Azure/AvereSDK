@@ -2,6 +2,7 @@
 # Copyright (c) 2015-2018 Avere Systems, Inc.  All Rights Reserved.
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License. See LICENSE in the project root for license information.
+from __future__ import print_function
 import argparse
 import logging
 import urlparse
@@ -932,7 +933,7 @@ def main():
         banner = "\n--- Service object available as 'service' ---\n"
         try:
             from IPython import start_ipython
-            print banner
+            print(banner)
             start_ipython(argv=['--classic', '--no-banner'], user_ns=local)
         except ImportError:
             from code import interact

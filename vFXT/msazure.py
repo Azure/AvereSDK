@@ -2137,8 +2137,7 @@ class Service(ServiceBase):
         for nic in netconn.network_interfaces.list_all():
             for ipconfig in nic.ip_configurations:
                 if address == ipconfig.private_ip_address:
-                    if nic.virtual_machine:
-                        return self.get_instance(nic.virtual_machine.id.split('/')[-1])
+                    return nic
         return None
 
     def _who_has_ip(self, address):

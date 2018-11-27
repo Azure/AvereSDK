@@ -331,24 +331,33 @@ class Service(ServiceBase):
             data_disk_count (int, optional): Data disk count
         '''
         if self.location:
-            for q in self.connection('network').usages.list(self.location):
+            try:
+                for q in self.connection('network').usages.list(self.location):
+                    if q.limit == 0: continue
+                    if q.current_value/q.limit > percentage:
+                        log.warn("QUOTA ALERT: Using {} of {} {}".format(q.current_value, q.limit, q.name.localized_value))
+                    else:
+                        log.debug("Using {} of {} {}".format(q.current_value, q.limit, q.name.localized_value))
+            except Exception as e:
+                log.debug(e)
+            try:
+                for q in self.connection().usage.list(self.location):
+                    if q.limit == 0: continue
+                    if q.current_value/q.limit > percentage:
+                        log.warn("QUOTA ALERT: Using {} of {} {}".format(q.current_value, q.limit, q.name.localized_value))
+                    else:
+                        log.debug("Using {} of {} {}".format(q.current_value, q.limit, q.name.localized_value))
+            except Exception as e:
+                log.debug(e)
+        try:
+            for q in self.connection('storage').usage.list():
                 if q.limit == 0: continue
                 if q.current_value/q.limit > percentage:
                     log.warn("QUOTA ALERT: Using {} of {} {}".format(q.current_value, q.limit, q.name.localized_value))
                 else:
                     log.debug("Using {} of {} {}".format(q.current_value, q.limit, q.name.localized_value))
-            for q in self.connection().usage.list(self.location):
-                if q.limit == 0: continue
-                if q.current_value/q.limit > percentage:
-                    log.warn("QUOTA ALERT: Using {} of {} {}".format(q.current_value, q.limit, q.name.localized_value))
-                else:
-                    log.debug("Using {} of {} {}".format(q.current_value, q.limit, q.name.localized_value))
-        for q in self.connection('storage').usage.list():
-            if q.limit == 0: continue
-            if q.current_value/q.limit > percentage:
-                log.warn("QUOTA ALERT: Using {} of {} {}".format(q.current_value, q.limit, q.name.localized_value))
-            else:
-                log.debug("Using {} of {} {}".format(q.current_value, q.limit, q.name.localized_value))
+        except Exception as e:
+            log.debug(e)
 
     def connection(self, connection_type='compute', **options):
         '''Connection factory, returns a new connection or thread local copy

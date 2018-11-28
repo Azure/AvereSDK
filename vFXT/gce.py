@@ -402,14 +402,14 @@ class Service(ServiceBase):
                 connections to come from our controlAddr.  __init__ is essentially
                 a copy of the httplib2 version.
                 """
-                def __init__(self, host, port=None, key_file=None, cert_file=None,
+                def __init__(self, host, port=None, key_file=None, cert_file=None, #pylint: disable=unused-argument
                              strict=None, timeout=None, proxy_info=None,
-                             ca_certs=None, disable_ssl_certificate_validation=False, **kwargs):
+                             ca_certs=None, disable_ssl_certificate_validation=False, **other_kwargs):
                     log.debug("Making connection to {} from {}".format(host, Service.CONTROL_ADDR))
                     httplib.HTTPSConnection.__init__(self, host, port=port,
                                                      key_file=key_file,
                                                      cert_file=cert_file, strict=strict, timeout=timeout,
-                                                     source_address=(Service.CONTROL_ADDR, 0), **kwargs)
+                                                     source_address=(Service.CONTROL_ADDR, 0))
                     self.timeout = timeout
                     self.proxy_info = proxy_info
                     if ca_certs is None:

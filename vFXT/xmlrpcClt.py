@@ -2,10 +2,11 @@
 # Copyright (c) 2015-2019 Avere Systems, Inc.  All Rights Reserved.
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License. See LICENSE in the project root for license information.
-
-import httplib
+import base64
+import http
 import socket
-import xmlrpclib
+import xmlrpc.client as xmlrpclib
+import logging
 import errno
 import sys
 
@@ -29,8 +30,8 @@ class CookieAuthXMLRPCTransport(xmlrpclib.SafeTransport):
         else:
             xmlrpclib.SafeTransport.__init__(self, use_datetime=use_datetime)
         self._cookie = ""
-        # Test if the underlying mechanism is httplib.HTTP (used in Python 2.6
-        # and before), or httplib.HTTPConnection (used in Python 2.7). In the
+        # Test if the underlying mechanism is http.HTTP (used in Python 2.6
+        # and before), or http.HTTPConnection (used in Python 2.7). In the
         # latter, a persistent connection is stored in self._connection.
         try:
             getattr(self, '_connection')
@@ -60,7 +61,7 @@ class CookieAuthXMLRPCTransport(xmlrpclib.SafeTransport):
                 except socket.error as e:
                     if i or e.errno not in (errno.ECONNRESET, errno.ECONNABORTED, errno.EPIPE):
                         raise
-                except httplib.BadStatusLine: #close after we sent request
+                except http.client.BadStatusLine: #close after we sent request
                     if i:
                         raise
         else:
@@ -142,11 +143,11 @@ def main():
         username = sys.argv[2]
         password = sys.argv[3]
     except Exception:
-        print "Arguments required: [mgmt ip] [username] [password]"
+        logging.error("Arguments required: [mgmt ip] [username] [password]")
         return
 
     s = getXmlrpcClient("http://{0}/cgi-bin/rpc2.py".format(mgmt_ip), do_cert_checks=False)
-    res = s.system.login(username.encode('base64'), password.encode('base64'))
+    res = s.system.login(base64.b64encode(bytes(username)), base64.b64encode(bytes(password)))
     if res != 'success':
         raise Exception(res)
 

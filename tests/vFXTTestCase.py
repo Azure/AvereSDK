@@ -13,7 +13,7 @@ class Base(unittest.TestCase):
         '''Load the test_config.json file which has our required test options'''
         try:
             import json
-            f = open('tests/test_config.json', 'r')
+            f = open('tests/test_config.json', 'rb')
             test_config = json.load(f)
             self.create_clusters                = test_config['create_clusters']
             self.shelve                         = test_config.get('shelve')

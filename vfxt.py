@@ -1,11 +1,11 @@
-#! /usr/bin/env python2.7
+#! /usr/bin/env python3
 # Copyright (c) 2015-2019 Avere Systems, Inc.  All Rights Reserved.
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License. See LICENSE in the project root for license information.
-from __future__ import print_function
+from future.moves.urllib import parse as urlparse
+from future.utils import viewitems
 import argparse
 import logging
-import urlparse
 import getpass
 import ssl
 import sys
@@ -22,7 +22,7 @@ def _validate_ip(addr):
     if len(octets) != 4:
         raise argparse.ArgumentTypeError("malformed IP address: {}".format(addr))
     try:
-        if all([v <= 255 and v >= 0 for v in [int(n) for n in octets]]):
+        if all([0 <= v <= 255 for v in [int(n) for n in octets]]):
             return addr
         raise ValueError(addr)
     except Exception:
@@ -36,7 +36,7 @@ def _validate_url(url):
 
 def _validate_ascii(s):
     try:
-        return s.encode('ascii',errors='ignore')
+        return s.encode('ascii', errors='ignore')
     except Exception:
         raise argparse.ArgumentTypeError("Value must be ASCII: {}".format(s))
 
@@ -51,7 +51,7 @@ def _validate_writeable_path(p):
         if f:
             f.close()
 
-def _get_user_shelveable(service, user):#pylint: disable=unused-argument
+def _get_user_shelveable(service, user):  # pylint: disable=unused-argument
     raise NotImplementedError()
 
 def _get_user_shelveable_aws(service, user):
@@ -65,9 +65,9 @@ def _get_user_shelveable_gce(service, user):
             continue
         if 'items' not in instance['metadata']:
             continue
-        metadata   = instance['metadata']['items']
+        metadata = instance['metadata']['items']
         has_shelve = 'shelve' in [attr['key'] for attr in metadata]
-        is_user    = user in [attr['value'] for attr in metadata if attr['key'] == 'Owner']
+        is_user = user in [attr['value'] for attr in metadata if attr['key'] == 'Owner']
         if is_user and has_shelve:
             shelveable.append(instance['name'])
     return shelveable
@@ -135,7 +135,7 @@ def _add_nfs_corefiler(cluster, logger, args):
 
 def _add_bucket_corefiler(cluster, logger, args):
     bucketname = args.bucket or "{}-{}".format(cluster.name, str(uuid.uuid4()).lower().replace('-', ''))[0:63]
-    corefiler  = args.core_filer or cluster.service.__module__.split('.')[-1]
+    corefiler = args.core_filer or cluster.service.__module__.split('.')[-1]
 
     bucket_opts = {
         'crypto_mode': 'DISABLED' if args.disable_bucket_encryption else None,
@@ -179,15 +179,15 @@ def _add_bucket_corefiler(cluster, logger, args):
                 logger.exception(e)
             logger.error("Failed to save key file to {}: {}".format(args.core_filer_key_file, e))
     elif key: # we only get a key if crypto mode is enabled... so if we didn't save it emit a warning
-        logger.warn("*** IT IS STRONGLY RECOMMENDED THAT YOU CREATE A NEW CLOUD ENCRYPTION KEY AND SAVE THE")
-        logger.warn("*** KEY FILE (AND PASSWORD) BEFORE USING YOUR NEW CLUSTER.  WITHOUT THESE, IT WILL NOT")
-        logger.warn("*** BE POSSIBLE TO RECOVER YOUR DATA AFTER A FAILURE")
-        logger.warn("Do this at https://{}/avere/fxt/cloudFilerKeySettings.php".format(cluster.mgmt_ip))
+        logger.warning("*** IT IS STRONGLY RECOMMENDED THAT YOU CREATE A NEW CLOUD ENCRYPTION KEY AND SAVE THE")
+        logger.warning("*** KEY FILE (AND PASSWORD) BEFORE USING YOUR NEW CLUSTER.  WITHOUT THESE, IT WILL NOT")
+        logger.warning("*** BE POSSIBLE TO RECOVER YOUR DATA AFTER A FAILURE")
+        logger.warning("Do this at https://{}/avere/fxt/cloudFilerKeySettings.php".format(cluster.mgmt_ip))
 
     return corefiler
 
 def main():
-    parser = argparse.ArgumentParser(description="Create an Avere vFXT cluster", version=vFXT.__version__)
+    parser = argparse.ArgumentParser(description="Create an Avere vFXT cluster")
 
     # actions
     action_opts = parser.add_mutually_exclusive_group(required=True)
@@ -209,11 +209,10 @@ def main():
     parser.add_argument("--cloud-type", help="the cloud provider to use", choices=['aws', 'gce', 'azure'], required=True)
     parser.add_argument('--s3-access-key', help='custom or specific S3 access key', default=None)
     parser.add_argument('--s3-secret-key', help='custom or specific S3 secret key', default=None)
-    parser.add_argument('--s3-profile',    help='custom or specific S3 profile',       default=None)
+    parser.add_argument('--s3-profile', help='custom or specific S3 profile', default=None)
     parser.add_argument("--on-instance", help="Assume running on instance and query for instance credentials", action="store_true")
     parser.add_argument("--from-environment", help="Assume credentials from local configuration/environment", action="store_true")
     parser.add_argument("--image-id", help="Root disk image ID used to instantiate nodes")
-
 
     # service arguments (AWS)
     aws_opts = parser.add_argument_group('AWS specific options', 'Options applicable for --cloud-type aws')
@@ -280,6 +279,7 @@ def main():
     azure_opts.add_argument("--azure-storage-suffix", help="The storage service suffix (if non-public Azure)", default=None)
 
     # optional arguments
+    parser.add_argument('--version', action='version', version=vFXT.__version__)
     parser.add_argument("-d", "--debug", help="Give verbose feedback", action="store_true")
     parser.add_argument("--skip-cleanup", help="Do not cleanup buckets, volumes, instances, etc on failure", action="store_true")
     parser.add_argument("--wait-for-state", help="Wait for cluster state after configuration to settle on red, yellow, or green. The default is yellow.", choices=['red', 'yellow', 'green'], default="yellow")
@@ -519,7 +519,7 @@ def main():
             args.labels = {}
 
         if args.storage_class:
-            if not args.storage_class in Service.STORAGE_CLASSES:
+            if args.storage_class not in Service.STORAGE_CLASSES:
                 logger.error("Invalid storage class.  Must be one of {}".format(', '.join(Service.STORAGE_CLASSES)))
                 parser.exit(1)
 
@@ -553,7 +553,8 @@ def main():
             args.azure_storage_suffix = Service.AZURE_ENVIRONMENTS['AzureGermanCloud']['storage_suffix']
 
         if args.on_instance:
-            service = Service.on_instance_init(proxy_uri=args.proxy_uri,
+            service = Service.on_instance_init(
+                proxy_uri=args.proxy_uri,
                 subscription_id=args.subscription_id,
                 application_id=args.application_id,
                 application_secret=args.application_secret,
@@ -581,9 +582,9 @@ def main():
 
                     if not args.subscription_id:
                         subscriptions = Service._list_subscriptions(
-                                application_id=args.application_id,
-                                application_secret=args.application_secret,
-                                tenant_id=args.tenant_id)
+                            application_id=args.application_id,
+                            application_secret=args.application_secret,
+                            tenant_id=args.tenant_id)
                         args.subscription_id = subscriptions[0]['subscriptionId']
 
                 if not all([args.subscription_id, args.azure_network, args.azure_subnet, args.resource_group, args.location]):
@@ -646,7 +647,7 @@ def main():
 
     if args.node_cache_size:
         if any([args.data_disk_count, args.data_disk_size]):
-            logger.warn("Overriding --data-disk-count and --data-disk-size with --node-cache-size")
+            logger.warning("Overriding --data-disk-count and --data-disk-size with --node-cache-size")
         disk_config = service._cache_to_disk_config(args.node_cache_size, disk_type=args.data_disk_type)
         args.data_disk_count = disk_config[0]
         args.data_disk_size = disk_config[1]
@@ -724,7 +725,7 @@ def main():
             'data_disk_caching': args.data_disk_caching,
         }
         # prune out unfortunate command line defaults
-        options = {k: v for k, v in options.iteritems() if v is not None and v != ''}
+        options = {k: v for k, v in viewitems(options) if v is not None and v != ''}
 
         logger.info("Creating {} cluster {}".format(args.instance_type, args.cluster_name))
         try:
@@ -809,7 +810,7 @@ def main():
             parser.exit(1)
 
         if all([args.management_address, args.admin_password]):
-            cluster.mgmt_ip        = args.management_address
+            cluster.mgmt_ip = args.management_address
             cluster.admin_password = args.admin_password
             if args.wait_for_state:
                 cluster.wait_for_healthcheck(state=args.wait_for_state, conn_retries=20, duration=args.wait_for_state_duration)
@@ -897,7 +898,7 @@ def main():
 
         # if a real cluster, we can run healthcheck
         if all([args.management_address, args.admin_password]) and not args.instances:
-            cluster.mgmt_ip        = args.management_address
+            cluster.mgmt_ip = args.management_address
             cluster.admin_password = args.admin_password
             if args.wait_for_state:
                 cluster.wait_for_healthcheck(state=args.wait_for_state, conn_retries=20, duration=args.wait_for_state_duration)
@@ -937,7 +938,7 @@ def main():
             'instance_addresses': args.instance_addresses,
         }
         # prune out unfortunate command line defaults
-        options = {k: v for k, v in options.iteritems() if v is not None and v != ''}
+        options = {k: v for k, v in viewitems(options) if v is not None and v != ''}
 
         try:
             count = args.nodes or 1
@@ -967,7 +968,7 @@ def main():
         banner = "\n--- Service object available as 'service' ---\n"
         try:
             from IPython import start_ipython
-            print(banner)
+            logger.info(banner)
             start_ipython(argv=['--classic', '--no-banner'], user_ns=local)
         except ImportError:
             from code import interact
@@ -1048,11 +1049,14 @@ def main():
 
 if __name__ == '__main__':
     try:
-        if sys.version_info.major < 2 or sys.version_info.minor < 7 or sys.version_info.micro < 10:
+        old_py_e = Exception("vFXT requires 2.7.10 or later")
+        if sys.version_info.major < 2:
+            raise Exception("vFXT requires 2.7.10 or later")
+        elif sys.version_info.major == 2 and (sys.version_info.minor < 7 or sys.version_info.micro < 10):
             raise Exception("vFXT requires 2.7.10 or later")
         if not hasattr(ssl, 'PROTOCOL_TLSv1_2'):
             raise Exception("vFXT requires OpenSSL with TLSv1.2 support")
-        if not hasattr(ssl, 'OPENSSL_VERSION_INFO') or ssl.OPENSSL_VERSION_INFO < (1,0,1,7): # at least OpenSSL 1.0.1
+        if not hasattr(ssl, 'OPENSSL_VERSION_INFO') or ssl.OPENSSL_VERSION_INFO < (1, 0, 1, 7): # at least OpenSSL 1.0.1
             raise Exception("vFXT requires OpenSSL version 1.0.1 or later")
     except Exception as e:
         logging.error(e)

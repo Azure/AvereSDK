@@ -35,10 +35,10 @@ msazure.unshelve(instance)
 
 instance = msazure.refresh(instance)
 
-print msazure.name(instance)
-print msazure.ip(instance)
-print msazure.fqdn(instance)
-print msazure.status(instance)
+print(msazure.name(instance))
+print(msazure.ip(instance))
+print(msazure.fqdn(instance))
+print(msazure.status(instance))
 
 if msazure.is_on(instance): pass
 if msazure.is_off(instance): pass
@@ -64,12 +64,14 @@ serializeme = msazure.export()
 newmsazure = vFXT.msazure.Service(**serializeme)
 
 '''
+import base64
+from builtins import range #pylint: disable=redefined-builtin
+from future.moves.urllib import parse as urlparse
 import time
 import threading
-import Queue
+import queue as Queue
 import logging
-import urlparse
-import httplib
+import http.client
 import json
 import uuid
 import re
@@ -114,59 +116,59 @@ class ContainerExistsException(Exception): pass
 
 class Service(ServiceBase):
     '''Azure service backend'''
-    ON_STATUS=['ProvisioningState/succeeded','PowerState/running']
-    OFF_STATUS=['ProvisioningState/succeeded','PowerState/deallocated']
-    STOP_STATUS=['ProvisioningState/succeeded','PowerState/stopped']
+    ON_STATUS = ['ProvisioningState/succeeded', 'PowerState/running']
+    OFF_STATUS = ['ProvisioningState/succeeded', 'PowerState/deallocated']
+    STOP_STATUS = ['ProvisioningState/succeeded', 'PowerState/stopped']
     #DESTROYED_STATUS=['ProvisioningState/succeeded']
-    NTP_SERVERS=['time.windows.com']
-    DNS_SERVERS=['168.63.129.16']
-    MACHINE_DEFAULTS={
-        'Standard_A4':      {'data_disk_size': 128,'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_A7':      {'data_disk_size': 128,'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_A8':      {'data_disk_size': 128,'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_A9':      {'data_disk_size': 128,'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_A10':     {'data_disk_size': 128,'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_A11':     {'data_disk_size': 128,'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_D4':      {'data_disk_size': 256,'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_D4_v2':   {'data_disk_size': 256,'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_D5_v2':   {'data_disk_size': 256,'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_D13':     {'data_disk_size': 512,'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4},
-        'Standard_D13_v2':  {'data_disk_size': 512,'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4},
-        'Standard_D14':     {'data_disk_size': 512,'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4},
-        'Standard_D14_v2':  {'data_disk_size': 512,'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4},
-        'Standard_DS1':     {'data_disk_size': 256,'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_DS4':     {'data_disk_size': 256,'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_DS4_v2':  {'data_disk_size': 256,'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_DS5_v2':  {'data_disk_size': 256,'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_D2s_v3':  {'data_disk_size': 256,'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_D4s_v3':  {'data_disk_size': 256,'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 8},
-        'Standard_D8s_v3':  {'data_disk_size': 256,'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 16},
-        'Standard_D16s_v3': {'data_disk_size': 256,'data_disk_count': 4, 'node_count': 3, 'max_data_disk_count': 32},
-        'Standard_D32s_v3': {'data_disk_size': 512,'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
-        'Standard_D64s_v3': {'data_disk_size': 512,'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
-        'Standard_DS13':    {'data_disk_size': 256,'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 32},
-        'Standard_DS13_v2': {'data_disk_size': 256,'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 32},
-        'Standard_DS14':    {'data_disk_size': 256,'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 64},
-        'Standard_DS14_v2': {'data_disk_size': 256,'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 64},
-        'Standard_DS15_v2': {'data_disk_size': 512,'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 64},
-        'Standard_E2s_v3':  {'data_disk_size': 256,'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4},
-        'Standard_E4s_v3':  {'data_disk_size': 256,'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 8},
-        'Standard_E8s_v3':  {'data_disk_size': 256,'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 16},
-        'Standard_E16s_v3': {'data_disk_size': 256,'data_disk_count': 4, 'node_count': 3, 'max_data_disk_count': 32},
-        'Standard_E32s_v3': {'data_disk_size': 512,'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
-        'Standard_E64s_v3': {'data_disk_size': 512,'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
-        'Standard_E64is_v3':{'data_disk_size': 512,'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
-        'Standard_G3':      {'data_disk_size': 512,'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_G4':      {'data_disk_size': 512,'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_G5':      {'data_disk_size': 512,'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_GS3':     {'data_disk_size': 512,'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_GS4':     {'data_disk_size': 512,'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_GS5':     {'data_disk_size': 512,'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
+    NTP_SERVERS = ['time.windows.com']
+    DNS_SERVERS = ['168.63.129.16']
+    MACHINE_DEFAULTS = {
+        'Standard_A4': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_A7': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_A8': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_A9': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_A10': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_A11': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_D4': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_D4_v2': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_D5_v2': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_D13': {'data_disk_size': 512, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4},
+        'Standard_D13_v2': {'data_disk_size': 512, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4},
+        'Standard_D14': {'data_disk_size': 512, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4},
+        'Standard_D14_v2': {'data_disk_size': 512, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4},
+        'Standard_DS1': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_DS4': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_DS4_v2': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_DS5_v2': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_D2s_v3': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_D4s_v3': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 8},
+        'Standard_D8s_v3': {'data_disk_size': 256, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 16},
+        'Standard_D16s_v3': {'data_disk_size': 256, 'data_disk_count': 4, 'node_count': 3, 'max_data_disk_count': 32},
+        'Standard_D32s_v3': {'data_disk_size': 512, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
+        'Standard_D64s_v3': {'data_disk_size': 512, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
+        'Standard_DS13': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 32},
+        'Standard_DS13_v2': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 32},
+        'Standard_DS14': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 64},
+        'Standard_DS14_v2': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 64},
+        'Standard_DS15_v2': {'data_disk_size': 512, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 64},
+        'Standard_E2s_v3': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4},
+        'Standard_E4s_v3': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 8},
+        'Standard_E8s_v3': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 16},
+        'Standard_E16s_v3': {'data_disk_size': 256, 'data_disk_count': 4, 'node_count': 3, 'max_data_disk_count': 32},
+        'Standard_E32s_v3': {'data_disk_size': 512, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
+        'Standard_E64s_v3': {'data_disk_size': 512, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
+        'Standard_E64is_v3': {'data_disk_size': 512, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
+        'Standard_G3': {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_G4': {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_G5': {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_GS3': {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_GS4': {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_GS5': {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
     }
     # managed also supports 32 and 64
     # 256 mentioned here: https://docs.microsoft.com/en-us/azure/virtual-machines/windows/managed-disks-overview
     VALID_DATA_DISK_SIZES = [128, 256, 512, 1024, 2048, 4095]
-    MACHINE_TYPES = MACHINE_DEFAULTS.keys()
+    MACHINE_TYPES = list(MACHINE_DEFAULTS.keys())
     BLOB_HOST = 'blob.core.windows.net'
     BLOB_URL_FMT = 'https://{}.{}/{}/{}' # account, host, container, blob
     DEFAULT_STORAGE_ACCOUNT_TYPE = 'Premium_LRS'
@@ -205,14 +207,14 @@ class Service(ServiceBase):
         'clustermanager': {
             'maxNumNodes': 20,
             'cacheSizes': [
-                { 'size': 256, 'type': None, 'label': '250' },
-                { 'size': 1024, 'type': None, 'label': '1000' },
-                { 'size': 4096, 'type': None, 'label': '4000' },
-                { 'size': 8192, 'type': None, 'label': '8000' }
+                {'size': 256, 'type': None, 'label': '250'},
+                {'size': 1024, 'type': None, 'label': '1000'},
+                {'size': 4096, 'type': None, 'label': '4000'},
+                {'size': 8192, 'type': None, 'label': '8000'}
             ],
             'inst': '',
             'pkg': '',
-            'instanceTypes': [ 'Standard_D16s_v3', 'Standard_E32s_v3' ]
+            'instanceTypes': ['Standard_D16s_v3', 'Standard_E32s_v3']
         }
     }
     DNS_TIMEOUT = 10.0
@@ -293,7 +295,7 @@ class Service(ServiceBase):
         self.location        = options.get('location') or None
         self.network         = options.get('network') or None
         self.subnets         = options.get('subnet') or []
-        self.subnets         = [self.subnets] if isinstance(self.subnets, basestring) else self.subnets
+        self.subnets         = self.subnets if isinstance(self.subnets, list) else [self.subnets]
         self.private_range   = options.get('private_range') or None
         self.source_address  = options.get('source_address') or None
         self.endpoint_base_url = options.get('endpoint_base_url') or None
@@ -358,8 +360,8 @@ class Service(ServiceBase):
             try:
                 for q in self.connection('network').usages.list(self.location):
                     if q.limit == 0: continue
-                    if q.current_value/q.limit > percentage:
-                        log.warn("QUOTA ALERT: Using {} of {} {}".format(q.current_value, q.limit, q.name.localized_value))
+                    if q.current_value / q.limit > percentage:
+                        log.warning("QUOTA ALERT: Using {} of {} {}".format(q.current_value, q.limit, q.name.localized_value))
                     else:
                         log.debug("Using {} of {} {}".format(q.current_value, q.limit, q.name.localized_value))
             except Exception as e:
@@ -367,8 +369,8 @@ class Service(ServiceBase):
             try:
                 for q in self.connection().usage.list(self.location):
                     if q.limit == 0: continue
-                    if q.current_value/q.limit > percentage:
-                        log.warn("QUOTA ALERT: Using {} of {} {}".format(q.current_value, q.limit, q.name.localized_value))
+                    if q.current_value / q.limit > percentage:
+                        log.warning("QUOTA ALERT: Using {} of {} {}".format(q.current_value, q.limit, q.name.localized_value))
                     else:
                         log.debug("Using {} of {} {}".format(q.current_value, q.limit, q.name.localized_value))
             except Exception as e:
@@ -376,8 +378,8 @@ class Service(ServiceBase):
         try:
             for q in self.connection('storage').usage.list():
                 if q.limit == 0: continue
-                if q.current_value/q.limit > percentage:
-                    log.warn("QUOTA ALERT: Using {} of {} {}".format(q.current_value, q.limit, q.name.localized_value))
+                if q.current_value / q.limit > percentage:
+                    log.warning("QUOTA ALERT: Using {} of {} {}".format(q.current_value, q.limit, q.name.localized_value))
                 else:
                     log.debug("Using {} of {} {}".format(q.current_value, q.limit, q.name.localized_value))
         except Exception as e:
@@ -535,9 +537,9 @@ class Service(ServiceBase):
             if source_address:
                 source_address = (source_address, 0)
             connection_host = cls.AZURE_INSTANCE_HOST
-            connection_port = httplib.HTTP_PORT
+            connection_port = http.client.HTTP_PORT
             headers = {'Metadata': 'true'}
-            conn = httplib.HTTPConnection(connection_host, connection_port, source_address=source_address, timeout=CONNECTION_TIMEOUT)
+            conn = http.client.HTTPConnection(connection_host, connection_port, source_address=source_address, timeout=CONNECTION_TIMEOUT)
 
             instance_data = {}
 
@@ -559,7 +561,7 @@ class Service(ServiceBase):
                         raise
                     time.sleep(backoff(attempts))
                     # reconnect on failure
-                    conn = httplib.HTTPConnection(connection_host, connection_port, source_address=source_address, timeout=CONNECTION_TIMEOUT)
+                    conn = http.client.HTTPConnection(connection_host, connection_port, source_address=source_address, timeout=CONNECTION_TIMEOUT)
 
             instance_location = instance_data['compute']['location'].lower() # region may be mixed case
             instance_location = cls.REGION_FIXUP.get(instance_location) or instance_location # region may be transposed
@@ -569,7 +571,7 @@ class Service(ServiceBase):
             else:
                 # must lookup endpoint metadata based on the VM location
                 attempts = 0
-                endpoint_conn = httplib.HTTPSConnection(cls.AZURE_ENDPOINT_HOST, source_address=source_address, timeout=CONNECTION_TIMEOUT)
+                endpoint_conn = http.client.HTTPSConnection(cls.AZURE_ENDPOINT_HOST, source_address=source_address, timeout=CONNECTION_TIMEOUT)
                 while True:
                     try:
                         endpoint_conn.request('GET', '/metadata/endpoints?api-version=2017-12-01')
@@ -589,7 +591,7 @@ class Service(ServiceBase):
                             raise
                         time.sleep(backoff(attempts))
                         # reconnect on failure
-                        endpoint_conn = httplib.HTTPSConnection(cls.AZURE_ENDPOINT_HOST, source_address=source_address, timeout=CONNECTION_TIMEOUT)
+                        endpoint_conn = http.client.HTTPSConnection(cls.AZURE_ENDPOINT_HOST, source_address=source_address, timeout=CONNECTION_TIMEOUT)
 
             # token metadata
             attempts = 0
@@ -615,7 +617,7 @@ class Service(ServiceBase):
                         raise
                     time.sleep(backoff(attempts))
                     # reconnect on failure
-                    conn = httplib.HTTPConnection(connection_host, connection_port, source_address=source_address, timeout=CONNECTION_TIMEOUT)
+                    conn = http.client.HTTPConnection(connection_host, connection_port, source_address=source_address, timeout=CONNECTION_TIMEOUT)
 
             instance_data['machine_type'] = instance_data['compute']['vmSize']
             instance_data['account_id'] = instance_data['compute']['subscriptionId']
@@ -892,7 +894,7 @@ class Service(ServiceBase):
         except vFXTServiceTimeout as e:
             # Timeouts may just mean the azure python stack lost state...
             log.error(e)
-            log.warning("Trying to clean up the rest of the resources for {}...".format(self.name(instance)))
+            log.warninging("Trying to clean up the rest of the resources for {}...".format(self.name(instance)))
 
         # Also need to delete any leftover disks
         try:
@@ -902,7 +904,7 @@ class Service(ServiceBase):
                 disk = self._parse_vhd_uri(instance.storage_profile.os_disk.vhd.uri)
                 self._delete_blob(**disk)
             else:
-                log.warn("Unable to determine root disk type to clean up")
+                log.warning("Unable to determine root disk type to clean up")
 
         except Exception as e:
             log.debug("Failed to delete root disk: {}".format(e))
@@ -915,7 +917,7 @@ class Service(ServiceBase):
                     disk = self._parse_vhd_uri(data_disk.vhd.uri)
                     self._delete_blob(**disk)
                 else:
-                    log.warn("Unable to determine data disk type to clean up")
+                    log.warning("Unable to determine data disk type to clean up")
             except Exception as e:
                 log.debug("Failed to delete data disk: {}".format(e))
 
@@ -936,7 +938,7 @@ class Service(ServiceBase):
                 instance: backend instance
         '''
         status = self.status(instance)
-        return status != self.OFF_STATUS and status != self.STOP_STATUS
+        return status not in [self.OFF_STATUS, self.STOP_STATUS]
 
     def is_off(self, instance):
         '''Return True if the instance is currently off
@@ -945,7 +947,7 @@ class Service(ServiceBase):
                 instance: backend instance
         '''
         status = self.status(instance)
-        return status == self.OFF_STATUS or status == self.STOP_STATUS
+        return status in [self.OFF_STATUS, self.STOP_STATUS]
 
     def name(self, instance):
         '''Returns the instance name (may be different from instance id)
@@ -1126,9 +1128,9 @@ class Service(ServiceBase):
         if body['tags']:
             if len(body['tags']) > 15:
                 raise vFXTConfigurationException("Resources cannot have more than 15 tags")
-            if any([len(_) > 512 for _  in body['tags']]):
+            if any([len(_) > 512 for _ in body['tags']]):
                 raise vFXTConfigurationException("Tag names cannot exceed 512 characters")
-            if any([len(body['tags'][_]) > 256 for _  in body['tags']]):
+            if any([len(body['tags'][_]) > 256 for _ in body['tags']]):
                 raise vFXTConfigurationException("Tag names cannot exceed 256 characters")
 
         admin_ssh_data = options.get('admin_ssh_data') or None
@@ -1225,7 +1227,7 @@ class Service(ServiceBase):
         # base64 encoded user data
         user_data = options.get('user_data') or None
         if user_data:
-            body['os_profile']['custom_data'] = user_data.encode('base64').replace('\n','').strip()
+            body['os_profile']['custom_data'] = base64.b64encode(user_data.encode('utf-8')).decode()
 
         # network interface
         network_security_group = options.get('network_security_group') or self.network_security_group
@@ -1355,7 +1357,7 @@ class Service(ServiceBase):
 
         data_disk_disks = []
         data_disk_caching = node_opts.get('data_disk_caching') or 'ReadOnly'
-        for idx in xrange(node_opts['data_disk_count']):
+        for idx in range(node_opts['data_disk_count']):
             disk_name = '{}-data_disk-{}-{}'.format(node_name, idx, int(time.time()))
             data_disk = {
                 'name': disk_name,
@@ -1420,13 +1422,13 @@ class Service(ServiceBase):
         machine_defs    = self.MACHINE_DEFAULTS[machine_type]
         cluster_size    = int(options.get('size', machine_defs['node_count']))
         subnets         = options.get('subnets') or self.subnets
-        subnets         = [subnets] if isinstance(subnets, basestring) else subnets
+        subnets         = subnets if isinstance(subnets, list) else [subnets]
         cluster.subnets = [subnets[0]] # first node subnet
         cluster.network_security_group = options.get('network_security_group') or self.network_security_group
 
         # disk sizing
-        root_image        = options.get('root_image')      or self._get_default_image()
-        data_disk_size    = options.get('data_disk_size')  or machine_defs['data_disk_size']
+        root_image        = options.get('root_image') or self._get_default_image()
+        data_disk_size    = options.get('data_disk_size') or machine_defs['data_disk_size']
         data_disk_count   = options.get('data_disk_count') or machine_defs['data_disk_count']
         data_disk_caching = options.get('data_disk_caching') or self.DEFAULT_CACHING_OPTION
         options.setdefault('root_disk_caching', self.DEFAULT_CACHING_OPTION)
@@ -1520,7 +1522,7 @@ class Service(ServiceBase):
         if count < 1: return
 
         subnets         = options.get('subnets') or cluster.subnets if hasattr(cluster, 'subnets') else self.subnets
-        subnets         = [subnets] if isinstance(subnets, basestring) else subnets
+        subnets         = subnets if isinstance(subnets, list) else [subnets]
         # make sure to use unused subnets first, but account for our cluster subnets
         subnets.extend([s for s in cluster.subnets if s not in subnets])
         cycle_subnets   = cycle(subnets)
@@ -1608,7 +1610,7 @@ class Service(ServiceBase):
                     log.exception(e)
                 failq.put(e)
 
-        for node_num in xrange(max_node_num, max_node_num+count):
+        for node_num in range(max_node_num, max_node_num + count):
             next_node_num = node_num + 1
             inst_opts = options.copy()
             inst_opts['subnet'] = next(cycle_subnets)
@@ -1670,10 +1672,10 @@ class Service(ServiceBase):
         cluster.mgmt_ip = xmlrpc.cluster.get()['mgmtIP']['IP']
         cluster.network_security_group = None
 
-        node_ips = set([n['primaryClusterIP']['IP']
+        node_ips = {n['primaryClusterIP']['IP']
                         for name in xmlrpc.node.list()
                         for n in [xmlrpc.node.get(name)[name]]
-                        if 'primaryClusterIP' in n])
+                        if 'primaryClusterIP' in n}
 
         instances = set()
         for nic in self.connection('network').network_interfaces.list_all():
@@ -1692,7 +1694,7 @@ class Service(ServiceBase):
             instances = [_.instance for _ in cluster.nodes]
 
             # subnet info
-            cluster.subnets = list(set([self._instance_subnet(i).name for i in instances]))
+            cluster.subnets = list({self._instance_subnet(i).name for i in instances})
 
             # XXX assume all instances have the same settings
             cluster.location         = instances[0].location
@@ -1830,7 +1832,7 @@ class Service(ServiceBase):
         '''
         instance = self.refresh(instance)
         if not self.is_shelved(instance):
-            log.info( "{} does not have shelved tag, skipping".format(instance['name']))
+            log.info("{} does not have shelved tag, skipping".format(instance['name']))
             return
 
         # check that instance is already stopped
@@ -1853,7 +1855,7 @@ class Service(ServiceBase):
             data_disk_caching = type_override
 
         data_disks = []
-        for idx in xrange(int(data_disk_count)):
+        for idx in range(int(data_disk_count)):
             disk_name = '{}-data_disk-{}-{}'.format(self.name(instance), idx, int(time.time()))
             # TODO maybe we could check shelve error for disk, query it exists
             # and use createOption: Attach
@@ -2005,7 +2007,7 @@ class Service(ServiceBase):
         conn        = self.connection('network')
         subnet      = conn.subnets.get(self.network_resource_group, self.network, self.subnets[0])
         c           = Cidr(subnet.address_prefix)
-        return c.to_address(c.start()+1)
+        return c.to_address(c.start() + 1)
 
     def get_dns_servers(self):
         '''Get DNS server addresses
@@ -2147,7 +2149,7 @@ class Service(ServiceBase):
                     break
                 if check.available is None: # call failed b/c no virtualNetwork/read permissions
                     break
-                log.warn("Waiting for {} to show up via check_ip_address_availability".format(address))
+                log.warning("Waiting for {} to show up via check_ip_address_availability".format(address))
             # permission denied, we can't use this check
             except msrestazure.azure_exceptions.CloudError:
                 break
@@ -2406,7 +2408,7 @@ class Service(ServiceBase):
         # https://docs.microsoft.com/en-us/azure/architecture/best-practices/naming-conventions
         if not ServiceBase.valid_instancename(self, name):
             return False
-        if len(name) > 64 or len(name) < 1:
+        if not name or len(name) > 64:
             return False
         if self.INSTANCENAME_RE.match(name):
             return True
@@ -2515,7 +2517,7 @@ class Service(ServiceBase):
         if network_security_group:
             data['network_security_group'] = {'id': self._network_security_group_scope(network_security_group)}
 
-        log.debug("Creating network interface {}: {}".format(name,data))
+        log.debug("Creating network interface {}: {}".format(name, data))
         op = conn.network_interfaces.create_or_update(resource_group, name, data)
         self._wait_for_operation(op, retries=self.WAIT_FOR_NIC, msg='network interface {} to be created'.format(name))
         log.info("Created network interface {}".format(name))
@@ -2597,7 +2599,7 @@ class Service(ServiceBase):
                 try:
                     existing = self._get_role(name, retries=1)
                     role_id = existing.id.split('/')[-1]
-                    log.warn("Role {} exists with id {}, updating the definition".format(name, role_id))
+                    log.warning("Role {} exists with id {}, updating the definition".format(name, role_id))
                 except vFXTConfigurationException: pass
 
                 time.sleep(self.POLLTIME)
@@ -2621,7 +2623,7 @@ class Service(ServiceBase):
                 time.sleep(self.POLLTIME)
                 if retries == 0:
                     raise vFXTConfigurationException("Role {} not found".format(role_name))
-                log.warn("Failed to lookup role {}, retrying".format(role_name))
+                log.warning("Failed to lookup role {}, retrying".format(role_name))
             retries -= 1
 
     def _delete_role(self, role_name):
@@ -2696,7 +2698,7 @@ class Service(ServiceBase):
                 log.debug(e)
                 if retries == 0:
                     raise vFXTServiceFailure("Failed to assign role {}: {}".format(role_name, e))
-                log.warn("Failed to assign role {} to principal {}, retrying".format(role_name, principal))
+                log.warning("Failed to assign role {} to principal {}, retrying".format(role_name, principal))
                 time.sleep(self.POLLTIME)
             retries -= 1
 
@@ -2809,15 +2811,15 @@ class Service(ServiceBase):
 
         size = best_size
 
-        if cache_size >= 256 and cache_size <= 1024:
+        if 256 <= cache_size <= 1024:
             size = 256
         # better to use 512GB disks if possible, up to a point
-        elif cache_size > 1024 and cache_size <= 4096:
+        elif 1024 < cache_size <= 4096:
             size = 512
-        elif cache_size > 4096 and cache_size <= 8192:
+        elif 4096 < cache_size <= 8192:
             size = 1024
 
-        count = int((cache_size+size-1) / size)
+        count = int((cache_size + size - 1) / size)
         return tuple([count, size])
 
     def _get_network(self, network=None, resource_group=None):
@@ -2868,10 +2870,7 @@ class Service(ServiceBase):
     def _delete_blob(self, storage_account, container, blob):
         blob_srv = self.connection('blobstorage', storage_account=storage_account)
         log.debug("Deleting blob {}/{} from storage account {}".format(container, blob, storage_account))
-        try:
-            blob_srv.delete_blob(container, blob, delete_snapshots='Include')
-        except Exception:
-            raise
+        blob_srv.delete_blob(container, blob, delete_snapshots='Include')
 
     def _create_image_from_vhd(self, vhd_url, name=None, caching='None'):
         '''Create a local image from a remove vhd url

@@ -11,7 +11,7 @@ n.start_address()
 n.end_address()
 
 for addr in n.addresses(): # generator
-    print addr
+    print(addr)
 addresses = n.addresses_list() # non-generator
 
 if not n.contains('10.2.1.0'):
@@ -23,7 +23,7 @@ str_val = Cidr.to_address(167837962)
 
 addr_range_list = Cidr.expand_address_range('10.1.1.1','10.1.1.10')
 '''
-
+from builtins import range #pylint: disable=redefined-builtin
 import struct
 import socket
 import logging
@@ -63,12 +63,12 @@ class Cidr(object):
         ''' start of cidr block
             Returns: int
         '''
-        return self.addr & ~(((1L << (32 - self.bits)) - 1))
+        return self.addr & ~(((1 << (32 - self.bits)) - 1))
     def end(self):
         ''' end of cidr block
             Returns: int
         '''
-        return self.addr | (((1L << (32 - self.bits)) - 1))
+        return self.addr | (((1 << (32 - self.bits)) - 1))
     def size(self):
         '''Return the size (in IP addresses) of the cidr block
             Returns: int
@@ -91,7 +91,7 @@ class Cidr(object):
         '''
         start = self.start()
         end   = self.end()
-        for i in xrange(start, end + 1):
+        for i in range(start, end + 1):
             yield i
     def range_list(self):
         '''Returns list from range'''
@@ -194,6 +194,6 @@ class Cidr(object):
         r = []
         start = cls.from_address(first)
         stop  = cls.from_address(last)
-        for offset in xrange(0, stop - start + 1):
+        for offset in range(0, stop - start + 1):
             r.append(cls.to_address(start + offset))
         return r

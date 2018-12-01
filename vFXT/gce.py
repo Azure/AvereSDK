@@ -31,10 +31,10 @@ gce.unshelve(instance)
 
 instance = gce.refresh(instance)
 
-print gce.name(instance)
-print gce.ip(instance)
-print gce.fqdn(instance)
-print gce.status(instance)
+print(gce.name(instance))
+print(gce.ip(instance))
+print(gce.fqdn(instance))
+print(gce.status(instance))
 
 if gce.is_on(instance): pass
 if gce.is_off(instance): pass
@@ -59,15 +59,17 @@ gce.get_default_router()
 serializeme = gce.export()
 newgce = vFXT.gce.Service(**serializeme)
 '''
-
-import httplib
+import base64
+from builtins import range #pylint: disable=redefined-builtin
+from future.utils import viewitems
+import http.client
 import httplib2
 import httplib2.socks
 import ssl
 import logging
 import time
 import threading
-import Queue
+import queue as Queue
 import json
 import socket
 import re
@@ -97,33 +99,33 @@ class Service(ServiceBase):
     GCE_INSTANCE_HOST = '169.254.169.254'
     CONTROL_ADDR = None
     MACHINE_DEFAULTS = {
-        'f1-micro':         {'data_disk_size': 200, 'data_disk_type': 'pd-standard', 'data_disk_count': 1, 'node_count': 1, 'root_disk_type': 'pd-standard'},
-        'g1-small':         {'data_disk_size': 200, 'data_disk_type': 'pd-standard', 'data_disk_count': 1, 'node_count': 1, 'root_disk_type': 'pd-standard'},
-        'n1-highcpu-2':     {'data_disk_size': 200, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 1, 'root_disk_type': 'pd-ssd'},
-        'n1-highcpu-4':     {'data_disk_size': 200, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
-        'n1-highcpu-8':     {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
-        'n1-highcpu-16':    {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
-        'n1-highcpu-32':    {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
-        'n1-highcpu-64':    {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
-        'n1-highcpu-96':    {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
-        'n1-highmem-2':     {'data_disk_size': 200, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 1, 'root_disk_type': 'pd-ssd'},
-        'n1-highmem-4':     {'data_disk_size': 200, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
-        'n1-highmem-8':     {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
-        'n1-highmem-16':    {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
-        'n1-highmem-32':    {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
-        'n1-highmem-64':    {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
-        'n1-highmem-96':    {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
-        'n1-standard-1':    {'data_disk_size': 200, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 1, 'root_disk_type': 'pd-ssd'},
-        'n1-standard-2':    {'data_disk_size': 200, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 1, 'root_disk_type': 'pd-ssd'},
-        'n1-standard-4':    {'data_disk_size': 200, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
-        'n1-standard-8':    {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
-        'n1-standard-16':   {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
-        'n1-standard-32':   {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
-        'n1-standard-64':   {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
-        'n1-standard-96':   {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
-        'custom-6-40960':   {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
+        'f1-micro': {'data_disk_size': 200, 'data_disk_type': 'pd-standard', 'data_disk_count': 1, 'node_count': 1, 'root_disk_type': 'pd-standard'},
+        'g1-small': {'data_disk_size': 200, 'data_disk_type': 'pd-standard', 'data_disk_count': 1, 'node_count': 1, 'root_disk_type': 'pd-standard'},
+        'n1-highcpu-2': {'data_disk_size': 200, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 1, 'root_disk_type': 'pd-ssd'},
+        'n1-highcpu-4': {'data_disk_size': 200, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
+        'n1-highcpu-8': {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
+        'n1-highcpu-16': {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
+        'n1-highcpu-32': {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
+        'n1-highcpu-64': {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
+        'n1-highcpu-96': {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
+        'n1-highmem-2': {'data_disk_size': 200, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 1, 'root_disk_type': 'pd-ssd'},
+        'n1-highmem-4': {'data_disk_size': 200, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
+        'n1-highmem-8': {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
+        'n1-highmem-16': {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
+        'n1-highmem-32': {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
+        'n1-highmem-64': {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
+        'n1-highmem-96': {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
+        'n1-standard-1': {'data_disk_size': 200, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 1, 'root_disk_type': 'pd-ssd'},
+        'n1-standard-2': {'data_disk_size': 200, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 1, 'root_disk_type': 'pd-ssd'},
+        'n1-standard-4': {'data_disk_size': 200, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
+        'n1-standard-8': {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
+        'n1-standard-16': {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
+        'n1-standard-32': {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
+        'n1-standard-64': {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
+        'n1-standard-96': {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
+        'custom-6-40960': {'data_disk_size': 250, 'data_disk_type': 'pd-ssd', 'data_disk_count': 1, 'node_count': 3, 'root_disk_type': 'pd-ssd'},
     }
-    MACHINE_TYPES = MACHINE_DEFAULTS.keys()
+    MACHINE_TYPES = list(MACHINE_DEFAULTS.keys())
     DEFAULTS_URL = "https://storage.googleapis.com/avere-dist/vfxtdefaults.json"
     DEFAULT_SCOPES = ['https://www.googleapis.com/auth/compute',
                     'https://www.googleapis.com/auth/devstorage.full_control',
@@ -140,7 +142,7 @@ class Service(ServiceBase):
       'version': '1',
       'clustermanager': {
         'maxNumNodes': 20,
-        'instanceTypes': [ 'n1-highmem-8', 'n1-highmem-32' ],
+        'instanceTypes': ['n1-highmem-8', 'n1-highmem-32'],
         'cacheSizes': [
           {'label': '250-persistent-SSD', 'size': 250, 'type': 'pd-ssd'},
           {'label': '375-local-SSD', 'size': 375, 'type': 'local-ssd'},
@@ -200,7 +202,7 @@ class Service(ServiceBase):
         self.key_data     = key_data
         self.access_token = access_token
         self.project_id   = project_id
-        self.zones        = [zone] if isinstance(zone, basestring) else zone
+        self.zones        = zone if isinstance(zone, list) else [zone]
         self.network_id   = network_id
         self.network_project_id = network_project_id
         self.s3_access_key        = s3_access_key
@@ -283,9 +285,9 @@ class Service(ServiceBase):
         if source_address:
             source_address = (source_address, 0)
         connection_host = cls.GCE_INSTANCE_HOST
-        connection_port = httplib.HTTP_PORT
+        connection_port = http.client.HTTP_PORT
 
-        conn          = httplib.HTTPConnection(connection_host, connection_port, source_address=source_address, timeout=CONNECTION_TIMEOUT)
+        conn          = http.client.HTTPConnection(connection_host, connection_port, source_address=source_address, timeout=CONNECTION_TIMEOUT)
         instance_data = {}
         headers       = {'Metadata-Flavor': 'Google'}
         attrs         = {
@@ -306,7 +308,7 @@ class Service(ServiceBase):
 
         try:
 
-            for k, v in attrs.iteritems():
+            for k, v in viewitems(attrs):
                 conn.request('GET', '{}'.format(v), headers=headers)
                 response = conn.getresponse()
                 if response.status == 200:
@@ -358,9 +360,12 @@ class Service(ServiceBase):
                 # prune username: from the key data
                 instance_data['ssh_keys'].extend([_.split(':')[-1] for _ in instance_data['metadata']['ssh-keys'].split('\n')])
 
-            instance_data['cluster_cfg'] = '' if 'cluster_cfg' not in instance_data['metadata'] \
-                                        else instance_data['metadata']['cluster_cfg']\
-                                            .replace('\\n', '\n').replace(' ', '\n').replace('_', '\n').replace('@', '=').decode('base64')
+            if 'cluster_cfg' not in instance_data['metadata']:
+                instance_data['cluster_cfg'] = ''
+            else:
+                instance_data['cluster_cfg'] = instance_data['metadata']['cluster_cfg'].replace('\\n', '\n').replace(' ', '\n').replace('_', '\n').replace('@', '=')
+                instance_data['cluster_cfg'] = base64.b64decode(instance_data['cluster_cfg'].encode('utf-8')).decode()
+
         except Exception as e:
             raise vFXTServiceMetaDataFailure('Unable to read instance metadata: {}'.format(e))
         finally:
@@ -406,9 +411,9 @@ class Service(ServiceBase):
                              strict=None, timeout=None, proxy_info=None,
                              ca_certs=None, disable_ssl_certificate_validation=False, **other_kwargs):
                     log.debug("Making connection to {} from {}".format(host, Service.CONTROL_ADDR))
-                    httplib.HTTPSConnection.__init__(self, host, port=port,
+                    http.client.HTTPSConnection.__init__(self, host, port=port,
                                                      key_file=key_file,
-                                                     cert_file=cert_file, strict=strict, timeout=timeout,
+                                                     cert_file=cert_file, timeout=timeout,
                                                      source_address=(Service.CONTROL_ADDR, 0))
                     self.timeout = timeout
                     self.proxy_info = proxy_info
@@ -489,7 +494,7 @@ class Service(ServiceBase):
             resp = conn.projects().get(project=self.project_id).execute()
             for q in resp['quotas']:
                 if q['usage'] / q['limit'] > 0.9:
-                    log.warn("QUOTA ALERT: Using {} of {} {}".format(int(q['usage']), int(q['limit']), q['metric']))
+                    log.warning("QUOTA ALERT: Using {} of {} {}".format(int(q['usage']), int(q['limit']), q['metric']))
         except Exception as e:
             if isinstance(e, IOError):
                 log.exception(e)
@@ -536,7 +541,7 @@ class Service(ServiceBase):
                 continue
             metric = metric.lower().capitalize().replace('_', ' ')
             if limit and float(usage) / limit > percentage:
-                log.warn("QUOTA ALERT: Using {} of {} {} for the project".format(usage, limit, metric))
+                log.warning("QUOTA ALERT: Using {} of {} {} for the project".format(usage, limit, metric))
             else:
                 log.debug("Using {} of {} {} for the project".format(usage, limit, metric))
 
@@ -558,7 +563,7 @@ class Service(ServiceBase):
 
             metric = metric.lower().capitalize().replace('_', ' ')
             if limit and float(usage) / limit > percentage:
-                log.warn("QUOTA ALERT: Using {} of {} {} for the region".format(usage, limit, metric))
+                log.warning("QUOTA ALERT: Using {} of {} {} for the region".format(usage, limit, metric))
             else:
                 log.debug("Using {} of {} {} for the region".format(usage, limit, metric))
 
@@ -607,9 +612,9 @@ class Service(ServiceBase):
         # maybe set this for those proxies that don't support CONNECT?
         # proxy.proxy_type = httplib2.socks.PROXY_TYPE_HTTP_NO_TUNNEL
 
-        http = httplib2.Http(proxy_info=proxy,
+        http_transport = httplib2.Http(proxy_info=proxy,
                 disable_ssl_certificate_validation=self.DISABLE_SSL_CERTIFICATE_VALIDATION, timeout=CONNECTION_TIMEOUT)
-        return creds.authorize(http)
+        return creds.authorize(http_transport)
 
     def connection(self, connection_type='compute', version='v1', retries=CONNECTION_TIMEOUT, scopes=None):
         '''Connection factory, returns a new connection or thread local copy
@@ -673,7 +678,7 @@ class Service(ServiceBase):
                     r =  _gce_do(conn.instances().list, project=self.project_id, filter=search, zone=zone, pageToken=page_token)
                     if r and 'items' in r:
                         instances.extend(r['items'])
-                    if r and 'nextPageToken'  in r:
+                    if r and 'nextPageToken' in r:
                         page_token = r['nextPageToken']
                     if not r or 'nextPageToken' not in r:
                         break
@@ -855,7 +860,7 @@ class Service(ServiceBase):
 
         root_disk = None
         if keep_root_disk:
-            root_disks = [ d for d in instance['disks'] if 'boot' in d and d['boot']]
+            root_disks = [d for d in instance['disks'] if 'boot' in d and d['boot']]
             if not root_disks:
                 raise vFXTServiceFailure("Failed to find root disk")
             root_disk = root_disks[0]
@@ -1002,7 +1007,7 @@ class Service(ServiceBase):
             instance = self.refresh(instance)
 
         disks          = instance['disks']
-        non_root_disks = [ d for d in disks if 'boot' not in d or not d['boot'] ]
+        non_root_disks = [d for d in disks if 'boot' not in d or not d['boot']]
 
         if not non_root_disks:
             log.info("No non-root volumes for instance {}, already shelved?".format(instance['name']))
@@ -1062,7 +1067,7 @@ class Service(ServiceBase):
 
         # assume we've previously killed the data disks and set a tag
         if not self._get_metadata(instance, "shelved"):
-            log.info( "{} does not have shelved tag, skipping".format(instance['name']))
+            log.info("{} does not have shelved tag, skipping".format(instance['name']))
             return
 
         # XXX assume instance is already stopped
@@ -1094,7 +1099,7 @@ class Service(ServiceBase):
         try:
             for i in range(int(vol_count)):
                 disk_name   = "{}-data-{}".format(instance['name'], i + 1)
-                body        = {'name': disk_name, "sizeGb": long(vol_size), 'type': vol_type}
+                body        = {'name': disk_name, "sizeGb": int(vol_size), 'type': vol_type}
 
                 log.info("{}: creating {} volume {}".format(instance['name'], vol_size, disk_name))
                 r = _gce_do(d_srv.insert, project=self.project_id, zone=zone, body=body)
@@ -1154,7 +1159,7 @@ class Service(ServiceBase):
         if 'tags' in options:
             labels = options.get('tags')
             bad_name_re = re.compile('[^a-z_]')
-            filtered_labels = {k: v for k, v in labels.iteritems() if not k.startswith('_') and not re.search(bad_name_re, k)}
+            filtered_labels = {k: v for k, v in viewitems(labels) if not k.startswith('_') and not re.search(bad_name_re, k)}
             if len(filtered_labels) != len(labels):
                 l_keys = set(labels.keys())
                 fl_keys = set(filtered_labels.keys())
@@ -1500,7 +1505,7 @@ class Service(ServiceBase):
                 'sourceImage': boot_image['selfLink']
             }
             if root_size:
-                body['disks'][0]['initializeParams']['diskSizeGb'] = long(root_size)
+                body['disks'][0]['initializeParams']['diskSizeGb'] = int(root_size)
         if other_disks:
             body['disks'].extend(other_disks)
 
@@ -1515,7 +1520,7 @@ class Service(ServiceBase):
             subnetworks = [_ for _ in self._get_subnetworks(subnetwork_region)]
             if subnetworks: # no subnetwork specified, but we have them so use one
                 subnetwork = subnetworks[0]
-                log.warning("No subnetwork specified, picking {}".format(subnetwork['selfLink']))
+                log.warninging("No subnetwork specified, picking {}".format(subnetwork['selfLink']))
                 body['networkInterfaces'][0]['subnetwork'] = subnetwork['selfLink']
                 body['networkInterfaces'][0]['network'] = subnetwork['network']
 
@@ -1542,7 +1547,7 @@ class Service(ServiceBase):
             raise vFXTConfigurationException("Invalid scopes: {}".format(scopes))
         body['serviceAccounts'] = [{
             'email': options.get('service_account') or 'default',
-            'scopes' : scopes
+            'scopes': scopes
         }]
         body['canIpForward'] = True
         body['tags'] = {'items': []}
@@ -1556,7 +1561,7 @@ class Service(ServiceBase):
 
         if metadata:
             # google wants a list of this dict :-/
-            pairs = [{'key': k, 'value': v} for k, v in metadata.iteritems()]
+            pairs = [{'key': k, 'value': v} for k, v in viewitems(metadata)]
             body['metadata']['items'].extend(pairs)
 
         log.debug("create_instance request body: {}".format(body))
@@ -1635,7 +1640,7 @@ class Service(ServiceBase):
                         },
                     }
                 else: # otherwise, create the data disks before the instance
-                    body = {'name': data_disk_name, 'sizeGb': long(node_opts['data_disk_size']), 'type': data_disk_url}
+                    body = {'name': data_disk_name, 'sizeGb': int(node_opts['data_disk_size']), 'type': data_disk_url}
                     log.info("Creating data disk {} for {}".format(idx + 1, node_name))
                     log.debug("data disk request body: {}".format(body))
                     r    = _gce_do(conn.disks().insert, project=self.project_id, zone=zone, body=body)
@@ -1714,7 +1719,7 @@ class Service(ServiceBase):
                 raise vFXTConfigurationException("Cluster addresses must reside within the Shared VPC address ranges")
 
         zones = options.get('zones') or self.zones
-        zones = [zones] if isinstance(zones, basestring) else zones
+        zones = zones if isinstance(zones, list) else [zones]
         # extend our service zones if necessary
         for z in zones:
             if z not in self.zones:
@@ -1736,7 +1741,7 @@ class Service(ServiceBase):
         cfg = cluster.cluster_config(expiration=options.get('config_expiration', None))
         log.debug("Generated cluster config: {}".format(cfg.replace(cluster.admin_password, '[redacted]')))
         # gce needs them base64 encoded
-        cfg = ''.join(cfg.encode('base64').split()).strip()
+        cfg = base64.b64encode(cfg.encode('utf-8')).decode()
 
         disk_type   = options.get('disk_type') or machine_defs['root_disk_type']
         root_image  = options.get('root_image') or self._get_default_image()
@@ -1811,7 +1816,7 @@ class Service(ServiceBase):
         if count < 1: return
 
         zones = options.get('zone') or cluster.zones if hasattr(cluster, 'zones') else self.zones
-        zones = [zones] if isinstance(zones, basestring) else zones
+        zones = zones if isinstance(zones, list) else [zones]
         # make sure to use unused zones first, but account for our cluster zones
         zones.extend([z for z in cluster.zones if z not in zones])
         cycle_zones = cycle(zones)
@@ -1887,7 +1892,7 @@ class Service(ServiceBase):
         max_node_num = max([int(i.name().split('-')[-1]) for i in cluster.nodes])
 
         joincfg = cluster.cluster_config(joining=True, expiration=options.get('config_expiration', None))
-        joincfg = ''.join(joincfg.encode('base64').split()).strip()
+        joincfg = base64.b64encode(joincfg.encode('utf-8')).decode()
 
         nodeq   = Queue.Queue()
         failq   = Queue.Queue()
@@ -1903,7 +1908,7 @@ class Service(ServiceBase):
                     log.exception(e)
                 failq.put(e)
 
-        for node_num in xrange(max_node_num, max_node_num + count):
+        for node_num in range(max_node_num, max_node_num + count):
             next_node_num = node_num + 1
             inst_opts = options.copy()
             inst_opts['zone'] = next(cycle_zones)
@@ -1947,10 +1952,10 @@ class Service(ServiceBase):
         # a node address to get in)
         cluster.mgmt_ip = xmlrpc.cluster.get()['mgmtIP']['IP']
 
-        node_ips = set([n['primaryClusterIP']['IP']
+        node_ips = {n['primaryClusterIP']['IP']
                         for name in xmlrpc.node.list()
                         for n in [xmlrpc.node.get(name)[name]]
-                        if 'primaryClusterIP' in n])
+                        if 'primaryClusterIP' in n}
 
         # lookup nodes that have one of our primary IP addresses..
         nodes = []
@@ -1960,7 +1965,7 @@ class Service(ServiceBase):
                 nodes.append(node)
         if nodes:
             cluster.nodes        = [ServiceInstance(self, instance=n) for n in nodes]
-            cluster.zones        = list(set([node['zone'].split('/')[-1] for node in nodes]))
+            cluster.zones        = list({node['zone'].split('/')[-1] for node in nodes})
             # XXX assume all instances have the same settings
             n                    = nodes[0]
             cluster.machine_type = n['machineType'].split('/')[-1]
@@ -2032,7 +2037,7 @@ class Service(ServiceBase):
         metadata    = instance['metadata']
         zone        = instance['zone'].split('/')[-1]
         items       = metadata['items']
-        existing = [ idx for idx, i in enumerate(items) if i['key'] == key]
+        existing = [idx for idx, i in enumerate(items) if i['key'] == key]
         if existing:
             del metadata['items'][existing[0]]
         response = _gce_do(conn.instances().setMetadata,
@@ -2056,7 +2061,7 @@ class Service(ServiceBase):
         zone        = instance['zone'].split('/')[-1]
         metadata    = instance['metadata']
         items       = metadata['items']
-        existing = [ (idx, i['value']) for idx, i in enumerate(items) if i['key'] == key]
+        existing = [(idx, i['value']) for idx, i in enumerate(items) if i['key'] == key]
         if existing:
             idx, oldvalue = existing[0]
             metadata['items'][idx]['value'] = value
@@ -2095,7 +2100,7 @@ class Service(ServiceBase):
         '''
         if not ServiceBase.valid_instancename(self, name):
             return False
-        if len(name) > 63 or len(name) < 1:
+        if not name or len(name) > 63:
             return False
         if self.INSTANCENAME_RE.match(name):
             return True
@@ -2205,7 +2210,7 @@ class Service(ServiceBase):
             # does sig exist
             if os.access(sig_file, os.F_OK) and os.access(filename, os.F_OK):
                 tmp = sig_file + '.tmp'
-                with open(tmp, 'w') as f:
+                with open(tmp, 'wb') as f:
                     self._gs_get_object(bkt, sig_obj, f)
                 sig_cmp = filecmp.cmp(sig_file, tmp)
                 os.unlink(tmp)
@@ -2217,7 +2222,7 @@ class Service(ServiceBase):
 
         # fetch sig for future comparison
         try:
-            with open(sig_file, 'w') as f:
+            with open(sig_file, 'wb') as f:
                 self._gs_get_object(bkt, sig_obj, f)
         except Exception as e:
             log.debug(e)
@@ -2228,7 +2233,7 @@ class Service(ServiceBase):
 
         # get the actual file
         try:
-            with open(filename, 'w') as f:
+            with open(filename, 'wb') as f:
                 self._gs_get_object(bkt, obj, f)
         except Exception as e:
             log.debug(e)
@@ -2324,14 +2329,14 @@ class Service(ServiceBase):
 
                 # add the route
                 body = {
-                    'name': '{}-{}'.format(self.name(instance), addr.address.replace('.','-')),
+                    'name': '{}-{}'.format(self.name(instance), addr.address.replace('.', '-')),
                     'network': network['selfLink'],
                     'nextHopInstance': instance['selfLink'],
                     'destRange': dest,
                     'priority': options.get('priority') or 900,
                 }
                 log.debug('Adding instance address body {}'.format(body))
-                resp = _gce_do(conn.routes().insert,project=self.network_project_id, body=body)
+                resp = _gce_do(conn.routes().insert, project=self.network_project_id, body=body)
                 self._wait_for_operation(resp, msg='route to be created', op_type='globalOperations')
         except vFXTConfigurationException as e:
             raise
@@ -2358,13 +2363,13 @@ class Service(ServiceBase):
             if dest not in [_['ipCidrRange'] for _ in nic.get('aliasIpRanges', [])]:
                 # XXX or fall back on routes
                 expr = 'destRange eq {}'.format(dest)
-                routes = _gce_do(conn.routes().list, project=self.network_project_id,filter=expr)
+                routes = _gce_do(conn.routes().list, project=self.network_project_id, filter=expr)
                 if not routes or 'items' not in routes:
                     #raise vFXTConfigurationException("No route was found for {}".format(addr.address))
                     raise vFXTConfigurationException("Address not assigned via routes: {}".format(address))
                 for route in routes['items']:
                     if instance['selfLink'] != route['nextHopInstance']:
-                        log.warning("Skipping route destined for other host: {} -> {}".format(address, route['nextHopInstance']))
+                        log.warninging("Skipping route destined for other host: {} -> {}".format(address, route['nextHopInstance']))
                         continue
                     log.debug("Deleting route {}".format(route['name']))
                     resp = _gce_do(conn.routes().delete, project=self.network_project_id, route=route['name'])

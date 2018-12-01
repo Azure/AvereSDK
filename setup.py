@@ -9,6 +9,7 @@ version = {}
 with open("vFXT/version.py") as f:
     exec(f.read(), version) #pylint: disable=exec-used
 
+base_deps = ['future']
 aws_deps = ['boto']
 gce_deps = ['oauth2client', 'google-api-python-client']
 azure_deps = ['requests', 'requests-oauthlib', 'adal==1.2.0', 'applicationinsights==0.11.5', 'azure-cli-core==2.0.41', 'azure-cli-nspkg==3.0.2', 'azure-common==1.1.13', 'azure-mgmt-authorization==0.50.0', 'azure-mgmt-compute==4.3.1', 'azure-mgmt-msi==0.2.0', 'azure-mgmt-network==2.4.0', 'azure-mgmt-nspkg==2.0.0', 'azure-mgmt-resource==2.0.0', 'azure-mgmt-storage==2.0.0', 'azure-nspkg==2.0.0', 'azure-storage-blob==1.4.0', 'azure-storage-common==1.4.0', 'azure-storage-nspkg==3.0.0', 'entrypoints==0.2.3', 'knack==0.3.3', 'msrest==0.6.2', 'msrestazure==0.4.34']
@@ -25,7 +26,7 @@ Licensed under the MIT license.''',
     author='Jason Woodward',
     author_email='woodwardj@averesystems.com',
     license='MIT',
-    install_requires = aws_deps + gce_deps + azure_deps,
+    install_requires = base_deps + aws_deps + gce_deps + azure_deps,
     packages=['vFXT'],
     test_suite="tests",
     scripts=['vfxt.py'],

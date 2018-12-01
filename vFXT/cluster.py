@@ -86,15 +86,16 @@ except Exception as e:
 
 
 '''
-
+from builtins import range #pylint: disable=redefined-builtin
+import base64
 import threading
-import Queue
+import queue as Queue
 import time
 import logging
 import uuid
 import re
 import socket
-from xmlrpclib import Fault as xmlrpclib_Fault
+from xmlrpc.client import Fault as xmlrpclib_Fault
 import math
 import itertools
 
@@ -143,16 +144,16 @@ class Cluster(object):
             This is handy for offline clusters.
         '''
         self.service          = service
-        self.nodes            = options.get('nodes',            [])
-        self.mgmt_ip          = options.get('mgmt_ip',          None)
-        self.admin_password   = options.get('admin_password',   None)
-        self.name             = options.get('name',             None)
-        self.machine_type     = options.get('machine_type',     None)
+        self.nodes            = options.get('nodes', [])
+        self.mgmt_ip          = options.get('mgmt_ip', None)
+        self.admin_password   = options.get('admin_password', None)
+        self.name             = options.get('name', None)
+        self.machine_type     = options.get('machine_type', None)
 
-        self.mgmt_netmask     = options.get('mgmt_netmask',     None)
+        self.mgmt_netmask     = options.get('mgmt_netmask', None)
         self.cluster_ip_start = options.get('cluster_ip_start', None)
-        self.cluster_ip_end   = options.get('cluster_ip_end',   None)
-        self.proxy            = options.get('proxy_uri',        None)
+        self.cluster_ip_end   = options.get('cluster_ip_end', None)
+        self.proxy            = options.get('proxy_uri', None)
         self.join_mgmt        = True
         self.trace_level      = None
         self.node_rename      = True
@@ -213,7 +214,7 @@ class Cluster(object):
         c.proxy           = options.get('proxy_uri', None)
         c.trace_level     = options.get('trace_level', None)
         c.timezone        = options.get('timezone', None)
-        c.join_mgmt       = False if options.get('join_instance_address', True) else True
+        c.join_mgmt       = not options.get('join_instance_address', True)
 
         if c.proxy:
             c.proxy = validate_proxy(c.proxy) # imported from vFXT.service
@@ -557,9 +558,9 @@ class Cluster(object):
                 try:
                     xmlrpc = vFXT.xmlrpcClt.getXmlrpcClient("https://{}/cgi-bin/rpc2.py".format(addr), do_cert_checks=False)
                     xmlrpc('transport').user_agent = 'vFXT/{}'.format(vFXT.__version__)
-                    xmlrpc.system.login( "admin".encode('base64'), password.encode('base64') )
+                    xmlrpc.system.login(base64.b64encode(bytes('admin'.encode('ascii'))), base64.b64encode(bytes(password.encode('utf-8'))))
                     if addr != self.mgmt_ip and self.join_mgmt:
-                        log.warn("Connected via instance address {} instead of management address {}".format(addr, self.mgmt_ip))
+                        log.warning("Connected via instance address {} instead of management address {}".format(addr, self.mgmt_ip))
                         self._log_conditions(xmlrpc)
                     return xmlrpc
                 except Exception as e:
@@ -973,7 +974,7 @@ class Cluster(object):
             if need_vserver > 0:
                 for vserver in self._xmlrpc_do(xmlrpc.vserver.list):
                     v_len     = len([a for r in self._xmlrpc_do(xmlrpc.vserver.get, vserver)[vserver]['clientFacingIPs']
-                                for a in xrange(Cidr.from_address(r['firstIP']), Cidr.from_address(r['lastIP']) + 1)])
+                                for a in range(Cidr.from_address(r['firstIP']), Cidr.from_address(r['lastIP']) + 1)])
                     to_add    = (node_count + count) - v_len
                     if to_add < 1:
                         continue
@@ -1288,7 +1289,7 @@ class Cluster(object):
 
     def status(self):
         '''Returns a list of node id:status'''
-        return [{n.id(): n.status() } for n in self.nodes]
+        return [{n.id(): n.status()} for n in self.nodes]
 
     def wait_for_service_checks(self):
         '''Wait for Service checks to complete for all nodes
@@ -1576,7 +1577,7 @@ class Cluster(object):
 
         if not all([netmask, start_address, end_address]):
             if any([netmask, start_address, end_address]):
-                log.warn("Ignoring address configuration because missing one of {}(start), {}(end), or {}(netmask)".format(start_address, end_address, netmask))
+                log.warning("Ignoring address configuration because missing one of {}(start), {}(end), or {}(netmask)".format(start_address, end_address, netmask))
             in_use_addrs        = self.in_use_addresses()
             vserver_ips, netmask = self.service.get_available_addresses(count=size or len(self.nodes), contiguous=True, in_use=in_use_addrs)
             start_address       = vserver_ips[0]
@@ -1585,7 +1586,7 @@ class Cluster(object):
             # Validate
             vserver_ips = Cidr.expand_address_range(start_address, end_address)
             if len(vserver_ips) < len(self.nodes):
-                log.warn("Adding vserver address range without enough addresses for all nodes")
+                log.warning("Adding vserver address range without enough addresses for all nodes")
 
         log.info("Creating vserver {} ({}-{}/{})".format(name, start_address, end_address, netmask))
         activity = self._xmlrpc_do(self.xmlrpc().vserver.create, name, {'firstIP': start_address, 'lastIP': end_address, 'netmask': netmask})
@@ -2009,7 +2010,7 @@ class Cluster(object):
         while True:
             try:
                 node_names = self._xmlrpc_do(xmlrpc.node.list)
-                nodes = [self._xmlrpc_do(xmlrpc.node.get, _).values()[0] for _ in node_names]
+                nodes = [list(self._xmlrpc_do(xmlrpc.node.get, _).values())[0] for _ in node_names]
                 for node in nodes:
                     node_name = node_ip_map.get(node['primaryClusterIP']['IP'], None)
                     if node_name and node_name != node['name'] and node_name in node_names:
@@ -2028,7 +2029,7 @@ class Cluster(object):
         while True:
             try:
                 node_names = self._xmlrpc_do(xmlrpc.node.list)
-                nodes = [self._xmlrpc_do(xmlrpc.node.get, _).values()[0] for _ in node_names]
+                nodes = [list(self._xmlrpc_do(xmlrpc.node.get, _).values())[0] for _ in node_names]
                 for node in nodes:
                     node_name = node_ip_map.get(node['primaryClusterIP']['IP'], None)
                     if node_name and node_name != node['name'] and node_name not in node_names:
@@ -2070,10 +2071,10 @@ class Cluster(object):
             # sort numerically
             vifs = [Cidr.to_address(_) for _ in sorted([Cidr.from_address(_) for _ in vifs])]
             # build mapping table
-            mappings = {vif: nodes.next() for vif in vifs}
+            mappings = {vif: next(nodes) for vif in vifs}
 
             old_mappings = {_['ip']: _['current'] for _ in home_cfg}
-            if not [_ for _ in mappings.keys() if mappings[_] != old_mappings.get(_)]:
+            if not [_ for _ in list(mappings.keys()) if mappings[_] != old_mappings.get(_)]:
                 log.debug("Address home configuration is up to date for vserver '{}'".format(vserver))
                 continue
 

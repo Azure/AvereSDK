@@ -29,10 +29,10 @@ aws.unshelve(instance)
 
 instance = aws.refresh(instance)
 
-print aws.name(instance)
-print aws.ip(instance)
-print aws.fqdn(instance)
-print aws.status(instance)
+print(aws.name(instance))
+print(aws.ip(instance))
+print(aws.fqdn(instance))
+print(aws.status(instance))
 
 if aws.is_on(instance): pass
 if aws.is_off(instance): pass
@@ -58,16 +58,18 @@ aws.get_default_router(subnet_id)
 serializeme = aws.export()
 newaws = vFXT.aws.Service(**serializeme)
 '''
-
+from builtins import range #pylint: disable=redefined-builtin
+from future.utils import viewitems
 import threading
-import Queue
+import queue as Queue
 import re
 import os
 import time
 import logging
 import socket
+import http.client
 import json
-import urllib2
+from future.moves.urllib import parse as urlparse
 import filecmp
 from itertools import cycle
 
@@ -87,18 +89,18 @@ from vFXT.service import *
 log = logging.getLogger(__name__)
 
 s3_region_locations = {
-    'us-east-1':        boto.s3.connection.Location.DEFAULT,
-    'us-east-2':        'us-east-2',
-    'eu-west-1':        boto.s3.connection.Location.EU,
-    'us-west-1':        boto.s3.connection.Location.USWest,
-    'us-west-2':        boto.s3.connection.Location.USWest2,
-    'sa-east-1':        boto.s3.connection.Location.SAEast,
-    'ap-northeast-1':   boto.s3.connection.Location.APNortheast,
-    'ap-northeast-2':   'ap-northeast-2',
-    'ap-southeast-1':   boto.s3.connection.Location.APSoutheast,
-    'ap-southeast-2':   boto.s3.connection.Location.APSoutheast2,
-    'ap-south-1':       'ap-south-1',
-    'cn-north-1':       boto.s3.connection.Location.CNNorth1,
+    'us-east-1': boto.s3.connection.Location.DEFAULT,
+    'us-east-2': 'us-east-2',
+    'eu-west-1': boto.s3.connection.Location.EU,
+    'us-west-1': boto.s3.connection.Location.USWest,
+    'us-west-2': boto.s3.connection.Location.USWest2,
+    'sa-east-1': boto.s3.connection.Location.SAEast,
+    'ap-northeast-1': boto.s3.connection.Location.APNortheast,
+    'ap-northeast-2': 'ap-northeast-2',
+    'ap-southeast-1': boto.s3.connection.Location.APSoutheast,
+    'ap-southeast-2': boto.s3.connection.Location.APSoutheast2,
+    'ap-south-1': 'ap-south-1',
+    'cn-north-1': boto.s3.connection.Location.CNNorth1,
 }
 
 class Service(ServiceBase):
@@ -110,28 +112,28 @@ class Service(ServiceBase):
     NTP_SERVERS = ['169.254.169.123']
     DNS_SERVERS = []
     MACHINE_DEFAULTS = {
-        "t2.micro":     {"data_disk_count": 1, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": False, "node_count": 3},
-        "t2.small":     {"data_disk_count": 1, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": False, "node_count": 3},
-        "t2.large":     {"data_disk_count": 1, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": False, "node_count": 3},
-        "m1.small":     {"data_disk_count": 1, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": False, "node_count": 3},
-        "c3.xlarge":    {"data_disk_count": 8, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
-        "c3.2xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
-        "c3.4xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
-        "c3.8xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": False, "node_count": 3},
-        "c4.xlarge":    {"data_disk_count": 8, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
-        "c4.2xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
-        "c4.4xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
-        "c4.8xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
-        "r3.xlarge":    {"data_disk_count": 8, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
-        "r3.2xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
-        "r3.4xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
-        "r3.8xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": False, "node_count": 3},
-        "r4.2xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
-        "r4.4xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
-        "r4.8xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
-        "r4.16xlarge":   {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": False, "node_count": 3},
+        "t2.micro": {"data_disk_count": 1, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": False, "node_count": 3},
+        "t2.small": {"data_disk_count": 1, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": False, "node_count": 3},
+        "t2.large": {"data_disk_count": 1, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": False, "node_count": 3},
+        "m1.small": {"data_disk_count": 1, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": False, "node_count": 3},
+        "c3.xlarge": {"data_disk_count": 8, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "c3.2xlarge": {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "c3.4xlarge": {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "c3.8xlarge": {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": False, "node_count": 3},
+        "c4.xlarge": {"data_disk_count": 8, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "c4.2xlarge": {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "c4.4xlarge": {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "c4.8xlarge": {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "r3.xlarge": {"data_disk_count": 8, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "r3.2xlarge": {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "r3.4xlarge": {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "r3.8xlarge": {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": False, "node_count": 3},
+        "r4.2xlarge": {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "r4.4xlarge": {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "r4.8xlarge": {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": True, "node_count": 3},
+        "r4.16xlarge": {"data_disk_count": 10, "data_disk_size": "200", 'data_disk_type': 'gp2', "ebsoptimized": False, "node_count": 3},
     }
-    MACHINE_TYPES = MACHINE_DEFAULTS.keys()
+    MACHINE_TYPES = list(MACHINE_DEFAULTS.keys())
     DEFAULTS_URL = "http://avere-dist.s3-website-us-west-2.amazonaws.com/vfxtdefaults.json"
     S3TYPE_NAME = 'AMAZON'
     COREFILER_TYPE = 's3'
@@ -171,13 +173,13 @@ class Service(ServiceBase):
     OFFLINE_DEFAULTS = {
         'version': '1',
         'clustermanager': {
-            'instanceTypes': [ 'r3.2xlarge', 'r3.8xlarge' ],
+            'instanceTypes': ['r3.2xlarge', 'r3.8xlarge'],
             'maxNumNodes': 20,
             'cacheSizes': [
-                { 'size': 250, 'type': 'gp2', 'label': '250' },
-                { 'size': 1000, 'type': 'gp2', 'label': '1000' },
-                { 'size': 4000, 'type': 'gp2', 'label': '4000' },
-                { 'size': 8000, 'type': 'gp2', 'label': '8000' }
+                {'size': 250, 'type': 'gp2', 'label': '250'},
+                {'size': 1000, 'type': 'gp2', 'label': '1000'},
+                {'size': 4000, 'type': 'gp2', 'label': '4000'},
+                {'size': 8000, 'type': 'gp2', 'label': '8000'}
             ]
         }
     }
@@ -234,8 +236,9 @@ class Service(ServiceBase):
         if not self.subnets:
             raise vFXTConfigurationException("You must provide at least one subnet")
 
-        self.subnets = [self.subnets] if isinstance(self.subnets, basestring) else self.subnets
-        self.security_groups = self.security_groups.split(' ') if isinstance(self.security_groups, basestring) else self.security_groups
+        self.subnets = self.subnets if isinstance(self.subnets, list) else [self.subnets]
+        if self.security_groups:
+            self.security_groups = self.security_groups.split(' ') if not isinstance(self.security_groups, list) else self.security_groups
 
         if self.proxy_uri:
             self.set_proxy(self.proxy_uri)
@@ -269,8 +272,6 @@ class Service(ServiceBase):
 
             Raises vFXTServiceFailure
         '''
-        import httplib
-
         data = {}
         attributes = ['ami-id', 'ami-launch-index', 'ami-manifest-path',
                     'hostname', 'instance-action', 'instance-id', 'instance-type',
@@ -284,9 +285,9 @@ class Service(ServiceBase):
         if source_address:
             source_address = (source_address, 0)
         connection_host = cls.AWS_INSTANCE_HOST
-        connection_port = httplib.HTTP_PORT
+        connection_port = http.client.HTTP_PORT
 
-        conn = httplib.HTTPConnection(connection_host, connection_port, source_address=source_address, timeout=CONNECTION_TIMEOUT)
+        conn = http.client.HTTPConnection(connection_host, connection_port, source_address=source_address, timeout=CONNECTION_TIMEOUT)
 
         try:
 
@@ -438,11 +439,11 @@ class Service(ServiceBase):
         try:
 
             region = instance_data['region']
-            #vpc_id      = instance_data['network']['interfaces']['macs'].values()[0]['vpc-id']
+            #vpc_id = list(instance_data['network']['interfaces']['macs'].values())[0]['vpc-id']
             #instance_id = instance_data['instance-id']
-            subnet_id   = instance_data['network']['interfaces']['macs'].values()[0]['subnet-id']
+            subnet_id = list(instance_data['network']['interfaces']['macs'].values())[0]['subnet-id']
             arn   = instance_data['arn']
-            security_groups = instance_data['network']['interfaces']['macs'].values()[0]['security-group-ids']
+            security_groups = list(instance_data['network']['interfaces']['macs'].values())[0]['security-group-ids']
 
             if all([options.get(_) for _ in ['access_key', 'secret_access_key', 'security_token']]):
                 access_key = options.get('access_key')
@@ -452,9 +453,9 @@ class Service(ServiceBase):
                 if 'iam' not in instance_data or not instance_data['iam']['security-credentials']:
                     raise Exception('Cannot read IAM information.  Check role policy permissions')
 
-                access_key = instance_data['iam']['security-credentials'].values()[0]['AccessKeyId']
-                secret_key = instance_data['iam']['security-credentials'].values()[0]['SecretAccessKey']
-                token = instance_data['iam']['security-credentials'].values()[0]['Token']
+                access_key = list(instance_data['iam']['security-credentials'].values())[0]['AccessKeyId']
+                secret_key = list(instance_data['iam']['security-credentials'].values())[0]['SecretAccessKey']
+                token = list(instance_data['iam']['security-credentials'].values())[0]['Token']
 
             iam_conn = boto.iam.connect_to_region(region, aws_access_key_id=access_key, aws_secret_access_key=secret_key, security_token=token)
             if not iam_conn:
@@ -522,13 +523,13 @@ class Service(ServiceBase):
         try:
             log.info("Performing quota check")
             account_attributes = conn.describe_account_attributes()
-            max_instances = filter(lambda x: x.attribute_name == 'max-instances', account_attributes)
+            max_instances = [x for x in account_attributes if x.attribute_name == 'max-instances']
             if not max_instances:
                 raise vFXTServiceFailure("Failed to lookup max instance quota")
             max_count = int(max_instances[0].attribute_values[0])
             instance_count = len([i for r in conn.get_all_reservations() for i in r.instances]) + (instances or 0)
             if (instance_count + 0.0) / max_count > percentage:
-                log.warn("QUOTA ALERT: Using {} of {} instances".format(instance_count, max_count))
+                log.warning("QUOTA ALERT: Using {} of {} instances".format(instance_count, max_count))
             else:
                 log.debug("Using {} of {} instances".format(instance_count, max_count))
         except Exception as e:
@@ -579,7 +580,7 @@ class Service(ServiceBase):
                 connection_type (str, optional): connection type (ec2, s3, iam, vpc)
         '''
         try:
-            cred_expiration = self.local.instance_data['iam']['security-credentials'].values()[0]['Expiration']
+            cred_expiration = list(self.local.instance_data['iam']['security-credentials'].values())[0]['Expiration']
             if (int(time.mktime(time.strptime(cred_expiration, "%Y-%m-%dT%H:%M:%SZ"))) - 120) < int(time.time()):
                 log.debug("Access token expired, forcing refresh")
                 self.local.connections = {}
@@ -598,7 +599,7 @@ class Service(ServiceBase):
             if self.on_instance:
                 instance_data            = self.get_instance_data(source_address=self.source_address)
                 if instance_data['iam'].get('security-credentials'):
-                    creds                    = instance_data['iam']['security-credentials'].values()[0]
+                    creds                    = list(instance_data['iam']['security-credentials'].values())[0]
                     self.local.instance_data = instance_data
                     access_key               = creds['AccessKeyId']
                     secret_access_key        = creds['SecretAccessKey']
@@ -833,7 +834,7 @@ class Service(ServiceBase):
         try:
             self.wait_for_status(instance, self.DESTROY_STATUS, wait)
         except Exception as e:
-            log.warn(e)
+            log.warning(e)
 
     def is_on(self, instance):
         '''Return True if the instance is currently on
@@ -844,7 +845,7 @@ class Service(ServiceBase):
             This will be false if the instance is off or terminated.
         '''
         s = _aws_do(instance.update)
-        return self.OFF_STATUS != s and self.DESTROY_STATUS != s
+        return s not in [self.OFF_STATUS, self.DESTROY_STATUS]
 
     def is_off(self, instance):
         '''Return True if the instance is currently off
@@ -855,7 +856,7 @@ class Service(ServiceBase):
             This will be true if the instance is on or terminated.
         '''
         s = _aws_do(instance.update)
-        return self.OFF_STATUS == s or self.DESTROY_STATUS == s
+        return s in [self.OFF_STATUS, self.DESTROY_STATUS]
 
     def is_shelved(self, instance):
         '''Return True if the instance is currently shelved
@@ -948,7 +949,7 @@ class Service(ServiceBase):
         tagset = boto.s3.tagging.TagSet()
         tags = options.get('tags', {})
         if tags:
-            for k, v in tags.iteritems():
+            for k, v in viewitems(tags):
                 tagset.add_tag(k, v)
             tagset.add_tag('Name', name)
             btags.add_tag_set(tagset)
@@ -1007,7 +1008,7 @@ class Service(ServiceBase):
         response = _aws_do(iam.get_role_policy, iamrole, policy_name)
         if not response:
             raise vFXTServiceFailure("Failed to find existing policy")
-        policy = json.loads(urllib2.unquote(response['get_role_policy_response']['get_role_policy_result']['policy_document']))
+        policy = json.loads(urlparse.unquote(response['get_role_policy_response']['get_role_policy_result']['policy_document']))
 
         bucket_policy = {
             'Action': self.IAM_BUCKET_POLICY,
@@ -1110,7 +1111,7 @@ class Service(ServiceBase):
         bdm[root_dev_name] = root
         # fill in with blank disks if necessary
         base = ord('b')
-        for idx in xrange(4):
+        for idx in range(4):
             dev_name = "/dev/sd{:c}".format(base + idx)
             if dev_name not in bdm:
                 dev      = boto.ec2.blockdevicemapping.BlockDeviceType(no_device=True)
@@ -1129,7 +1130,7 @@ class Service(ServiceBase):
         security_groups = options.get('security_group_ids', None)
         tenancy         = 'dedicated' if options.get('dedicated_tenancy') else None
 
-        if security_groups and isinstance(security_groups, basestring):
+        if security_groups and not isinstance(security_groups, list):
             security_groups = [_ for _ in security_groups.split(' ')]
 
         interfaces = None
@@ -1170,7 +1171,7 @@ class Service(ServiceBase):
                 log.debug('Run instances failed: {}'.format(e))
                 retries -= 1
 
-                if retries > 0 and [_ for _ in iam_propagation_msgs if _ in e.message]:
+                if retries > 0 and [_ for _ in iam_propagation_msgs if _ in str(e)]:
                     log.debug("Retrying awaiting IAM propagation: {}".format(e))
                     time.sleep(self.POLLTIME)
                     continue
@@ -1198,7 +1199,7 @@ class Service(ServiceBase):
 
             # tag volumes
             instance = self.refresh(instance) # refresh to get latest block device mapping
-            for vname, vdev in instance.block_device_mapping.iteritems():
+            for vname, vdev in viewitems(instance.block_device_mapping):
                 vol_tags = tags.copy()
                 vol_tags['Name'] = "{}-{}".format(tags['Name'], vname[vname.rfind("/") + 1:])
                 log.debug("Tagging volume {} with {}".format(vdev.volume_id, vol_tags))
@@ -1257,20 +1258,20 @@ class Service(ServiceBase):
             if 'ebs_optimized' in instance_options:
                 instance_options['ebs_optimized'] = False
             base = ord('b')
-            for idx in xrange(4): # ignore data_disk_size for ephemeral
+            for idx in range(4): # ignore data_disk_size for ephemeral
                 name     = 'ephemeral{}'.format(idx)
                 dev_name = "/dev/sd{:c}".format(base + idx)
                 dev      = boto.ec2.blockdevicemapping.BlockDeviceType(ephemeral_name=name)
                 bdm[dev_name] = dev
         else:
             base = ord('f')
-            for idx in xrange(node_opts['data_disk_count']):
+            for idx in range(node_opts['data_disk_count']):
                 opts = {
-                    'size':                  node_opts['data_disk_size'],
-                    'volume_type':           node_opts['data_disk_type'],
+                    'size': node_opts['data_disk_size'],
+                    'volume_type': node_opts['data_disk_type'],
                     'delete_on_termination': True,
-                    'iops':                  node_opts['data_disk_iops'],
-                    'encrypted':             node_opts.get('disk_encryption', True)
+                    'iops': node_opts['data_disk_iops'],
+                    'encrypted': node_opts.get('disk_encryption', True)
                 }
                 dev       = boto.ec2.blockdevicemapping.BlockDeviceType(**opts)
                 name      = "/dev/sd{:c}".format(base + idx)
@@ -1330,13 +1331,13 @@ class Service(ServiceBase):
 
         # networking
         subnets = options.get('subnet') or self.subnets
-        subnets = [subnets] if isinstance(subnets, basestring) else subnets
+        subnets = subnets if isinstance(subnets, list) else [subnets]
         cluster.subnets = [subnets[0]] # first node subnet
 
         # check subnet objects for mapPublicIpOnLaunch
         for subnet_id in subnets:
             if self._get_subnet(subnet_id).mapPublicIpOnLaunch == 'true':
-                log.warn("Subnet {} has mapPublicIpOnLaunch enabled".format(subnet_id))
+                log.warning("Subnet {} has mapPublicIpOnLaunch enabled".format(subnet_id))
 
         # check that our subnets share a route table
         route_tables = set()
@@ -1459,7 +1460,7 @@ class Service(ServiceBase):
         if count < 1: return
 
         subnets = options.get('subnet') or cluster.subnets if hasattr(cluster, 'subnets') else self.subnets
-        subnets = [subnets] if isinstance(subnets, basestring) else subnets
+        subnets = subnets if isinstance(subnets, list) else [subnets]
         # make sure to use unused subnets first, but account for our cluster subnets
         subnets.extend([s for s in cluster.subnets if s not in subnets])
         cycle_subnets = cycle(subnets)
@@ -1519,7 +1520,7 @@ class Service(ServiceBase):
                     log.exception(e)
                 failq.put(e)
 
-        for node_num in xrange(max_node_num, max_node_num + count):
+        for node_num in range(max_node_num, max_node_num + count):
             next_node_num = node_num + 1
             inst_opts = options.copy()
             inst_opts['subnet'] = next(cycle_subnets)
@@ -1564,10 +1565,10 @@ class Service(ServiceBase):
         # a node address to get in)
         cluster.mgmt_ip = xmlrpc.cluster.get()['mgmtIP']['IP']
 
-        node_ips = set([n['primaryClusterIP']['IP']
+        node_ips = {n['primaryClusterIP']['IP']
                         for name in xmlrpc.node.list()
                         for n in [xmlrpc.node.get(name)[name]]
-                        if 'primaryClusterIP' in n])
+                        if 'primaryClusterIP' in n}
 
         expr = {"private_ip_address": list(node_ips)}
         instances = [i for r in _aws_do(conn.get_all_reservations, filters=expr) for i in r.instances]
@@ -1588,12 +1589,12 @@ class Service(ServiceBase):
             for i in instances:
                 cluster.nodes.append(ServiceInstance(service=self, instance=i))
 
-            cluster.subnets      = list(set([i.subnet_id for i in instances]))
+            cluster.subnets      = list({i.subnet_id for i in instances})
             # XXX assume all instances have the same settings
             cluster.iamrole      = instances[0].instance_profile['arn'].split('/')[-1]
             cluster.vpc_id       = instances[0].vpc_id
             cluster.machine_type = instances[0].instance_type
-            cluster.ephemeral    = True if len(instances[0].block_device_mapping) == 1 else False
+            cluster.ephemeral    = len(instances[0].block_device_mapping) == 1
             cluster.name         = self.CLUSTER_NODE_NAME_RE.search(cluster.nodes[0].name()).groups()[0]
 
     def can_shelve(self, instance):
@@ -1690,7 +1691,7 @@ class Service(ServiceBase):
 
         # assume we've previously killed the data disks and set a tag
         if "shelved" not in instance.tags:
-            log.info( "{} does not have shelved tag, skipping".format(instance.id))
+            log.info("{} does not have shelved tag, skipping".format(instance.id))
             return
         # XXX assume instance is already stopped
         if instance.state != self.OFF_STATUS:
@@ -1724,7 +1725,7 @@ class Service(ServiceBase):
             # create an ephemeral instance (or find one) to examine
             # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/block-device-mapping-concepts.html
             drive_id_base = ord('f')
-            for i in xrange(int(vol_count)):
+            for i in range(int(vol_count)):
                 drive_name = drive_id_base + i
                 dev_name   = "/dev/sd{:c}".format(drive_name)
 
@@ -1757,7 +1758,7 @@ class Service(ServiceBase):
                 self.wait_for_status(vol, 'available')
                 _aws_do(vol.attach, instance.id, dev_name)
                 self.wait_for_status(vol, 'in-use')
-                _aws_do(instance.modify_attribute, 'blockDeviceMapping', [ "{}=1".format(dev_name)])
+                _aws_do(instance.modify_attribute, 'blockDeviceMapping', ["{}=1".format(dev_name)])
 
         except boto.exception.BotoServerError as e:
             log.debug(e)
@@ -2015,7 +2016,7 @@ class Service(ServiceBase):
 
         # role name must be <= 64 chars long
         if len(name) > 64:
-            log.warn("Truncating role name from {} to {}".format(name, name[0:63]))
+            log.warning("Truncating role name from {} to {}".format(name, name[0:63]))
             name = name[0:63]
 
         policy = {
@@ -2033,7 +2034,7 @@ class Service(ServiceBase):
             "Version": "2012-10-17",
             "Statement": [{
                 "Effect": "Allow",
-                "Principal": { "Service": self.iam_role_principal_service},
+                "Principal": {"Service": self.iam_role_principal_service},
                 "Action": "sts:AssumeRole"
             }]
         }
@@ -2045,7 +2046,7 @@ class Service(ServiceBase):
         policy_name = 'policy_{}'.format(name)
         log.debug("Adding role policy {}: {}".format(policy_name, policy))
         _aws_do(iam.put_role_policy, name, policy_name, json.dumps(policy))
-        log.info("Adding role {} to instance profile {}".format(name, name))
+        log.info("Adding role {0} to instance profile {0}".format(name))
         _aws_do(iam.add_role_to_instance_profile, name, name)
         time.sleep(5) # XXX Wow, sync time between IAM service and EC2
         return role['create_role_response']['create_role_result']['role']
@@ -2259,7 +2260,7 @@ class Service(ServiceBase):
         # check sig
         if os.access(sig_filename, os.F_OK) and os.access(filename, os.F_OK):
             sig_filename_tmp = sig_filename + '.tmp'
-            with open(sig_filename_tmp, 'w') as f:
+            with open(sig_filename_tmp, 'wb') as f:
                 k = bucket.get_key(sig_path)
                 if k:
                     k.get_contents_to_file(f)
@@ -2271,10 +2272,10 @@ class Service(ServiceBase):
         # fetch sig
         sig_obj = _aws_do(bucket.get_key, sig_path)
         if sig_obj:
-            with open(sig_filename, 'w') as f:
+            with open(sig_filename, 'wb') as f:
                 sig_obj.get_contents_to_file(f)
         # fetch object
-        with open(filename, 'w') as f:
+        with open(filename, 'wb') as f:
             obj.get_contents_to_file(f)
 
     def _destroy_installation_image(self, name):
@@ -2356,7 +2357,7 @@ def _aws_do_non_idempotent(function, *args, **kwargs):
             errors += 1
             # probably could be only 503 but boto also looks for 500
             # Throttling is 400
-            throttled = True if e.status == 400 and 'Throttling' in str(e) else False
+            throttled = e.status == 400 and 'Throttling' in str(e)
             if e.status < 500 and not throttled: raise # #pylint: disable=no-member
 
             time.sleep(backoff(errors))
@@ -2385,7 +2386,7 @@ def _aws_do(function, *args, **kwargs):
             # probably could be only 503 but boto also looks for 500
             if isinstance(e, boto.exception.BotoServerError):
                 # Throttling is 400
-                throttled = True if e.status == 400 and 'Throttling' in str(e) else False # pylint: disable=no-member
+                throttled = e.status == 400 and 'Throttling' in str(e) #pylint: disable=no-member
                 if e.status < 500 and not throttled: raise # #pylint: disable=no-member
 
             time.sleep(backoff(errors))

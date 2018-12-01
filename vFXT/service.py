@@ -2,14 +2,14 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License. See LICENSE in the project root for license information.
 '''Service commons'''
-
+from future.moves.urllib import parse as urlparse
+from future.moves.urllib import request as urllib
+from future.utils import viewitems
 import re
 import os
-import urllib2
 import filecmp
 import logging
 import random
-import urlparse
 import socket
 import threading
 import json
@@ -33,11 +33,11 @@ class ShelveErrors(dict):
     def __init__(self, s=None): # optional init with str in k:v;k:v format
         if s:
             try:
-                self.update( dict([e.split(':') for e in s.split(';')]) )
+                self.update(dict([e.split(':') for e in s.split(';')]))
             except Exception:
                 pass
     def __str__(self): # return k:v;k:v format
-        return ";".join(["{}:{}".format(k, v) for k, v in self.iteritems()])
+        return ";".join(["{}:{}".format(k, v) for k, v in viewitems(self)])
 
 def backoff(counter, max_backoff=MAX_ERRORTIME):
     '''Return an exponential backoff time based on a provided counter
@@ -61,7 +61,7 @@ def validate_proxy(proxy_uri):
         if not proxy.hostname:
             raise vFXTConfigurationException("Invalid proxy: {}".format(proxy_uri))
         return proxy
-    except vFXTConfigurationException:
+    except vFXTConfigurationException: #pylint: disable=try-except-raise
         raise
 
 def gethostbyname(host, timeout=DNS_TIMEOUT):
@@ -98,12 +98,12 @@ def load_defaults(service):
         if default_url.scheme not in ['http', 'https', 'file']:
             raise Exception("Invalid scheme: {}".format(default_url.scheme))
 
-        proxy_handler = urllib2.ProxyHandler({})
+        proxy_handler = urllib.ProxyHandler({})
         if service.proxy_uri:
-            proxy_handler = urllib2.ProxyHandler({'http': service.proxy_uri, 'https': service.proxy_uri})
+            proxy_handler = urllib.ProxyHandler({'http': service.proxy_uri, 'https': service.proxy_uri})
 
-        opener = urllib2.build_opener(proxy_handler)
-        req = urllib2.Request(service.DEFAULTS_URL)
+        opener = urllib.build_opener(proxy_handler)
+        req = urllib.Request(service.DEFAULTS_URL)
         r = opener.open(req, timeout=CONNECTION_TIMEOUT)
         service.defaults = json.load(r)
     except Exception as e:
@@ -312,7 +312,7 @@ class ServiceBase(object):
                 raise Exception("Invalid scheme: {}".format(parsed_url.scheme))
 
             log.debug("Fetching {} to {}".format(r, n))
-            remote      = urllib2.urlopen(r) # open first, before local file open
+            remote      = urllib.urlopen(r) # open first, before local file open
             destination = open(n, 'wb')
             while True:
                 data = remote.read(chunksize)

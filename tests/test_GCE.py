@@ -111,7 +111,7 @@ class GCE_test(tests.vFXTTestCase.Base):
     #def test_connection_bad_zone(self):
     #    service = self.mk_gce_service()
     #    r = 'a{}a'.format(str(uuid.uuid4()).lower().replace('-','')[0:55])
-    #    self.assertRaises(vFXT.service.vFXTConfigurationException, Service,client_email=service.client_email, key=service.key.encode('base64'), zone=r, project_id=service.project_id, network_id=service.network_id)
+    #    self.assertRaises(vFXT.service.vFXTConfigurationException, Service,client_email=service.client_email, key=base64.b64encode(service.key.encode('utf-8')), zone=r, project_id=service.project_id, network_id=service.network_id)
 
     def test_connection_expired(self):
         service = self.mk_gce_service()
@@ -288,7 +288,7 @@ class GCE_test(tests.vFXTTestCase.Base):
     def test_gs_get_object(self):
         service = self.mk_gce_service()
         fd, name = tempfile.mkstemp()
-        with os.fdopen(fd, 'w') as f:
+        with os.fdopen(fd, 'wb') as f:
             service._gs_get_object(self.gce['bucket'], self.gce['bucket_file'], f)
             f.close()
             os.remove(name)

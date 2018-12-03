@@ -515,7 +515,7 @@ class Service(ServiceBase):
             attempts = 0
             while True:
                 try:
-                    url_path = '/metadata/instance?api-version=2017-12-01'
+                    url_path = '/metadata/instance?api-version=2018-02-01'
                     conn.request('GET', '{}'.format(url_path), headers=headers)
                     response = conn.getresponse()
                     if response.status == 200:

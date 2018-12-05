@@ -457,7 +457,9 @@ class Service(ServiceBase):
                           proxy_uri=proxy_uri, on_instance=True, skip_load_defaults=kwargs.get('skip_load_defaults'),
                           network_project_id=network_project_id, source_address=source_address)
             srv.local.instance_data = instance_data
-            region      = srv._zone_to_region(zone_id)
+            region = srv._zone_to_region(zone_id)
+            # translate our network project id into a name
+            srv.network_project_id = srv._get_network()['selfLink'].split('/')[-4]
             # no subnetwork in metadata... figure out which subnetwork owns our address
             subnetworks = srv._get_subnetworks(region)
             if subnetworks:

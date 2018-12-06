@@ -1374,6 +1374,7 @@ class Cluster(object):
             'cryptoMode': options.get('crypto_mode') or 'CBC-AES-256-HMAC-SHA-512',
             'proxy': proxy or '',
             'bucketContents': 'used' if options.get('existing_data', False) else 'empty',
+            'serverName': options.get('serverName') or None,
         }
 
         if data['cloudType'] == 's3':

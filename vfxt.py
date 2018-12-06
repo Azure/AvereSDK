@@ -137,15 +137,18 @@ def _add_bucket_corefiler(cluster, logger, args):
     bucketname = args.bucket or "{}-{}".format(cluster.name, str(uuid.uuid4()).lower().replace('-', ''))[0:63]
     corefiler  = args.core_filer or cluster.service.__module__.split('.')[-1]
 
-    if args.cloud_type == 'azure':
-        bucketname = '{}/{}'.format(cluster.service.storage_account, bucketname)
-
     bucket_opts = {
         'crypto_mode': 'DISABLED' if args.disable_bucket_encryption else None,
         'compress_mode': 'DISABLED' if args.disable_bucket_compression else None,
         'https': 'no' if args.disable_bucket_https else None,
         'https_verify_mode': 'DISABLED' if (args.disable_bucket_https or args.disable_bucket_https_verify) else None,
     }
+
+    if args.cloud_type == 'azure':
+        bucketname = '{}/{}'.format(cluster.service.storage_account, bucketname)
+        if args.azure_storage_suffix:
+            bucket_opts['serverName'] = '{}.blob.{}'.format(cluster.service.storage_account, args.azure_storage_suffix)
+
     tags = args.aws_tag or args.metadata
     if tags:
         bucket_opts['tags'] = tags
@@ -269,6 +272,9 @@ def main():
     azure_opts.add_argument("--root-disk-caching", help="Azure root disk caching mode (defaults to None)", choices=['ReadOnly', 'ReadWrite'], default=None)
     azure_opts.add_argument("--data-disk-caching", help="Azure data disk caching mode (defaults to None)", choices=['ReadOnly', 'ReadWrite'], default=None)
     azure_opts.add_argument("--azure-instance-addresses", nargs='+', help="Instance addresses to use rather than dynamically assigned", type=_validate_ip, default=None)
+    azure_opts.add_argument("--azure-government", help="Set the defaults for Azure Government (endpoint base URL and storage suffix)", action="store_true")
+    azure_opts.add_argument("--azure-endpoint-base-url", help="The base URL of the API endpoint (if non-public Azure)", type=_validate_url, default=None)
+    azure_opts.add_argument("--azure-storage-suffix", help="The storage service suffix (if non-public Azure)", default=None)
 
     # optional arguments
     parser.add_argument("-d", "--debug", help="Give verbose feedback", action="store_true")
@@ -532,6 +538,10 @@ def main():
             logging.getLogger(Service.__module__).setLevel(logging.INFO)
         logging.getLogger(Service.__module__).addHandler(log_file)
 
+        if args.azure_government:
+            args.azure_endpoint_base_url = Service.AZURE_ENVIRONMENTS['usGovCloud']['endpoint']
+            args.azure_storage_suffix = Service.AZURE_ENVIRONMENTS['usGovCloud']['storage_suffix']
+
         if args.on_instance:
             service = Service.on_instance_init(proxy_uri=args.proxy_uri,
                 subscription_id=args.subscription_id,
@@ -544,11 +554,11 @@ def main():
                 network=args.azure_network, subnet=args.azure_subnet,
                 no_connection_test=args.skip_check,
                 skip_load_defaults=args.skip_load_defaults,
+                endpoint_base_url=args.azure_endpoint_base_url,
+                storage_suffix=args.azure_storage_suffix,
+                storage_account=args.storage_account,
+                private_range=args.cluster_range,
             )
-            if args.storage_account:
-                service.storage_account = args.storage_account
-            if args.cluster_range:
-                service.private_range = args.cluster_range
         else:
             if args.from_environment:
                 if not all([args.resource_group, args.location, args.azure_network, args.azure_subnet]):
@@ -586,6 +596,8 @@ def main():
                 'private_range': args.cluster_range,
                 'no_connection_test': args.skip_check,
                 'skip_load_defaults': args.skip_load_defaults,
+                'endpoint_base_url': args.azure_endpoint_base_url,
+                'storage_suffix': args.azure_storage_suffix,
             }
             if args.from_environment:
                 service = Service.environment_init(**opts)

@@ -167,7 +167,7 @@ class Service(ServiceBase):
     VALID_DATA_DISK_SIZES = [128, 256, 512, 1024, 2048, 4095]
     MACHINE_TYPES = MACHINE_DEFAULTS.keys()
     BLOB_HOST = 'blob.core.windows.net'
-    BLOB_URL_FMT = 'https://{}.blob.core.windows.net/{}/{}' # account, container, blob
+    BLOB_URL_FMT = 'https://{}.{}/{}/{}' # account, host, container, blob
     DEFAULT_STORAGE_ACCOUNT_TYPE = 'Premium_LRS'
     AZURE_INSTANCE_HOST = '169.254.169.254'
     AZURE_ENDPOINT_HOST = 'management.azure.com'
@@ -230,6 +230,10 @@ class Service(ServiceBase):
     ALLOCATE_INSTANCE_ADDRESSES = True
     DEFAULT_MARKETPLACE_URN = 'microsoft-avere:vfxt:avere-vfxt-node:latest'
     NIC_OPERATIONS_RETRY = 2
+    # TODO keep an eye out for azure lib constants to reference for these
+    AZURE_ENVIRONMENTS = {
+        'usGovCloud': { 'endpoint': 'https://management.usgovcloudapi.net/', 'storage_suffix': 'core.usgovcloudapi.net'}
+    }
 
     def __init__(self, subscription_id=None, application_id=None, application_secret=None,
                        tenant_id=None, resource_group=None, storage_account=None,
@@ -257,6 +261,7 @@ class Service(ServiceBase):
                 no_connection_test (bool, optional): skip connection test
 
                 endpoint_base_url (str, optional): A custom endpoint URL
+                storage_suffix (str, optional): The blob storage service suffix (if not blob.core.windows.net)
 
             If an access token is provided it is used in place of the application ID/secret pair
             for API authentication.
@@ -278,6 +283,7 @@ class Service(ServiceBase):
         self.private_range   = options.get('private_range') or None
         self.source_address  = options.get('source_address') or None
         self.endpoint_base_url = options.get('endpoint_base_url') or None
+        self.storage_suffix = options.get('storage_suffix') or None
 
         self.proxy_uri       = options.get('proxy_uri') or None
         if self.proxy_uri:
@@ -373,7 +379,7 @@ class Service(ServiceBase):
 
             Connection types include:
                 authorization
-                cloudstorage
+                blobstorage
                 compute (default)
                 identity
                 network
@@ -381,7 +387,7 @@ class Service(ServiceBase):
                 storage
                 subscription
 
-            cloudstorage can take optional arguments
+            blobstorage can take optional arguments
                 storage_account (str, optional): defaults to self.storage_account
                 resource_group (str, optional): defaults to self.storage_resource_group
         '''
@@ -400,7 +406,7 @@ class Service(ServiceBase):
 
         connection_types = {
             'authorization': {'cls': azure.mgmt.authorization.AuthorizationManagementClient, 'pass_subscription': True},
-            'cloudstorage': None, # special handling below
+            'blobstorage': None, # special handling below
             'compute': {'cls': azure.mgmt.compute.ComputeManagementClient, 'pass_subscription': True},
             'identity': {'cls': azure.mgmt.msi.ManagedServiceIdentityClient, 'pass_subscription': True},
             'network': {'cls': azure.mgmt.network.NetworkManagementClient, 'pass_subscription': True},
@@ -420,15 +426,18 @@ class Service(ServiceBase):
                 self.local.instance_data = self.get_instance_data(source_address=self.source_address)
             log.debug("Creating connection of type {}".format(connection_type))
 
-            # cloudstorage connections are just returned (not cached) since they are tied to a storage account
+            # blobstorage connections are just returned (not cached) since they are tied to a storage account
             # and less frequently used
-            if connection_type == 'cloudstorage':
+            if connection_type == 'blobstorage':
                 storage_account = options.get('storage_account') or self.storage_account
                 resource_group = options.get('resource_group') or self.storage_resource_group
                 keys = self.connection('storage').storage_accounts.list_keys(resource_group, storage_account).keys
                 if not keys:
                     raise vFXTConfigurationException("Unable to look up storage keys for {}".format(storage_account))
-                return azure.storage.common.cloudstorageaccount.CloudStorageAccount(storage_account, keys[0].value)
+                endpoint_suffix = None
+                if self.storage_suffix:
+                    endpoint_suffix = self.storage_suffix
+                return azure.storage.blob.blockblobservice.BlockBlobService(storage_account, keys[0].value, endpoint_suffix=endpoint_suffix)
 
             connection_settings = connection_types[connection_type]
             connection_cls = connection_settings['cls']
@@ -608,6 +617,11 @@ class Service(ServiceBase):
                 network (str, optional): Azure virtual network
                 subnet (str, optional): Azure virtual network subnets
 
+                endpoint_base_url (str, optional): passed to __init__
+                storage_account (str, optional): passed to __init__
+                storage_suffix (str, optional): passed to __init__
+                private_range (str, optional): passed to __init__
+
             This is only meant to be called on instance.  Otherwise will
             raise a vFXTConfigurationException exception.
         '''
@@ -635,7 +649,10 @@ class Service(ServiceBase):
                               subnet=subnet, network=network,
                               access_token=instance_data.get('access_token'),
                               on_instance=True, skip_load_defaults=skip_load_defaults,
-                              endpoint_base_url=instance_data['token_resource']
+                              endpoint_base_url=options.get('endpoint_base_url') or instance_data['token_resource'],
+                              storage_suffix=options.get('storage_suffix'),
+                              storage_account=options.get('storage_account'),
+                              private_range=options.get('private_range'),
             )
             service.local.instance_data = instance_data
 
@@ -1114,15 +1131,16 @@ class Service(ServiceBase):
         # determine where we are getting the root disk
         # if its a url and in our storage account, use it directly
         boot_disk_image_url = urlparse.urlparse(boot_disk_image)
-        if boot_disk_image_url.hostname == '{}.{}'.format(self.storage_account, self.BLOB_HOST):
+        blob_host = 'blob.{}'.format(self.storage_suffix) if self.storage_suffix else self.BLOB_HOST
+        if boot_disk_image_url.hostname == '{}.{}'.format(self.storage_account, blob_host):
             log.info("Using local image {}".format(boot_disk_image))
             img = self._create_image_from_vhd(boot_disk_image)
             body['storage_profile']['image_reference'] = {'id': img.id}
         # if its some other azure storage account, copy it in (only if we have a configured storage account)
-        elif self.storage_account and boot_disk_image_url.hostname and boot_disk_image_url.hostname.endswith(self.BLOB_HOST):
+        elif self.storage_account and boot_disk_image_url.hostname and boot_disk_image_url.hostname.endswith(blob_host):
 
             blob_name = 'Microsoft.Compute/Images/vhds/{}'.format(boot_disk_image_url.path.split('/')[-1])
-            local_blob_url = self.BLOB_URL_FMT.format(self.storage_account, self.SYSTEM_CONTAINER, blob_name)
+            local_blob_url = self.BLOB_URL_FMT.format(self.storage_account, blob_host, self.SYSTEM_CONTAINER, blob_name)
 
             try:
                 self.create_container('{}/{}'.format(self.storage_account, self.SYSTEM_CONTAINER))
@@ -1167,12 +1185,13 @@ class Service(ServiceBase):
 
         # if we turn on boot diagnostics, log to our non-premium account
         if options.get('enable_boot_diagnostics'):
+            blob_host = 'blob.{}'.format(self.storage_suffix) if self.storage_suffix else self.BLOB_HOST
             boot_diagnostics_storage_account = options.get('boot_diagnostics_storage') or self.storage_account
             if not boot_diagnostics_storage_account:
                 raise vFXTConfigurationException("No storage account provided for boot diagnostics")
             body['diagnostics_profile'] = {'boot_diagnostics': {
                 'enabled': True,
-                'storage_uri': 'https://{}.{}'.format(boot_diagnostics_storage_account, self.BLOB_HOST)
+                'storage_uri': 'https://{}.{}'.format(boot_diagnostics_storage_account, blob_host)
             }}
 
         # base64 encoded user data
@@ -1857,8 +1876,7 @@ class Service(ServiceBase):
 
         log.debug("Creating container {} in storage account {}".format(container, storage_account))
 
-        conn = self.connection('cloudstorage', storage_account=storage_account)
-        blob_srv = conn.create_page_blob_service()
+        blob_srv = self.connection('blobstorage', storage_account=storage_account)
 
         # check for existing
         if container in [_.name for _ in blob_srv.list_containers()]:
@@ -1881,8 +1899,7 @@ class Service(ServiceBase):
         '''
         container, storage_account = self._container_name(name)
 
-        conn = self.connection('cloudstorage', storage_account=storage_account)
-        blob_srv = conn.create_page_blob_service()
+        blob_srv = self.connection('blobstorage', storage_account=storage_account)
 
         if next(iter(blob_srv.list_blobs(container)), None):
             raise vFXTConfigurationException("Container {} not empty".format(container))
@@ -1905,8 +1922,7 @@ class Service(ServiceBase):
             Raises: vFXTServiceFailure
         '''
         container, storage_account = self._container_name(name) # pylint: disable=unused-variable
-        conn = self.connection('cloudstorage', storage_account=storage_account)
-        blob_srv = conn.create_page_blob_service()
+        blob_srv = self.connection('blobstorage', storage_account=storage_account)
 
         try:
             storage_account_props = self.connection('storage').storage_accounts.get_properties(self.storage_resource_group, storage_account)
@@ -2257,6 +2273,8 @@ class Service(ServiceBase):
             'proxy_uri',
             'private_range',
             'network_security_group',
+            'endpoint_base_url',
+            'storage_suffix',
         ]
 
         data = {}
@@ -2324,8 +2342,7 @@ class Service(ServiceBase):
         log.debug("Copying {} to {} in container {}".format(src, dest_blob, container))
         storage_account = storage_account or self.storage_account
 
-        conn = self.connection('cloudstorage', storage_account=storage_account)
-        blob_srv = conn.create_page_blob_service()
+        blob_srv = self.connection('blobstorage', storage_account=storage_account)
 
         if container not in [_.name for _ in blob_srv.list_containers()]:
             rv = blob_srv.create_container(container)
@@ -2748,8 +2765,7 @@ class Service(ServiceBase):
 
     def _blob_exists(self, storage_account, container, blob):
         log.debug("Checking if blob {} exists in {}/{}".format(blob, storage_account, container))
-        conn = self.connection('cloudstorage', storage_account=storage_account)
-        blob_srv = conn.create_page_blob_service()
+        blob_srv = self.connection('blobstorage', storage_account=storage_account)
 
         try:
             rv = blob_srv.get_blob_properties(container, blob)
@@ -2760,8 +2776,7 @@ class Service(ServiceBase):
             return False
 
     def _delete_blob(self, storage_account, container, blob):
-        conn = self.connection('cloudstorage', storage_account=storage_account)
-        blob_srv = conn.create_page_blob_service()
+        blob_srv = self.connection('blobstorage', storage_account=storage_account)
         log.debug("Deleting blob {}/{} from storage account {}".format(container, blob, storage_account))
         try:
             blob_srv.delete_blob(container, blob, delete_snapshots='Include')

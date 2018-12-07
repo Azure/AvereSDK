@@ -143,6 +143,9 @@ def _add_bucket_corefiler(cluster, logger, args):
         'https': 'no' if args.disable_bucket_https else None,
         'https_verify_mode': 'DISABLED' if (args.disable_bucket_https or args.disable_bucket_https_verify) else None,
     }
+    if args.core_filer_encryption_password:
+        # if unset we use the cluster admin password
+        bucket_opts['master_password'] = args.core_filer_encryption_password
 
     if args.cloud_type == 'azure':
         bucketname = '{}/{}'.format(cluster.service.storage_account, bucketname)
@@ -164,7 +167,7 @@ def _add_bucket_corefiler(cluster, logger, args):
     else: # existing bucket
         logger.info("Attaching an existing cloud storage {} to corefiler {}".format(bucketname, corefiler))
         bucket_opts['existing_data'] = args.bucket_not_empty
-        key = cluster.attach_bucket(corefiler, bucketname, master_password=args.admin_password, **bucket_opts)
+        key = cluster.attach_bucket(corefiler, bucketname, **bucket_opts)
 
     if key and args.core_filer_key_file:
         try:
@@ -337,6 +340,7 @@ def main():
     cluster_opts.add_argument("--nfs-type", help="NFS server type", choices=['NetappNonClustered', 'NetappClustered', 'EmcIsilon'], default=None)
     cluster_opts.add_argument("--core-filer", help="Name of the core filer to create")
     cluster_opts.add_argument("--core-filer-key-file", help="File path to save the encryption key (if encryption is not disabled)", type=_validate_writeable_path, default=None)
+    cluster_opts.add_argument("--core-filer-encryption-password", help="The encryption password for the corefiler (defaults to the cluster admin password)", default=None)
     cluster_opts.add_argument("--subdir", help="NFS Export subdirectory (if / is the only export)", type=str, default='')
     cluster_opts.add_argument("--junction", help="Path of the vserver junction (must start with /, defaults to /nfs for NFS exports or cloud vendor name)", type=str, default='')
     cluster_opts.add_argument("--vserver", help="Name of the vserver to create (defaults to vserver)", default='vserver')

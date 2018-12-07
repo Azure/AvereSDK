@@ -1319,7 +1319,7 @@ class Cluster(object):
         corefiler       = corefiler or bucketname
         self.service.create_bucket(bucketname, **options)
         log.info("Created cloud storage {} ".format(bucketname))
-        return self.attach_bucket(corefiler, bucketname, master_password=self.admin_password, proxy=proxy, remove_on_fail=remove_on_fail, **options)
+        return self.attach_bucket(corefiler, bucketname, proxy=proxy, remove_on_fail=remove_on_fail, **options)
 
     def attach_bucket(self, corefiler, bucketname, master_password=None, credential=None, proxy=None, **options):
         '''Attach a named bucket as core filer
@@ -1354,9 +1354,6 @@ class Cluster(object):
             log.debug("Looking up credential as none was specified")
             credential = self.service.authorize_bucket(self, bucketname, xmlrpc=xmlrpc)
             log.debug("Using credential {}".format(credential))
-
-        if not master_password:
-            master_password = self.admin_password
 
         # set proxy if provided
         if not proxy:
@@ -1433,7 +1430,12 @@ class Cluster(object):
             self._sleep()
 
         if options.get('crypto_mode') != 'DISABLED':
-            log.info("Generating master key for {} using the admin pass phrase".format(corefiler))
+            if not master_password:
+                log.info("Generating master key for {} using the admin pass phrase".format(corefiler))
+                master_password = self.admin_password
+            else:
+                log.info("Generating master key for {} using the specified pass phrase".format(corefiler))
+
             retries = self.service.XMLRPC_RETRIES
             while True:
                 try:

@@ -14,6 +14,7 @@ logging.basicConfig()
 log = logging.getLogger(__name__)
 
 class Cluster_test(tests.vFXTTestCase.Base):
+    customize_corefiler_name = lambda x: x
 
     def test__init__aws(self):
         if not self.aws['enabled']:
@@ -52,9 +53,10 @@ class Cluster_test(tests.vFXTTestCase.Base):
         cluster.wait_for_healthcheck(state='green', duration=10)
         self.assertTrue(cluster.xmlrpc().vserver.get('vserver'))
         if not skip_corefiler:
-            cluster.make_test_bucket(cluster.name)
-            self.assertTrue(cluster.name in cluster.xmlrpc().corefiler.list())
-            cluster.add_vserver_junction('vserver', cluster.name)
+            corefiler_name = self.customize_corefiler_name(cluster.name)
+            cluster.make_test_bucket(corefiler_name)
+            self.assertTrue(corefiler_name in cluster.xmlrpc().corefiler.list())
+            cluster.add_vserver_junction('vserver', corefiler_name)
 
         self.assertTrue(cluster.in_use_addresses())
         self.assertTrue(cluster.in_use_addresses('mgmt'))
@@ -154,8 +156,12 @@ class Cluster_test(tests.vFXTTestCase.Base):
 
         self.assertTrue(cluster.xmlrpc().cluster.get())
 
+        def _azure_storage_account_fixup(name):
+            return '{}/{}'.format(self.azure['storage_account'], name)
+        self.customize_corefiler_name = _azure_storage_account_fixup
+
         try:
-            self._run_cluster_steps(cluster, skip_corefiler=True, use_instance_for_mgmt=True)
+            self._run_cluster_steps(cluster, use_instance_for_mgmt=True)
         except Exception as e:
             log.error(e)
             raise

@@ -71,6 +71,8 @@ class Base(unittest.TestCase):
             self.azure['check_on_instance']             = test_config['azure']['check_on_instance']
             self.azure['check_from_environment']        = test_config['azure']['check_from_environment']
 
+            f.close()
+
         except Exception as e:
             self.skipTest(e)
 

@@ -3,137 +3,98 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License. See LICENSE in the project root for license information.
 import base64
-import http
-import socket
-import xmlrpc.client as xmlrpclib
 import logging
-import errno
+import requests
+import socket
+import ssl
 import sys
+import xmlrpc.client
 
-def _setup_https_sock(h, verbose):
-    if verbose:
-        h.set_debuglevel(1)
-    h.connect()
-    h.sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)    # disable Nagle algorithm and send small requests immediately
-    h.sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1) # check for dead servers
-    h.sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPINTVL, 15) # probe every 15 seconds
-    h.sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPCNT, 8)    # up to 8 attempts == 120 seconds
+requests.packages.urllib3.disable_warnings() # pylint: disable=no-member
+logging.getLogger('urllib3').setLevel(logging.WARNING)
 
-class CookieAuthXMLRPCTransport(xmlrpclib.SafeTransport):
-    '''xmlrpclib.Transport that sends HTTP cookie.'''
+class RequestsTransport(xmlrpc.client.SafeTransport):
+
+    class CustomAdapter(requests.adapters.HTTPAdapter):
+        def init_poolmanager(self, *args, **kwargs):
+            kwargs['socket_options'] = [
+                (socket.SOL_TCP, socket.TCP_NODELAY, 1),     # disable Nagle algorithm and send small requests immediately
+                (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1), # check for dead servers
+                (socket.SOL_TCP, socket.TCP_KEEPINTVL, 15),  # probe every 15 seconds
+                (socket.SOL_TCP, socket.TCP_KEEPCNT, 8),     # up to 8 attempts == 120 seconds
+            ]
+            super(RequestsTransport.CustomAdapter, self).init_poolmanager(*args, **kwargs)
+
     def __init__(self, use_datetime=0, do_cert_checks=True):
-        if (not do_cert_checks) and (sys.hexversion > 0x2070900):
-            ## Python 2.7.9 and greater checks the CA chains by default; disable it if requested
-            import ssl
-            ctx = ssl._create_unverified_context()
-            xmlrpclib.SafeTransport.__init__(self, use_datetime=use_datetime, context=ctx)
-        else:
-            xmlrpclib.SafeTransport.__init__(self, use_datetime=use_datetime)
-        self._cookie = ""
-        # Test if the underlying mechanism is http.HTTP (used in Python 2.6
-        # and before), or http.HTTPConnection (used in Python 2.7). In the
-        # latter, a persistent connection is stored in self._connection.
-        try:
-            getattr(self, '_connection')
-            self._has_httpconnection = True
-        except AttributeError:
-            self._has_httpconnection = False
-
-    def send_host(self, connection, host):
-        '''Send the Host: header and extra headers.
-        Note that in 2.7, this doesn't actually send the Host: header, but we
-        just want to send the Cookie: header, and this is the proper place to
-        do it.
-
-        '''
-        xmlrpclib.SafeTransport.send_host(self, connection, host)
-        if self._cookie:
-            # Session cookie is set, send it
-            connection.putheader('Cookie', self._cookie)
+        xmlrpc.client.SafeTransport.__init__(self, use_datetime=use_datetime)
+        self._do_cert_checks = do_cert_checks
+        socket_opts_adapter = self.CustomAdapter()
+        self._requests_session = requests.session()
+        self._requests_session.mount('http://', socket_opts_adapter)
+        self._requests_session.mount('https://', socket_opts_adapter)
+        self.verbose = False
 
     def request(self, host, handler, request_body, verbose=0):
-        '''Send a complete request and return a parsed response.'''
-        if self._has_httpconnection:
-            #retry request once if cached connection has gone cold
-            for i in (0, 1):
-                try:
-                    return self.single_request(host, handler, request_body, verbose)
-                except socket.error as e:
-                    if i or e.errno not in (errno.ECONNRESET, errno.ECONNABORTED, errno.EPIPE):
-                        raise
-                except http.client.BadStatusLine: #close after we sent request
-                    if i:
-                        raise
-        else:
-            h = self.make_connection(host)
-            _setup_https_sock(h, verbose)
-            self.send_request(h, handler, request_body)
-            self.send_host(h, host)
-            self.send_user_agent(h)
-            self.send_content(h, request_body)
-            errcode, errmsg, headers = h.getreply()
-            if errcode != 200:
-                raise xmlrpclib.ProtocolError(host + handler,
-                                              errcode, errmsg,
-                                              headers
-                                              )
-            cookie_header = headers.getheaders('Set-Cookie')
-            if cookie_header:
-                self._cookie = '; '.join(cookie_header)
-            self.verbose = verbose # pylint: disable=attribute-defined-outside-init
-            try:
-                sock = h._conn.sock # pylint: disable=no-member
-            except AttributeError:
-                sock = None
-            return self._parse_response(h.getfile(), sock) # pylint: disable=no-member
+        headers = {}
+        url = 'https://{}/{}'.format(host, handler)
 
-    def single_request(self, host, handler, request_body, verbose=0):
-        '''Issue an XML-RPC request on a persistent HTTPConnection.'''
-        h = self.make_connection(host)
-        _setup_https_sock(h, verbose)
+        response = self._requests_session.post(url, data=request_body, headers=headers, stream=True, cert=None, verify=self._do_cert_checks)
+        response.raise_for_status()
+        if verbose:
+            logging.debug(response.headers)
+        return self.parse_response(response.raw)
 
-        try:
-            self.send_request(h, handler, request_body)
-            self.send_host(h, host)
-            self.send_user_agent(h)
-            self.send_content(h, request_body)
+    @staticmethod
+    def get_client_and_transport(server_uri, verbose=False, do_cert_checks=True):
+        '''Return an xmlrpc client which supports authentication via cookies'''
+        trans = RequestsTransport(do_cert_checks=do_cert_checks)
+        client = xmlrpc.client.ServerProxy(server_uri, transport=trans, verbose=verbose)
+        return trans, client
 
-            response = h.getresponse(buffering=True)
-            if response.status == 200:
-                self.verbose = verbose # pylint: disable=attribute-defined-outside-init
-                cookie_header = response.getheader('set-cookie')
-                if cookie_header:
-                    cookies = cookie_header.split(', ')
-                    self._cookie = '; '.join(cookies)
-                return self.parse_response(response)
-        except xmlrpclib.Fault:
-            raise
-        except Exception:
-            # All unexpected errors leave connection in
-            # a strange state, so we clear it.
-            self.close()
-            raise
+    @staticmethod
+    def get_client(server_uri, verbose=False, do_cert_checks=True):
+        return RequestsTransport.get_client_and_transport(server_uri, verbose, do_cert_checks)[1]
 
-        #discard any response data and raise exception
-        if response.getheader("content-length", 0):
-            response.read()
-        raise xmlrpclib.ProtocolError(host + handler,
-                                      response.status, response.reason,
-                                      response.msg,
-                                      )
+getXmlrpcClientAndTransport = RequestsTransport.get_client_and_transport
+getXmlrpcClient = RequestsTransport.get_client
 
-def getXmlrpcClientAndTransport(server_uri, verbose=False, do_cert_checks=True):
-    '''Return an xmlrpc client which supports authentication via cookies'''
-    trans = CookieAuthXMLRPCTransport(do_cert_checks=do_cert_checks)
-    client = xmlrpclib.Server(server_uri, transport=trans, verbose=verbose)
-    return trans, client
+try:
+    # older Python versions raise an AttributeError for ssl.{PROTOCOL_TLSv1_2,OPENSSL_VERSION_INFO}
+    # check explicitly for Python support for TLS v1.2
+    _ = ssl.PROTOCOL_TLSv1_2
+    if ssl.OPENSSL_VERSION_INFO < (1,0,1,7): # at least OpenSSL 1.0.1
+        raise Exception()
+except Exception:
+    try:
+        openssl_version = ssl.OPENSSL_VERSION
+    except AttributeError:
+        openssl_version = "Unable to determine (Python is too old)"
+    ERRMSG = """\
+Python >= 2.7.9 and OpenSSL >= v1.0.1g required. Please upgrade your packages.
 
-def getXmlrpcClient(server_uri, verbose=False, do_cert_checks=True):
-    return getXmlrpcClientAndTransport(server_uri, verbose, do_cert_checks)[1]
+As of V4.7.3.1, AvereOS has removed support for outdated HTTPS settings.
+TLS v1.2 is required, as are the Modern TLS ciphersuites described here:
+  * https://wiki.mozilla.org/Security/Server_Side_TLS
+  * https://mozilla.github.io/server-side-tls/ssl-config-generator/
 
+This requires your remote system (i.e. the box you're running this on) to have
+AT LEAST the following versions installed:
+  * Python >= 2.7.9
+  * OpenSSL >= v1.0.1g
 
-def main():
+For more information, see the Avere OS 4.7 Release Notes at
+  * http://library.averesystems.com/#relnotes
+
+Current installed versions:
+    Python: {0}
+    OpenSSL: {1}
+"""
+    logging.error(ERRMSG.format(sys.version.split()[0], openssl_version))
+    sys.exit(-1)
+
+if __name__ == '__main__':
     import code
+    logging.basicConfig(level=logging.DEBUG)
 
     mgmt_ip  = None
     username = None
@@ -144,15 +105,13 @@ def main():
         password = sys.argv[3]
     except Exception:
         logging.error("Arguments required: [mgmt ip] [username] [password]")
-        return
+        sys.exit(1)
 
-    s = getXmlrpcClient("http://{0}/cgi-bin/rpc2.py".format(mgmt_ip), do_cert_checks=False)
-    res = s.system.login(base64.b64encode(bytes(username)), base64.b64encode(bytes(password)))
+    logging.warning("Disabling certificate validation")
+    rpc = RequestsTransport.get_client("https://{0}/cgi-bin/rpc2.py".format(mgmt_ip), do_cert_checks=False, verbose=False)
+    res = rpc.system.login(base64.b64encode(username.encode('utf-8')).decode(), base64.b64encode(password.encode('utf-8')).decode())
     if res != 'success':
         raise Exception(res)
 
+    logging.info("XML-RPC client object is named rpc, issue methods with rpc.[method]([arguments])")
     code.interact(local=locals())
-
-
-if __name__ == '__main__':
-    main()

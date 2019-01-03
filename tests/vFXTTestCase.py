@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License. See LICENSE in the project root for license information.
 import unittest
+import warnings
 
 from vFXT.aws import Service as AWS
 from vFXT.gce import Service as GCE
@@ -75,6 +76,11 @@ class Base(unittest.TestCase):
 
         except Exception as e:
             self.skipTest(e)
+
+        try:
+            warnings.filterwarnings(action="ignore", message="unclosed", category=ResourceWarning)
+        except NameError:
+            pass
 
     def mk_aws_service(self):
         service = AWS(

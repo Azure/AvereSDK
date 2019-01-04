@@ -108,7 +108,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     logging.warning("Disabling certificate validation")
-    rpc = RequestsTransport.get_client("https://{0}/cgi-bin/rpc2.py".format(mgmt_ip), do_cert_checks=False, verbose=False)
+    rpc = RequestsTransport.get_client("https://{0}/python/rpc2.py".format(mgmt_ip), do_cert_checks=False, verbose=False)
     res = rpc.system.login(base64.b64encode(username.encode('utf-8')).decode(), base64.b64encode(password.encode('utf-8')).decode())
     if res != 'success':
         raise Exception(res)

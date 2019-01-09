@@ -2594,13 +2594,17 @@ class Service(ServiceBase):
             association_id = str(uuid.uuid4())
             try:
                 scope = self._resource_group_scope()
-                # if we span resource groups, the scope must be on the subscription
-                if self.network_resource_group != self.resource_group:
-                    scope = self._subscription_scope()
                 r = conn.role_assignments.create(scope, association_id, body)
                 if not r:
-                    raise Exception("Failed to assign role {} to principal {}".format(role_name, principal))
+                    raise Exception("Failed to assign role {} to principal {} for resource group {}".format(role_name, principal, self.resource_group))
                 log.debug("Assigned role {} with principal {} to scope {}: {}".format(role_name, principal, scope, body))
+                # if we span resource groups, the scope must be assigned to both resource groups
+                if self.network_resource_group != self.resource_group:
+                    network_scope = self._resource_group_scope(self.network_resource_group)
+                    network_association_id = str(uuid.uuid4())
+                    r2 = conn.role_assignments.create(network_scope, network_association_id, body)
+                    if not r2:
+                        raise Exception("Failed to assign role {} to principal {} for resource group {}".format(role_name, principal, self.network_resource_group))
                 return r
             except Exception as e:
                 log.debug(e)

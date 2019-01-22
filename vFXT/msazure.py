@@ -696,11 +696,14 @@ class Service(ServiceBase):
         '''
         options['use_environment_for_auth'] = True
         s = Service(**options)
-        if not all([s.subscription_id, s.tenant_id]):
-            conn = s.connection()
-            s.subscription_id = conn.config.subscription_id
-            # XXX there has to be a better way
-            s.tenant_id = conn.config.credentials._token_retriever()[2]['_authority'].split('/')[-1]
+        if not s.subscription_id:
+            s.subscription_id = s.connection().config.subscription_id
+        if not s.tenant_id:
+            try:
+                s.tenant_id = next(s.connection('subscription').tenants.list()).tenant_id
+            except Exception as e:
+                log.debug(e)
+                raise vFXTServiceFailure("Failed to lookup tenant")
         return s
 
     def find_instances(self, search=None):
@@ -2688,7 +2691,7 @@ class Service(ServiceBase):
                             application_secret=application_secret,
                             proxy_uri=proxy_uri,
                             no_connection_test=True)
-        return [_.id.split('/')[-1] for _ in service.connection('subscription').subscriptions.list()]
+        return [_.subscription_id for _ in service.connection('subscription').subscriptions.list()]
 
     def _cache_to_disk_config(self, cache_size, machine_type=None, disk_type=None):#pylint: disable=unused-argument
         '''For a given cache size, output the default data disk count and size

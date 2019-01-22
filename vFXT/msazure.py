@@ -2526,9 +2526,9 @@ class Service(ServiceBase):
     def _get_role(self, role_name, retries=ServiceBase.CLOUD_API_RETRIES):
         '''Retrieve a role
         '''
-        conn = self.connection('authorization')
         # may need to retry if it was recently created
         while True:
+            conn = self.connection('authorization')
             try:
                 roles = [_ for _ in conn.role_definitions.list(self._subscription_scope()) if role_name == _.role_name]
                 if roles and roles[0]:
@@ -2577,25 +2577,26 @@ class Service(ServiceBase):
 
             Raises: vFXTServiceFailure
         '''
-        conn = self.connection('authorization')
-        role = self._get_role(role_name, retries=options.get('retries') or self.NEW_ROLE_FETCH_RETRY)
+        retries = options.get('retries') or self.NEW_ROLE_FETCH_RETRY
+
+        role = self._get_role(role_name, retries=retries)
         if not role:
             raise vFXTServiceFailure("Failed to find role {}".format(role_name))
 
-        assignments = [_ for _ in conn.role_assignments.list() if role.id == _.role_definition_id]
-        if principal in [_.principal_id for _ in assignments]:
-            log.debug("Assignment for role {} and principal {} exists.".format(role.role_name, principal))
-            return None
-
-        body = {
-            'role_definition_id': role.id,
-            'principal_id': principal
-        }
-
-        retries = options.get('retries') or self.NEW_ROLE_FETCH_RETRY
         while True:
             association_id = str(uuid.uuid4())
             try:
+                conn = self.connection('authorization')
+                assignments = [_ for _ in conn.role_assignments.list() if role.id == _.role_definition_id]
+                if principal in [_.principal_id for _ in assignments]:
+                    log.debug("Assignment for role {} and principal {} exists.".format(role.role_name, principal))
+                    return None
+
+                body = {
+                    'role_definition_id': role.id,
+                    'principal_id': principal
+                }
+
                 scope = self._resource_group_scope()
                 r = conn.role_assignments.create(scope, association_id, body)
                 if not r:

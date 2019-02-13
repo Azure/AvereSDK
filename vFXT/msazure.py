@@ -224,12 +224,12 @@ class Service(ServiceBase):
     TOKEN_RESOURCE = 'https://management.azure.com/'
     AUTO_LICENSE = True
     WAIT_FOR_NIC = 180
-    WAIT_FOR_IPCONFIG = 180
+    WAIT_FOR_IPCONFIG = 300
     REGIONS_WITH_3_FAULT_DOMAINS = ['canadacentral', 'centralus', 'eastus', 'eastus2', 'northcentralus', 'northeurope', 'southcentralus', 'westeurope', 'westus']
     MAX_UPDATE_DOMAIN_COUNT = 20
     ALLOCATE_INSTANCE_ADDRESSES = True
     DEFAULT_MARKETPLACE_URN = 'microsoft-avere:vfxt:avere-vfxt-node:latest'
-    NIC_OPERATIONS_RETRY = 2
+    NIC_OPERATIONS_RETRY = 60
     # TODO keep an eye out for azure lib constants to reference for these
     AZURE_ENVIRONMENTS = {
         'usGovCloud': { 'endpoint': 'https://management.usgovcloudapi.net/', 'storage_suffix': 'core.usgovcloudapi.net'}
@@ -808,19 +808,18 @@ class Service(ServiceBase):
 
             Raises: vFXTServiceFailure
         '''
-        while operation.status() != status:
-            time.sleep(self.POLLTIME)
+        while operation.status() != status: # the call to status() can block
             if retries % 10 == 0:
                 log.debug("Waiting for {}: {}".format(msg, operation.status()))
-
             try:
-                if operation.done() and operation.result().error:
-                    raise vFXTServiceFailure("Failed waiting for {}: {}".format(msg, operation.result().error))
+                if operation.done() and operation.result().error: # an error, not a timeout
+                    raise vFXTServiceFailure("Operation error waiting for {}: {}".format(msg, operation.result().error))
             except AttributeError: pass
 
             retries -= 1
             if retries == 0:
-                raise vFXTServiceTimeout("Failed waiting for {}".format(msg))
+                raise vFXTServiceTimeout("Timed out waiting for {}".format(msg))
+            time.sleep(self.POLLTIME)
         log.debug("Finishing waiting for {}: {}".format(msg, operation.status()))
 
     def stop(self, instance, wait=WAIT_FOR_STOP):
@@ -2076,6 +2075,14 @@ class Service(ServiceBase):
         dest = '{}/32'.format(address)
         addr = Cidr(dest) # validate
         ipcfg_name = '{}-{}'.format(self.name(instance), addr.address.replace('.', '-')) # XXX this is a convention
+        new_ip = {
+            'properties': {
+                'subnet': {'id': subnet.id},
+                'privateIPAllocationMethod': 'static',
+                'privateIPAddress': address,
+            },
+            'name': ipcfg_name,
+        }
 
         # address must ber in subnet range since we use IP configurations
         if not Cidr(subnet.address_prefix).contains(address):
@@ -2089,28 +2096,40 @@ class Service(ServiceBase):
             self._remove_address_from_nic(existing_nic, address)
 
         nic = self._instance_primary_nic(instance)
-        nic_data = nic.serialize()
-        new_ip = {
-            'properties': {
-                'subnet': {'id': subnet.id},
-                'privateIPAllocationMethod': 'static',
-                'privateIPAddress': address,
-            },
-            'name': ipcfg_name,
-        }
-        nic_data['properties']['ipConfigurations'].append(new_ip)
         nic_rsg = nic.id.split('/')[4]
+
+        # last ditch check here if available
+        network = self._instance_network(instance)
+        network_rsg = network.id.split('/')[4]
+        retries = self.NIC_OPERATIONS_RETRY
+        while True:
+            try:
+                if conn.virtual_networks.check_ip_address_availability(network_rsg, network.name, address).available:
+                    break
+                log.debug("Waiting for {} to show up via check_ip_address_availability".format(address))
+            except Exception as e:
+                log.debug("Failed to check check_ip_address_availability for {}: {}".format(address, e))
+                if retries == 0:
+                    raise vFXTServiceFailure("Address {} is not associated with any network interface but is not available".format(address))
+            time.sleep(self.POLLTIME)
+            retries -= 1
 
         retries = self.NIC_OPERATIONS_RETRY
         while True:
+            nic_data = nic.serialize()
+            nic_data['properties']['ipConfigurations'].append(new_ip)
             try:
                 op = conn.network_interfaces.create_or_update(nic_rsg, nic.name, nic_data)
                 self._wait_for_operation(op, retries=self.WAIT_FOR_IPCONFIG, msg='{} to be assigned to {}'.format(address, nic.name))
                 break
-            except Exception as e:
-                log.debug(e)
+            # check for retry-able/fatal exceptions
+            except (msrestazure.azure_exceptions.CloudError, vFXTServiceFailure) as e:
+                nic = self._instance_primary_nic(instance) # refresh on error
+                log.debug("Failed to add address {} to {}: {}".format(address, self.name(instance), e))
                 if retries == 0:
-                    raise vFXTServiceFailure("Failed to add address {} to {}: {}".format(address, self.name(instance), e))
+                    raise vFXTServiceFailure("Exceeded retries when adding address {} to {}: {}".format(address, self.name(instance), e))
+            except (vFXTServiceTimeout, Exception) as e:
+                raise vFXTServiceFailure("Failed to add address {} to {}: {}".format(address, self.name(instance), e))
             time.sleep(self.POLLTIME)
             retries -= 1
 
@@ -2138,21 +2157,25 @@ class Service(ServiceBase):
 
     def _remove_address_from_nic(self, nic, address):
         conn = self.connection('network')
-        nic_data = nic.serialize()
-        ip_configurations = nic_data['properties']['ipConfigurations']
-        nic_data['properties']['ipConfigurations'] = [_ for _ in ip_configurations if _['properties']['privateIPAddress'] != address]
         nic_rsg = nic.id.split('/')[4]
 
         retries = self.NIC_OPERATIONS_RETRY
         while True:
+            nic_data = nic.serialize()
+            nic_data['properties']['ipConfigurations'] = [_ for _ in nic_data['properties']['ipConfigurations'] if _['properties']['privateIPAddress'] != address]
+
             try:
                 op = conn.network_interfaces.create_or_update(nic_rsg, nic.name, nic_data)
                 self._wait_for_operation(op, retries=self.WAIT_FOR_IPCONFIG, msg='{} to be removed from {}'.format(address, nic.name))
                 break
-            except Exception as e:
-                log.debug(e)
+            # check for retry-able/fatal exceptions
+            except (msrestazure.azure_exceptions.CloudError, vFXTServiceFailure) as e:
+                nic = conn.network_interfaces.get(nic_rsg, nic.name) # refresh on error
+                log.debug("Failed to remove address {} from {}: {}".format(address, nic.name, e))
                 if retries == 0:
-                    raise vFXTServiceFailure("Failed to remove address {} from {}: {}".format(address, nic.name, e))
+                    raise vFXTServiceFailure("Exceeded retries when removing address {} from {}: {}".format(address, nic.name, e))
+            except (vFXTServiceTimeout, Exception) as e:
+                raise vFXTServiceFailure("Failed to remove address {} from {}: {}".format(address, nic.name, e))
             time.sleep(self.POLLTIME)
             retries -= 1
 

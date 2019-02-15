@@ -431,13 +431,20 @@ class Service(ServiceBase):
             if connection_type == 'blobstorage':
                 storage_account = options.get('storage_account') or self.storage_account
                 resource_group = options.get('resource_group') or self.storage_resource_group
-                keys = self.connection('storage').storage_accounts.list_keys(resource_group, storage_account).keys
-                if not keys:
-                    raise vFXTConfigurationException("Unable to look up storage keys for {}".format(storage_account))
-                endpoint_suffix = None
+                auth = {}
+                if self.on_instance: # use MSI for auth
+                    auth['token_credential'] = msrestazure.azure_active_directory.MSIAuthentication(resource='https://storage.azure.com/')
+                else:
+                    try:
+                        keys = self.connection('storage').storage_accounts.list_keys(resource_group, storage_account).keys
+                        if not keys:
+                            raise Exception()
+                    except Exception:
+                        raise vFXTConfigurationException("Unable to look up storage keys for {}".format(storage_account))
+                    auth['account_key'] = keys[0].value # just use the first one, may be multiple
                 if self.storage_suffix:
-                    endpoint_suffix = self.storage_suffix
-                return azure.storage.blob.blockblobservice.BlockBlobService(storage_account, keys[0].value, endpoint_suffix=endpoint_suffix)
+                    auth['endpoint_suffix'] = self.storage_suffix
+                return azure.storage.blob.blockblobservice.BlockBlobService(storage_account, **auth)
 
             connection_settings = connection_types[connection_type]
             connection_cls = connection_settings['cls']

@@ -558,7 +558,7 @@ class Service(ServiceBase):
                         endpoint_data = json.loads(response.read())
                         for endpoint_name in endpoint_data['cloudEndpoint']:
                             endpoint = endpoint_data['cloudEndpoint'][endpoint_name]
-                            if instance_data['compute']['location'] in endpoint['locations']:
+                            if instance_data['compute']['location'].lower() in [_.lower() for _ in endpoint['locations']]: # force lowercase comparison
                                 instance_data['endpoint'] = endpoint
                                 instance_data['token_resource'] = 'https://{}'.format(endpoint['endpoint']) # Always assume URL format
                         break

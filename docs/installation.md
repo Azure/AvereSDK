@@ -3,7 +3,9 @@
 
 You can run vfxt.py from any UNIX-style console environment that has access to your cloud computing resources. The simplest option is to create a Linux instance within the cloud environment, and install vfxt.py in that virtual machine. Alternatively, you can use a console from a remote Linux or Mac OS environment, as long as it has IP connectivity to your cloud instances. 
 
-> Tip: For Microsoft Azure, a preconfigured Cluster Controller Node virtual machine image is available in the Azure Marketplace. Search for “Avere” to find the image. This image is preconfigured with required software to create and manage Microsoft Avere vFXT clusters.  
+> Tip: For Microsoft Azure, a preconfigured Cluster Controller Node virtual machine image is available in the Azure Marketplace. Search for “Avere” and then choose **Avere vFXT for Azure**. This image is preconfigured with required software to create and manage Avere vFXT clusters in Azure.  
+> 
+> The Azure Marketplace also has the **Avere vFXT for Azure template**, which is a wizard-based cluster creation tool. That process is described in [Avere vFXT for Azure documentation](https://docs.microsoft.com/en-us/azure/avere-vfxt/).
 
 ## Cloud Console Setup
 
@@ -23,13 +25,13 @@ Install the software described in [vfxt.py Software Requirements](#vfxtpy-softwa
 
 Before using vfxt.py, make sure that your Linux environment includes all of the necessary software packages. 
 
-> Note that recent distributions of Red Hat/CentOS do not include [required security packages](<http://library.averesystems.com/ops_guide/4_7/security_prereqs.html>). 
+> Note that recent distributions of Red Hat/CentOS do not include [required security packages](<https://azure.github.io/Avere/legacy/ops_guide/4_7/html/security_prereqs.html>). 
 
 ### 1. Check security prerequisites and Python version
 
 The vfxt.py script requires Python version 2.7.9 or later. 
 
-Also, the system used for creating and managing the vFXT cluster must meet the software security requirements for administering an Avere cluster, as described in the [appendix of the Avere OS Configuration Guide](<http://library.averesystems.com/ops_guide/4_7/security_prereqs.html>).
+Also, the system used for creating and managing the vFXT cluster must meet the software security requirements for administering an Avere cluster, as described in the [appendix of the Avere OS Configuration Guide](<https://azure.github.io/Avere/legacy/ops_guide/4_7/html/security_prereqs.html>).
 
 ### 2. Update system dependencies 
 
@@ -90,15 +92,15 @@ Before you can use vfxt.py to create or modify Avere clusters, you must have a c
 
 Regardless of whether you use vfxt.py on a virtual machine inside your cloud environment, or from a console outside the cloud, the following basic requirements apply: 
 
-* vfxt.py must be able to make contact with the cloud provider's API endpoints (a proxy service might be required). 
+* vfxt.py must be able to make contact with the cloud provider's API endpoints. A proxy service might be required. 
 * vfxt.py must be able to authenticate to the cloud environment. 
 * vfxt.py must have permission to create and destroy virtual machine instances in the cloud environment. 
 
 The details vary greatly by cloud provider. Read the detailed Avere vFXT Installation Guide for your cloud compute provider for complete information about setting up projects, network configuration, security and privileges, and other vital information before attempting to use vfxt.py. 
 
-* [vFXT Installation Guide for Amazon Web Services](<http://library.averesystems.com/#vfxt>)
-* [vFXT Installation Guide for Google Cloud Platform](<http://library.averesystems.com/#vfxt>)
-* vFXT Installation Guide for Microsoft Azure (coming soon, read current documentation [here](<https://github.com/Azure/Avere/blob/master/README.md>))
+* [vFXT Installation Guide for Amazon Web Services](<https://azure.github.io/Avere/#vfxt>)
+* [vFXT Installation Guide for Google Cloud Platform](<https://azure.github.io/Avere/#vfxt>)
+* vFXT Installation Guide for Microsoft Azure (vfxt.py version in development, read current documentation [here](<https://docs.microsoft.com/en-us/azure/avere-vfxt/avere-vfxt-deploy-plan>))
 
 These sections of this documentation also give provider-specific information about using vfxt.py on particular cloud systems. 
 * [Quick Reference - Using vfxt.py with Amazon Web Services](aws_reference.md)

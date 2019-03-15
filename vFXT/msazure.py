@@ -2104,9 +2104,11 @@ class Service(ServiceBase):
         retries = self.NIC_OPERATIONS_RETRY
         while True:
             try:
+                # TODO, when InUseByResource is included in the response inspect it for which nic the backend
+                # believes is still holding the ip configuration.
                 if conn.virtual_networks.check_ip_address_availability(network_rsg, network.name, address).available:
                     break
-                log.debug("Waiting for {} to show up via check_ip_address_availability".format(address))
+                log.warn("Waiting for {} to show up via check_ip_address_availability".format(address))
             except Exception as e:
                 log.debug("Failed to check check_ip_address_availability for {}: {}".format(address, e))
                 if retries == 0:

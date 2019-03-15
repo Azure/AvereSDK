@@ -12,7 +12,7 @@ with open("vFXT/version.py") as f:
 base_deps = ['future', 'requests']
 aws_deps = ['boto']
 gce_deps = ['oauth2client', 'google-api-python-client']
-azure_deps = ['requests-oauthlib', 'adal==1.2.0', 'applicationinsights==0.11.5', 'azure-cli-core==2.0.41', 'azure-cli-nspkg==3.0.2', 'azure-common==1.1.13', 'azure-mgmt-authorization==0.50.0', 'azure-mgmt-compute==4.3.1', 'azure-mgmt-msi==0.2.0', 'azure-mgmt-network==2.4.0', 'azure-mgmt-nspkg==2.0.0', 'azure-mgmt-resource==2.0.0', 'azure-mgmt-storage==2.0.0', 'azure-nspkg==2.0.0', 'azure-storage-blob==1.4.0', 'azure-storage-common==1.4.0', 'azure-storage-nspkg==3.0.0', 'entrypoints==0.2.3', 'knack==0.3.3', 'msrest==0.6.2', 'msrestazure==0.4.34']
+azure_deps = ['requests-oauthlib', 'adal==1.2.1', 'azure-cli-core==2.0.60', 'azure-cli-nspkg==3.0.3', 'azure-common==1.1.18', 'azure-mgmt-authorization==0.51.1', 'azure-mgmt-compute==4.4.0', 'azure-mgmt-msi==0.2.0', 'azure-mgmt-network==2.5.1', 'azure-mgmt-nspkg==3.0.2', 'azure-mgmt-resource==2.1.0', 'azure-mgmt-storage==3.1.1', 'azure-nspkg==3.0.2', 'azure-storage-blob==1.5.0', 'azure-storage-queue==1.4.0', 'azure-storage-common==1.4.0', 'azure-storage-nspkg==3.1.0', 'entrypoints==0.3', 'knack==0.5.3', 'msrest==0.6.4', 'msrestazure==0.6.0']
 
 setup(name='vFXT',
     version=version['__version__'],

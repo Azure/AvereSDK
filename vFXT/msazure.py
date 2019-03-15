@@ -2602,7 +2602,8 @@ class Service(ServiceBase):
 
                 body = {
                     'role_definition_id': role.id,
-                    'principal_id': principal
+                    'principal_id': principal,
+                    'principal_type': 'ServicePrincipal',
                 }
 
                 scope = self._resource_group_scope()

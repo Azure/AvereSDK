@@ -5,6 +5,7 @@
 import unittest
 import time
 import logging
+import random
 import uuid
 
 import vFXT.service
@@ -105,8 +106,8 @@ class Azure_test(tests.vFXTTestCase.Base):
 
             # use ip configurations for addresses within the subnet
             subnet = service._instance_subnet(instance.instance)
-            addrs, _ = service.get_available_addresses(count=30, addr_range=subnet.address_prefix)
-            addr = addrs[-10]
+            addrs, _ = service.get_available_addresses(count=10, addr_range=subnet.address_prefix)
+            addr = random.choice(addrs)
             instance.add_address(addr)
             instance.refresh()
             self.assertTrue(addr in instance.in_use_addresses())

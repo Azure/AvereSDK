@@ -6,6 +6,7 @@ import unittest
 import time
 import uuid
 import logging
+import random
 
 import boto.ec2
 import boto.s3
@@ -109,8 +110,8 @@ class AWS_test(tests.vFXTTestCase.Base):
             self.assertTrue(instance.status())
 
             # get a free address
-            addrs, _ = service.get_available_addresses(count=1, addr_range='172.16.16.0/24')
-            addr = addrs[0]
+            addrs, _ = service.get_available_addresses(count=10, addr_range='172.16.16.0/24')
+            addr = random.choice(addrs)
 
             instance.add_address(addr)
             instance.refresh()
@@ -261,8 +262,8 @@ class AWS_test(tests.vFXTTestCase.Base):
             i2 = ServiceInstance.create(service, self.aws['instance_type'], 'vfxttest-dup-route-2-{}'.format(uniq), self.aws['ami'])
 
             # get a free address
-            addrs, _ = service.get_available_addresses(count=1, addr_range='172.16.16.0/24')
-            addr = addrs[0]
+            addrs, _ = service.get_available_addresses(count=10, addr_range='172.16.16.0/24')
+            addr = random.choice(addrs)
 
             i1.add_address(addr)
             i2.add_address(addr)

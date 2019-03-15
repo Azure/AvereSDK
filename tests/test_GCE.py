@@ -8,6 +8,7 @@ import time
 import os
 import tempfile
 import logging
+import random
 
 import googleapiclient
 
@@ -175,8 +176,8 @@ class GCE_test(tests.vFXTTestCase.Base):
             self.assertTrue(instance.status())
 
             # get a free address
-            addrs, _ = service.get_available_addresses(count=1, addr_range='172.16.16.0/24')
-            addr = addrs[0]
+            addrs, _ = service.get_available_addresses(count=10, addr_range='172.16.16.0/24')
+            addr = random.choice(addrs)
 
             instance.add_address(addr)
             instance.refresh()
@@ -315,8 +316,8 @@ class GCE_test(tests.vFXTTestCase.Base):
             i1 = ServiceInstance.create(service, self.gce['instance_type'], 'vfxttest-dup-route-1-{}'.format(uniq), self.gce['image'], metadata={'purpose': 'test'}, tags=['avere-dev'])
             i2 = ServiceInstance.create(service, self.gce['instance_type'], 'vfxttest-dup-route-2-{}'.format(uniq), self.gce['image'], metadata={'purpose': 'test'}, tags=['avere-dev'])
 
-            addrs, mask = service.get_available_addresses(count=2, addr_range='172.16.16.0/24') #pylint: disable=unused-variable
-            addr = addrs[0]
+            addrs, mask = service.get_available_addresses(count=10, addr_range='172.16.16.0/24') #pylint: disable=unused-variable
+            addr = random.choice(addrs)
 
             i1.add_address(addr)
             i2.add_address(addr)
@@ -326,7 +327,7 @@ class GCE_test(tests.vFXTTestCase.Base):
             self.assertTrue(addr in i2.in_use_addresses())
 
             # add a different kind of route
-            addr = addrs[1]
+            addr = random.choice([_ for _ in addrs if _ != addr])
             route_body = {
                 'name': 'reservation-{}'.format(addr.replace('.', '-')),
                 'network': service._get_network()['selfLink'],
@@ -364,8 +365,8 @@ class GCE_test(tests.vFXTTestCase.Base):
             i1 = ServiceInstance.create(service, self.gce['instance_type'], 'vfxttest-ip-alias-1-{}'.format(uniq), self.gce['image'], metadata={'purpose':'test'}, tags=['avere-dev'])
             i2 = ServiceInstance.create(service, self.gce['instance_type'], 'vfxttest-ip-alias-2-{}'.format(uniq), self.gce['image'], metadata={'purpose':'test'}, tags=['avere-dev'])
 
-            addrs, _ = service.get_available_addresses(count=1, addr_range=ipalias_range)
-            addr = addrs[0]
+            addrs, _ = service.get_available_addresses(count=10, addr_range=ipalias_range)
+            addr = random.choice(addrs)
 
             # add to first instance
             i1.add_address(addr)

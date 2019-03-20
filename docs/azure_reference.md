@@ -81,8 +81,7 @@ az account set --subscription id
 Then authenticate using the credentials from that login:
 `vfxt.py --cloud-type azure --from-environment`
 
-> [!TIP]
-> You can use ``az login --identity`` with any VM that has a managed identity.  
+> **TIP**: You can use ``az login --identity`` with any VM that has a managed identity.  
 
 ### Service Principal Authentication Option 
 

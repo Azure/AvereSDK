@@ -40,16 +40,14 @@ Use the generic option `--on-instance` for local console commands.
 | `--network-security-group` *group_name* |  Name of the network security group (if needed) |
 | `--root-disk-caching` {`ReadOnly`,`ReadWrite`} | Azure root disk caching mode (defaults to `ReadOnly`) |
 | `--storage-account` *account_ID* | Storage account for Blob-backed core filer and boot diagnostics |
-| **XXX review below XXX**  | | 
 | `--azure-government` | Use the default base URL and storage suffix for the Azure Government Cloud environment  |
 | `--azure-endpoint-base-url` | Specify the base URL of the API endpoint for a non-public Azure environment | 
 | `--azure-storage-suffix` | Specify the storage suffice for a non-public Azure environment | 
-| `--avere-container-not-empty` | Use the specified storage endpoint, which has existing Avere-formatted data **XXX is this right? XXX**  | 
-| `--disable-azure-container-encryption` | Don't allow encryption for objects written to the storage endpoint | 
-| `--disable-azure-container-compression` | Don't allow compression for objects written to the storage endpoint |
-| `--disable-azure-container-https` | Don't use HTTPS for communication with the storage endpoint |
-| `--disable-azure-container-https-verify` | Don't verify encryption certificates for communication with the storage endpoint |
-
+| `--azurecontainer-not-empty` | Use the specified storage endpoint, which has existing Avere-formatted data | 
+| `--disable-azurecontainer-encryption` | Don't allow encryption for objects written to the storage endpoint | 
+| `--disable-azurecontainer-compression` | Don't allow compression for objects written to the storage endpoint |
+| `--disable-azurecontainer-https` | Don't use HTTPS for communication with the storage endpoint |
+| `--disable-azurecontainer-https-verify` | Don't verify encryption certificates for communication with the storage endpoint |
 
 ## Additional Azure Information
 

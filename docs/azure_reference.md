@@ -71,11 +71,7 @@ Now authenticate:
 
 ### Remote Console 
 
-For Azure-hosted virtual machines, you can use **az login --identity** to obtain a token that allows you to use the `from-environment` option to log in. 
-
-**[ xxx does this /\ actually belong here? How do you make it work exactly? xxx ]**
-
-For other remote systems, after connecting to the Azure environment with an SSL tunnel or by using a VPN or ExpressRoute, run the configuration step `az login` before using vfxt.py.
+To use a remote system, after connecting to the Azure environment with an SSL tunnel or by using a VPN or ExpressRoute, run the configuration step `az login` before using vfxt.py.
 
 ```
 az login
@@ -84,6 +80,9 @@ az account set --subscription id
 
 Then authenticate using the credentials from that login:
 `vfxt.py --cloud-type azure --from-environment`
+
+> [!TIP]
+> You can use ``az login --identity`` with any VM that has a managed identity.  
 
 ### Service Principal Authentication Option 
 
@@ -149,8 +148,7 @@ The Avere vFXT system uses role-based access control to give vFXT cluster nodes 
 
 Create a custom role for the cluster nodes and scope it to the subscription that you will use for the cluster.
 
-Copy the lines in this example, substituting your subscription ID in the `AssignableScopes` statement. Save the role in a .json file (for example, averecluster.json). 
-<!-- xxx remove routes lines at GA? xxx  -->
+Copy the lines in this example, substituting your subscription ID in the `AssignableScopes` statement. Save the role in a .json file (for example, averecluster.json).
 
 ```
 {
@@ -166,8 +164,6 @@ Copy the lines in this example, substituting your subscription ID in the `Assign
         "Microsoft.Network/virtualNetworks/subnets/read",
         "Microsoft.Network/virtualNetworks/subnets/join/action",
         "Microsoft.Network/networkSecurityGroups/join/action",
-        "Microsoft.Network/routeTables/read",
-        "Microsoft.Network/routeTables/routes/*",
         "Microsoft.Resources/subscriptions/resourceGroups/read"
         "Microsoft.Storage/storageAccounts/blobServices/containers/delete",
         "Microsoft.Storage/storageAccounts/blobServices/containers/read",

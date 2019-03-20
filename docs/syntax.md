@@ -57,7 +57,7 @@ These options make up the basic actions for cluster creation and maintenance.
 | `--add-nodes` | Add nodes to a cluster. Read [Add Nodes to a Cluster](using_vxt_py.md#add-nodes-to-a-cluster) for details. |
 | `--upgrade` | Updates the Avere OS software for the cluster. Used with `--upgrade-url` and `--upgrade-non-ha` (described below). Read [Update Software](using_vfxt_py.md#update-software) for more information. |
 | `--telemetry` | Starts a support data upload. You must accept privacy terms from the Avere Control Panel in order to use this option. Read [Using the Avere Control Panel Support Tab](<https://azure.github.io/Avere/legacy/ops_guide/4_7/html/support_overview.html>) for details. |
-| `--telemetry-mode` *mode* | **XXX ??? XXX** |
+| `--telemetry-mode` *mode* | Sets the support data gathering parameters. The mode options are documented in the ``support.listNormalModes`` method in the [Avere OS XML-RPC API Guide](<https://azure.github.io/Avere/#api>). |
 
 ### Cluster Action Modifiers
 
@@ -126,10 +126,9 @@ These options apply to any supported cloud provider.
 | `--nfs-mount` host:/path | NFS mountpoint to use as the core filer (in host:/path format). If you use this option when creating a cluster, it will use the specified resource instead of creating a cloud core filer. |
 | `--nfs-type` {`NetappNonClustered`\| `NetappClustered`\|`EmcIsilon`} | Specify the type of appliance used as the core filer in the `--nfs-mount` argument. This type is important for correct SMB operation and cannot be easily detected. |
 | `--subdir` *path_under_mountpoint* | Use this option with `--nfs-mount` to mount a subdirectory on the NFS storage system. |
-| **XXX review below XXX** |  |
 | `--core-filer-key-file` *filepath* | Specify the path to store the encryption key for a newly created core filer. This parameter is required when cloud core filer encryption is enabled. |
-| `--core-filer-encryption-password` *password* | Password to use for core filer encryption. If this parameter is not set, the cluster administrator password is used. | 
-| `--bucket-not-empty` | Use the specified storage endpoint, which has existing Avere-formatted data **XXX is this right? XXX** |
+| `--core-filer-encryption-password` *password* | Password to use for core filer encryption. If this parameter is not set, the cluster administrator password is used. |
+| `--bucket-not-empty` | Use the specified storage endpoint, which has existing Avere-formatted data |
 | `--disable-bucket-encryption` | Don't allow encryption for objects written to the storage endpoint | 
 | `--disable-bucket-compression` | Don't allow compression for objects written to the storage endpoint |
 | `--disable-bucket-https` | Don't use HTTPS for communication with the storage endpoint |

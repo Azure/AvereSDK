@@ -2,7 +2,7 @@
 
 This section describes the syntax for using vfxt.py. It explains frequently used options when performing basic operations like creating or modifying Avere vFXT clusters. 
 
-Additional options are explained in the [vfxt.py Command Syntax and Options](syntax.md) document and in the platform-specific documents for [Azure](azure_options.md), [AWS](aws_options.md), and [GCE](gce_options.md). 
+Additional options are explained in the [vfxt.py Command Syntax and Options](syntax.md) document and in the platform-specific sections for [Azure](azure_options.md), [AWS](aws_options.md), and [GCE](gce_options.md). 
 
 ## Basic Syntax 
 
@@ -76,7 +76,7 @@ Use these options with the create command to set up the basic parameters for you
 
 * `--cluster-range` *IP_range* - An IP address range, in CIDR notation, that the cluster will use for client-facing IP addresses and for cluster management.  
 
-* `--vserver` *vserver_name* - The name to use for the cluster vserver. If not specified, the default name is "vserver".  The vfxt.py create command gives one vserver per cluster. If you want to add vservers, use the Avere Control Panel or the XML-RPC API after creating the cluster. (Read [Creating and Working with VServers](http://library.averesystems.com/ops_guide/4_7/settings_overview.html#creating-and-working-with-vservers) in the cluster Configuration Guide to learn more about vservers, junctions, and the global namespace.)
+* `--vserver` *vserver_name* - The name to use for the cluster vserver. If not specified, the default name is "vserver".  The vfxt.py create command gives one vserver per cluster. If you want to add vservers, use the Avere Control Panel or the XML-RPC API after creating the cluster. (Read [Creating and Working with VServers](https://azure.github.io/Avere/legacy/ops_guide/4_7/html/settings_overview.html#creating-and-working-with-vservers) in the cluster Configuration Guide to learn more about vservers, junctions, and the global namespace.)
 
 * `--core-filer` *core_filer_name* - The name to use for creating a new cloud core filer as part of the cluster creation. If not specified, the default name is the name of the cloud service type (aws, azure, or gce), or nfs if you specified an NFS core filer. 
 
@@ -116,7 +116,7 @@ vfxt.py	--cloud-type type           \
 
 **NFS Core Filer**
 
-vfxt.py can configure an NFS core filer at cluster creation time by providing the NFS mount point in the host:/path format. Note that if you specify an NFS core filer, vfxt.py does not create a cloud core filer.  If your storage appliance type is one of the values in `--nfs-type` you can use that option here to set it. (If you don’t set the `--nfs-type` option it defaults to other.)  
+vfxt.py can configure an NFS core filer at cluster creation time if you provide the NFS mount point in the host:/path format. Note that if you specify an NFS core filer, vfxt.py does not create a cloud core filer.  If your storage appliance type is one of the values in `--nfs-type` you can use that option here to set it. (If you don’t set the `--nfs-type` option it defaults to "other".)  
 
 ```bash
 vfxt.py	--cloud-type type         \
@@ -186,7 +186,7 @@ New nodes will be identical to the existing cluster nodes unless you include opt
 
 Read [Initial Configuration for the New Cluster](#initial-configuration-for-the-new-cluster) for details about these options. 
 
-To *remove* nodes from the cluster, use the Avere Control Panel. Read the [Cluster > FXT Nodes](http://library.averesystems.com/ops_guide/4_7/gui_fxt_nodes.html) settings page documentation in the Avere OS Configuration Guide.
+To *remove* nodes from the cluster, use the Avere Control Panel. Read the [Cluster > FXT Nodes](https://azure.github.io/Avere/legacy/ops_guide/4_7/html/gui_fxt_nodes.html) settings page documentation in the Avere OS Configuration Guide.
 
 ### Destroy a Cluster
 

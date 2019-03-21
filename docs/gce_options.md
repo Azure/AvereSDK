@@ -23,7 +23,6 @@ Use the generic option `--on-instance` for local console commands.
 
 | <img width=800/> | |
 | ---------- | ------------------ |
-| `--data-disk-nvme` | Use the NVME interface instead of SCSI for local SSD drives. This option applies only to the GCE disk type `local-ssd`. |
 | `--gce-tag` *GCE_instance_tag* | GCE instance tag |
 | `--instance-addresses` *inst1_addr* *inst2_addr* *inst3_addr* [... *instN_addr*] | Instance addresses to assign to the cluster nodes. Separate addresses with spaces.   |
 | `--local-ssd`  | Use local-ssd disks for cache     |

@@ -47,7 +47,7 @@ These arguments affect how vfxt.py behaves.
 
 These options make up the basic actions for cluster creation and maintenance.
 
-| <img width=200 /> | |
+| <img width=450 /> | |
 | ---------- | ------------------ |
 | `--check` | Test API authentication credentials and check the account quota. Issues warnings if any required resources are at more than 80% utilization. |
 | `--create`  | Create a new cluster. Read [Create a Cluster](using_vfxt_py.md#create-a-cluster) for details. |
@@ -56,7 +56,8 @@ These options make up the basic actions for cluster creation and maintenance.
 | `--start`  | Reactivate an offline cluster. Read [Start a Cluster](using_vfxt_py.md#start-a-cluster) for details. |
 | `--add-nodes` | Add nodes to a cluster. Read [Add Nodes to a Cluster](using_vxt_py.md#add-nodes-to-a-cluster) for details. |
 | `--upgrade` | Updates the Avere OS software for the cluster. Used with `--upgrade-url` and `--upgrade-non-ha` (described below). Read [Update Software](using_vfxt_py.md#update-software) for more information. |
-| `--telemetry` | Starts a support data upload. You must accept privacy terms from the Avere Control Panel in order to use this option. Read [Using the Avere Control Panel Support Tab](<http://library.averesystems.com/ops_guide/4_7/support_overview.html>) for details. |
+| `--telemetry` | Starts a support data upload. You must accept privacy terms from the Avere Control Panel in order to use this option. Read [Using the Avere Control Panel Support Tab](<https://azure.github.io/Avere/legacy/ops_guide/4_7/html/support_overview.html>) for details. |
+| `--telemetry-mode` *mode* | Sets the support data gathering parameters. The mode options are documented in the ``support.listNormalModes`` method in the [Avere OS XML-RPC API Guide](<https://azure.github.io/Avere/#api>). |
 
 ### Cluster Action Modifiers
 
@@ -111,6 +112,7 @@ These options apply to any supported cloud provider.
 | `--data-disk-type` *volume_type* | Type of storage volumes to create for the vFXT cluster cache. Values depend on the cloud provider; AWS values are `gp2` (default), `io1`, or `standard`. GCE values are `pd-ssd` (default), or `local-ssd`. Azure supports only one disk type (premium LRS) and does not use this option. |
 |`--instance-type` *instance_type* | Type of instance to use when creating nodes. This is required for creating a cluster or when adding nodes to a cluster. Read [Create a Cluster](using_vfxt_py.md#create-a-cluster) for details. |
 | `--image-id` *image_ID_or_URI* | Optionally, use this parameter to specify an image instead of using the default image when creating the cluster. Consult support for guidance before using this advanced option. <br/>The image ID or URL should match what your cloud provider uses. <br/> • AWS image ID example: ami-ff6e9c9f <br/> • GCE image URL example: https<!-- -->://ww<!-- -->w.googleapis.<!-- -->com/compute/v1/projects/tribal-parsec-845/global/images/avere-vfxt-4625 <br/> • Azure URN example: microsoft-avere:vfxt-preview:avere-vfxt-node:latest |
+| `--skip-load-defaults` | Do not look for the defaults.json file in standard online locations. You must specify the installation version manually with the `--image-id` parameter | 
 | `--join-instance-address` | Join nodes using the instance address rather than the management address |
 | `--join-wait wait_time` | Set a custom time (in seconds) to wait for nodes to join the cluster. This is a troubleshooting option that should only be used when recommended by support staff. |
 
@@ -124,6 +126,14 @@ These options apply to any supported cloud provider.
 | `--nfs-mount` host:/path | NFS mountpoint to use as the core filer (in host:/path format). If you use this option when creating a cluster, it will use the specified resource instead of creating a cloud core filer. |
 | `--nfs-type` {`NetappNonClustered`\| `NetappClustered`\|`EmcIsilon`} | Specify the type of appliance used as the core filer in the `--nfs-mount` argument. This type is important for correct SMB operation and cannot be easily detected. |
 | `--subdir` *path_under_mountpoint* | Use this option with `--nfs-mount` to mount a subdirectory on the NFS storage system. |
+| `--core-filer-key-file` *filepath* | Specify the path to store the encryption key for a newly created core filer. This parameter is required when cloud core filer encryption is enabled. |
+| `--core-filer-encryption-password` *password* | Password to use for core filer encryption. If this parameter is not set, the cluster administrator password is used. |
+| `--bucket-not-empty` | Use the specified storage endpoint, which has existing Avere-formatted data |
+| `--disable-bucket-encryption` | Don't allow encryption for objects written to the storage endpoint | 
+| `--disable-bucket-compression` | Don't allow compression for objects written to the storage endpoint |
+| `--disable-bucket-https` | Don't use HTTPS for communication with the storage endpoint |
+| `--disable-bucket-https-verify` | Don't verify encryption certificates for communication with the storage endpoint |
+
 
 ## Provider-specific Options
 

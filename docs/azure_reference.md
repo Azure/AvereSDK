@@ -2,7 +2,7 @@
 
 This section gives an overview of how to configure a vfxt.py installation to be able to create Avere clusters in a Microsoft Azure environment.
 
-> Note: Read the vFXT Installation Guide for Microsoft Azure (coming soon) for complete information about the configuration required to create vFXT clusters in the Amazon cloud computing environment. 
+> Note: A wizard for creating an Avere vFXT for Azure clusters is available in the Azure Marketplace. Read the [Avere vFXT for Azure documentation](https://docs.microsoft.com/en-us/azure/avere-vfxt/) for more complete information about the template-based deploy and additional preconfiguration required. The deployment wizard  automates most of these steps. 
 
 Configuring the Azure environment to allow vfxt.py access includes the following steps: 
 * Create a virtual network and subnet for the cluster
@@ -28,7 +28,7 @@ On the system where you will run vfxt.py, install the [Microsoft Azure SDK for P
 
 `pip install –-user azure`
 
-**Note:** The Azure Marketplace includes preconfigured images that you can use to quickly create an Avere vFXT cluster for Azure. Details are included in the vFXT Installation Guide for Microsoft Azure (coming soon). 
+**Note:** The Azure Marketplace includes preconfigured images that you can use to quickly create an Avere vFXT cluster for Azure, or to create a cluster controller for a customized deploy or for cluster maintenance. 
 
 ## Azure Authentication Options
 
@@ -81,6 +81,8 @@ az account set --subscription id
 Then authenticate using the credentials from that login:
 `vfxt.py --cloud-type azure --from-environment`
 
+> **TIP**: You can use ``az login --identity`` with any VM that has a managed identity.  
+
 ### Service Principal Authentication Option 
 
 A more complicated authentication strategy exists that does not require managed service identities or az login. This option can be used either from within Azure or remotely. 
@@ -129,7 +131,7 @@ This table shows example values that can be used when creating an Avere vFXT clu
 
 |   | vfxt.py script option | Default value | Other value options |
 | ---------- | ---------- | ------------------ | ---------- | 
-| VM instance type | `--instance-type` | `Standard_d16s_v3` | `Standard_E32s_v3` |
+| VM instance type | `--instance-type` | `Standard_E32s_v3` |  |
 | Node cache size | `--node-cache-size` | `1024` | `4096`, `8192` |
 | Number of nodes | `--nodes` | `3` | `6` |
 | **Storage options:** |||| 
@@ -139,14 +141,13 @@ This table shows example values that can be used when creating an Avere vFXT clu
 
 ## Creating the Avere Runtime Role in Azure Active Directory
 
-Before creating a cluster you need to set up a role to assign privileges to the cluster nodes. Refer to the [vFXT Installation Guide for Microsoft Azure](http://aka.ms/averedocs) <!-- <http://library.averesystems.com/#vfxt> --> for more complete information. 
+Before creating a cluster you need to set up a role to assign privileges to the cluster nodes. Refer to the [vFXT Installation Guide for Microsoft Azure](http://aka.ms/averedocs) for more complete information. 
 
 The Avere vFXT system uses role-based access control to give vFXT cluster nodes the privileges they need to operate. For example, each cluster node needs the ability to access other vFXT nodes, to manage network infrastructure, and to modify storage resources.  
 
 Create a custom role for the cluster nodes and scope it to the subscription that you will use for the cluster.
 
-Copy the lines in this example, substituting your subscription ID in the `AssignableScopes` statement. Save the role in a .json file (for example, averecluster.json). 
-<!-- remove routes lines at GA -->
+Copy the lines in this example, substituting your subscription ID in the `AssignableScopes` statement. Save the role in a .json file (for example, averecluster.json).
 
 ```
 {
@@ -162,8 +163,6 @@ Copy the lines in this example, substituting your subscription ID in the `Assign
         "Microsoft.Network/virtualNetworks/subnets/read",
         "Microsoft.Network/virtualNetworks/subnets/join/action",
         "Microsoft.Network/networkSecurityGroups/join/action",
-        "Microsoft.Network/routeTables/read",
-        "Microsoft.Network/routeTables/routes/*",
         "Microsoft.Resources/subscriptions/resourceGroups/read"
         "Microsoft.Storage/storageAccounts/blobServices/containers/delete",
         "Microsoft.Storage/storageAccounts/blobServices/containers/read",

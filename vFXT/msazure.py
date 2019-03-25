@@ -2099,20 +2099,26 @@ class Service(ServiceBase):
         nic_rsg = nic.id.split('/')[4]
 
         # last ditch check here if available
-        network = self._instance_network(instance)
-        network_rsg = network.id.split('/')[4]
+        network_rsg = nic.ip_configurations[0].subnet.id.split('/')[4]
+        network_name = nic.ip_configurations[0].subnet.id.split('/')[8]
         retries = self.NIC_OPERATIONS_RETRY
         while True:
             try:
                 # TODO, when InUseByResource is included in the response inspect it for which nic the backend
                 # believes is still holding the ip configuration.
-                if conn.virtual_networks.check_ip_address_availability(network_rsg, network.name, address).available:
+                check = conn.virtual_networks.check_ip_address_availability(network_rsg, network_name, address)
+                if check.available:
+                    break
+                if check.available is None: # call failed b/c no virtualNetwork/read permissions
                     break
                 log.warn("Waiting for {} to show up via check_ip_address_availability".format(address))
+            # permission denied, we can't use this check
+            except msrestazure.azure_exceptions.CloudError:
+                break
             except Exception as e:
                 log.debug("Failed to check check_ip_address_availability for {}: {}".format(address, e))
-                if retries == 0:
-                    raise vFXTServiceFailure("Address {} is not associated with any network interface but is not available".format(address))
+            if retries == 0:
+                raise vFXTServiceFailure("Address {} is not associated with any network interface but is not available".format(address))
             time.sleep(self.POLLTIME)
             retries -= 1
 

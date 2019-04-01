@@ -98,6 +98,7 @@ import azure.mgmt.storage
 import azure.mgmt.resource
 import azure.mgmt.msi
 import msrestazure.azure_active_directory
+import msrestazure.azure_cloud
 
 # silence requests
 import requests
@@ -221,6 +222,7 @@ class Service(ServiceBase):
     DEFAULT_CACHING_OPTION = 'None'
     VALID_CACHING_OPTIONS = ['ReadOnly', 'ReadWrite', 'None']
     METADATA_FETCH_RETRIES = 5
+    ENDPOINT_FETCH_RETRIES = 2
     TOKEN_RESOURCE = 'https://management.azure.com/'
     AUTO_LICENSE = True
     WAIT_FOR_NIC = 180
@@ -230,9 +232,16 @@ class Service(ServiceBase):
     ALLOCATE_INSTANCE_ADDRESSES = True
     DEFAULT_MARKETPLACE_URN = 'microsoft-avere:vfxt:avere-vfxt-node:latest'
     NIC_OPERATIONS_RETRY = 60
-    # TODO keep an eye out for azure lib constants to reference for these
     AZURE_ENVIRONMENTS = {
-        'usGovCloud': { 'endpoint': 'https://management.usgovcloudapi.net/', 'storage_suffix': 'core.usgovcloudapi.net'}
+        'AzureUSGovernment': { 'endpoint': msrestazure.azure_cloud.AZURE_US_GOV_CLOUD.endpoints.resource_manager, 'storage_suffix': msrestazure.azure_cloud.AZURE_US_GOV_CLOUD.suffixes.storage_endpoint},
+        'AzureCloud':        { 'endpoint': msrestazure.azure_cloud.AZURE_PUBLIC_CLOUD.endpoints.resource_manager, 'storage_suffix': msrestazure.azure_cloud.AZURE_PUBLIC_CLOUD.suffixes.storage_endpoint},
+        'AzureChinaCloud':   { 'endpoint': msrestazure.azure_cloud.AZURE_CHINA_CLOUD.endpoints.resource_manager, 'storage_suffix': msrestazure.azure_cloud.AZURE_CHINA_CLOUD.suffixes.storage_endpoint},
+        'AzureGermanCloud':  { 'endpoint': msrestazure.azure_cloud.AZURE_GERMAN_CLOUD.endpoints.resource_manager, 'storage_suffix': msrestazure.azure_cloud.AZURE_GERMAN_CLOUD.suffixes.storage_endpoint},
+        # compat map
+        'AZUREUSGOVERNMENTCLOUD': { 'endpoint': msrestazure.azure_cloud.AZURE_US_GOV_CLOUD.endpoints.resource_manager, 'storage_suffix': msrestazure.azure_cloud.AZURE_US_GOV_CLOUD.suffixes.storage_endpoint},
+        'AZUREPUBLICCLOUD':       { 'endpoint': msrestazure.azure_cloud.AZURE_PUBLIC_CLOUD.endpoints.resource_manager, 'storage_suffix': msrestazure.azure_cloud.AZURE_PUBLIC_CLOUD.suffixes.storage_endpoint},
+        'AZURECHINACLOUD':        { 'endpoint': msrestazure.azure_cloud.AZURE_CHINA_CLOUD.endpoints.resource_manager, 'storage_suffix': msrestazure.azure_cloud.AZURE_CHINA_CLOUD.suffixes.storage_endpoint},
+        'AZUREGERMANCLOUD':       { 'endpoint': msrestazure.azure_cloud.AZURE_GERMAN_CLOUD.endpoints.resource_manager, 'storage_suffix': msrestazure.azure_cloud.AZURE_GERMAN_CLOUD.suffixes.storage_endpoint},
     }
     REGION_FIXUP = {
         "centralindia": "indiacentral",
@@ -555,30 +564,32 @@ class Service(ServiceBase):
             instance_location = instance_data['compute']['location'].lower() # region may be mixed case
             instance_location = cls.REGION_FIXUP.get(instance_location) or instance_location # region may be transposed
 
-            # endpoint metadata
-            attempts = 0
-            endpoint_conn = httplib.HTTPSConnection(cls.AZURE_ENDPOINT_HOST, source_address=source_address, timeout=CONNECTION_TIMEOUT)
-            while True:
-                try:
-                    endpoint_conn.request('GET', '/metadata/endpoints?api-version=2017-12-01')
-                    response = endpoint_conn.getresponse()
-                    if response.status == 200:
-                        endpoint_data = json.loads(response.read())
-                        for endpoint_name in endpoint_data['cloudEndpoint']:
-                            endpoint = endpoint_data['cloudEndpoint'][endpoint_name]
-                            if instance_location in [_.lower() for _ in endpoint['locations']]: # force lowercase comparison
-                                instance_data['endpoint'] = endpoint
-                                instance_data['token_resource'] = 'https://{}'.format(endpoint['endpoint']) # Always assume URL format
-                        break
-                    raise vFXTServiceFailure("Failed to fetch endpoint data: {}".format(response.reason))
-                except Exception as e:
-                    log.debug(e)
-                    attempts += 1
-                    if attempts == cls.METADATA_FETCH_RETRIES:
-                        raise
-                    time.sleep(backoff(attempts))
-                    # reconnect on failure
-                    endpoint_conn = httplib.HTTPSConnection(cls.AZURE_ENDPOINT_HOST, source_address=source_address, timeout=CONNECTION_TIMEOUT)
+            if instance_data['compute']['azEnvironment'] in cls.AZURE_ENVIRONMENTS:
+                instance_data['token_resource'] = cls.AZURE_ENVIRONMENTS.get(instance_data['compute']['azEnvironment']).get('endpoint')
+            else:
+                # must lookup endpoint metadata based on the VM location
+                attempts = 0
+                endpoint_conn = httplib.HTTPSConnection(cls.AZURE_ENDPOINT_HOST, source_address=source_address, timeout=CONNECTION_TIMEOUT)
+                while True:
+                    try:
+                        endpoint_conn.request('GET', '/metadata/endpoints?api-version=2017-12-01')
+                        response = endpoint_conn.getresponse()
+                        if response.status == 200:
+                            endpoint_data = json.loads(response.read())
+                            for endpoint_name in endpoint_data['cloudEndpoint']:
+                                endpoint = endpoint_data['cloudEndpoint'][endpoint_name]
+                                if instance_location in [_.lower() for _ in endpoint['locations']]: # force lowercase comparison
+                                    instance_data['token_resource'] = 'https://{}'.format(endpoint['endpoint']) # Always assume URL format
+                            break
+                        raise vFXTServiceFailure("Failed to fetch endpoint data: {}".format(response.reason))
+                    except Exception as e:
+                        log.debug(e)
+                        attempts += 1
+                        if attempts == cls.ENDPOINT_FETCH_RETRIES:
+                            raise
+                        time.sleep(backoff(attempts))
+                        # reconnect on failure
+                        endpoint_conn = httplib.HTTPSConnection(cls.AZURE_ENDPOINT_HOST, source_address=source_address, timeout=CONNECTION_TIMEOUT)
 
             # token metadata
             attempts = 0
@@ -664,7 +675,7 @@ class Service(ServiceBase):
                               subnet=subnet, network=network,
                               access_token=instance_data.get('access_token'),
                               on_instance=True, skip_load_defaults=skip_load_defaults,
-                              endpoint_base_url=options.get('endpoint_base_url') or instance_data['token_resource'],
+                              endpoint_base_url=options.get('endpoint_base_url') or instance_data.get('token_resource') or None,
                               storage_suffix=options.get('storage_suffix'),
                               storage_account=options.get('storage_account'),
                               private_range=options.get('private_range'),

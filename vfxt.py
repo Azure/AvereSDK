@@ -275,7 +275,7 @@ def main():
     azure_opts.add_argument("--root-disk-caching", help="Azure root disk caching mode (defaults to None)", choices=['ReadOnly', 'ReadWrite'], default=None)
     azure_opts.add_argument("--data-disk-caching", help="Azure data disk caching mode (defaults to None)", choices=['ReadOnly', 'ReadWrite'], default=None)
     azure_opts.add_argument("--azure-instance-addresses", nargs='+', help="Instance addresses to use rather than dynamically assigned", type=_validate_ip, default=None)
-    azure_opts.add_argument("--azure-government", help="Set the defaults for Azure Government (endpoint base URL and storage suffix)", action="store_true")
+    azure_opts.add_argument("--azure-environment", help="Set the defaults (endpoint base URL and storage suffix) for the Azure environment", choices=['public', 'usgovernment', 'china', 'germany'], default="public")
     azure_opts.add_argument("--azure-endpoint-base-url", help="The base URL of the API endpoint (if non-public Azure)", type=_validate_url, default=None)
     azure_opts.add_argument("--azure-storage-suffix", help="The storage service suffix (if non-public Azure)", default=None)
 
@@ -542,9 +542,15 @@ def main():
             logging.getLogger(Service.__module__).setLevel(logging.INFO)
         logging.getLogger(Service.__module__).addHandler(log_file)
 
-        if args.azure_government:
-            args.azure_endpoint_base_url = Service.AZURE_ENVIRONMENTS['usGovCloud']['endpoint']
-            args.azure_storage_suffix = Service.AZURE_ENVIRONMENTS['usGovCloud']['storage_suffix']
+        if args.azure_environment == 'usgovernment':
+            args.azure_endpoint_base_url = Service.AZURE_ENVIRONMENTS['AzureUSGovernment']['endpoint']
+            args.azure_storage_suffix = Service.AZURE_ENVIRONMENTS['AzureUSGovernment']['storage_suffix']
+        if args.azure_environment == 'china':
+            args.azure_endpoint_base_url = Service.AZURE_ENVIRONMENTS['AzureChinaCloud']['endpoint']
+            args.azure_storage_suffix = Service.AZURE_ENVIRONMENTS['AzureChinaCloud']['storage_suffix']
+        if args.azure_environment == 'germany':
+            args.azure_endpoint_base_url = Service.AZURE_ENVIRONMENTS['AzureGermanCloud']['endpoint']
+            args.azure_storage_suffix = Service.AZURE_ENVIRONMENTS['AzureGermanCloud']['storage_suffix']
 
         if args.on_instance:
             service = Service.on_instance_init(proxy_uri=args.proxy_uri,

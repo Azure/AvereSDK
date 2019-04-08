@@ -2039,10 +2039,12 @@ class Service(ServiceBase):
             Raises: vFXTConfigurationException
         '''
         addr_range = addr_range or self.private_range
-        netmask    = '255.255.255.255'
+        netmask = '255.255.255.255'
+
+        conn = self.connection('network')
+        network = self._get_network()
 
         if not addr_range:
-            network = self._get_network()
             for subnet in network.subnets:
                 if subnet.name == self.subnets[0]:
                     addr_range = subnet.address_prefix
@@ -2053,17 +2055,40 @@ class Service(ServiceBase):
         else:
             log.debug("Using specified address range {}".format(addr_range))
 
-        used = self.in_use_addresses(addr_range)
+        used = set(self.in_use_addresses(addr_range))
         if in_use:
-            used.extend(in_use)
-            used = list(set(used))
+            used.update(in_use)
+
+        cidr = Cidr(addr_range)
+        generator = cidr.addresses()
+        # skip first reserved
+        for _ in range(0, 4):
+            used.add(next(generator))
 
         try:
-            addr_cidr = Cidr(addr_range)
-            avail     = addr_cidr.available(count, contiguous, used)
+            avail = []
+            for address in generator:
+                if address in used:
+                    continue
+                check = conn.virtual_networks.check_ip_address_availability(self.network_resource_group, network.name, address)
+                if not check.available:
+                    # mark a range as used from this address to the address *before* the next available address as reported
+                    used.update(Cidr.expand_address_range(address, Cidr.to_address(Cidr.from_address(check.available_ip_addresses[0])-1)))
+                if avail and contiguous:
+                    if Cidr.from_address(avail[-1]) != Cidr.from_address(address)-1:
+                        # if we wanted a contiguous list start over if the last found isn't just before the current address
+                        avail = []
+                avail.append(address)
+                if len(avail) == count:
+                    break
+            else:
+                raise vFXTConfigurationException("Check that the subnet or specified address range has enough free addresses")
+
             if not netmask:
-                netmask   = addr_cidr.netmask
+                netmask = cidr.netmask
             return (avail, netmask)
+        except vFXTConfigurationException:
+            raise
         except Exception as e:
             raise vFXTConfigurationException("Check that the subnet or specified address range has enough free addresses: {}".format(e))
 

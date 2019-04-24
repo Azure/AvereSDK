@@ -33,7 +33,7 @@ class ShelveErrors(dict):
     def __init__(self, s=None): # optional init with str in k:v;k:v format
         if s:
             try:
-                self.update(dict([e.split(':') for e in s.split(';')]))
+                self.update(dict([e.split(':') for e in s.split(';')])) #pylint: disable=consider-using-dict-comprehension
             except Exception:
                 pass
     def __str__(self): # return k:v;k:v format
@@ -228,7 +228,7 @@ class ServiceBase(object):
         raise NotImplementedError()
     def _add_cluster_nodes_setup(self, cluster, count, **options):
         '''Service specific customization prior to adding nodes'''
-        pass
+        # does nothing here
     def add_cluster_nodes(self, cluster, count, **options):
         raise NotImplementedError()
     def load_cluster_information(self, cluster, **options):

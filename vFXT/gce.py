@@ -408,7 +408,7 @@ class Service(ServiceBase):
                 a copy of the httplib2 version.
                 """
                 def __init__(self, host, port=None, key_file=None, cert_file=None, #pylint: disable=unused-argument
-                             strict=None, timeout=None, proxy_info=None,
+                             strict=None, timeout=None, proxy_info=None, #pylint: disable=unused-argument
                              ca_certs=None, disable_ssl_certificate_validation=False, **other_kwargs):
                     log.debug("Making connection to {} from {}".format(host, Service.CONTROL_ADDR))
                     http.client.HTTPSConnection.__init__(self, host, port=port,
@@ -1800,7 +1800,7 @@ class Service(ServiceBase):
 
     def post_destroy_cluster(self, cluster):
         '''Post cluster destroy cleanup'''
-        pass
+        # does nothing here
 
     def add_cluster_nodes(self, cluster, count, **options):
         '''Add nodes to the cluster (delegates to create_node())

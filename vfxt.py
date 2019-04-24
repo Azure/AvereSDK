@@ -962,7 +962,7 @@ def main():
         logger.info("Complete")
 
     elif args.interact:
-        from vFXT.serviceInstance import ServiceInstance # handy import #pylint: disable=unused-variable
+        from vFXT.serviceInstance import ServiceInstance # handy import #pylint: disable=unused-variable,possibly-unused-variable
         local = globals()
         local.update(locals())
         banner = "\n--- Service object available as 'service' ---\n"

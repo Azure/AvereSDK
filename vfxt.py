@@ -264,7 +264,7 @@ def main():
     azure_opts.add_argument("--network-resource-group", help='Network resource group (if vnet/subnet are different from the vm instance group)', default=None)
     azure_opts.add_argument("--storage-resource-group", help='Storage resource group (if different from the vm instance group)', default=None)
     azure_opts.add_argument("--storage-account", help='Azure Storage account', default=None)
-    azure_opts.add_argument("--azure-role", help='Existing Azure role for the cluster (otherwise one is created)', default=None)
+    azure_opts.add_argument("--azure-role", help='Existing Azure role for the cluster (otherwise one is created)', default='Avere Operator')
     azure_opts.add_argument("--location", help='Azure location', default=None)
     azure_opts.add_argument("--azure-network", help='Azure virtual network', default=None)
     azure_opts.add_argument("--azure-subnet", help='Azure virtual network subnet (one or more)', type=str, default=None)

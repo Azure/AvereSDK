@@ -2005,7 +2005,7 @@ class Service(ServiceBase):
         '''
         subnet_id   = subnet_id or self.subnets[0]
         conn        = self.connection('network')
-        subnet      = conn.subnets.get(self.network_resource_group, self.network, self.subnets[0])
+        subnet      = conn.subnets.get(self.network_resource_group, self.network, subnet_id)
         c           = Cidr(subnet.address_prefix)
         return c.to_address(c.start() + 1)
 

@@ -1994,10 +1994,16 @@ class Service(ServiceBase):
         for sn in network_data['subnetworks']:
             sn_region = sn.split('/')[-3]
             sn_name = sn.split('/')[-1]
-            subnetwork = _gce_do(conn.subnetworks().get,
-                            project=self.network_project_id,
-                            region=sn_region, subnetwork=sn_name)
-            subnetworks.append(subnetwork)
+            # Why would this ever fail?  Well it looks like subnets
+            # can be listed that are hidden based on serverless services
+            # that are managed for the customer
+            try:
+                subnetwork = _gce_do(conn.subnetworks().get,
+                                project=self.network_project_id,
+                                region=sn_region, subnetwork=sn_name)
+                subnetworks.append(subnetwork)
+            except Exception as e:
+                log.error(e)
         if region:
             subnetworks = [_ for _ in subnetworks if _['region'].endswith(region)]
         return subnetworks

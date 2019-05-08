@@ -183,8 +183,7 @@ The first part of the invocations are the cloud-type and the authentication opti
     --cluster-name avereclustrer  \
     --admin-password adminpass              \
     --nodes 3                               \
-    --instance-type 'Standard_D16s_v3' \
-    --azure-role "avere-cluster"
+    --instance-type 'Standard_E32s_v3' 
 
 ## GCE examples
 

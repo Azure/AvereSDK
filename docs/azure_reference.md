@@ -11,7 +11,6 @@ Configuring the Azure environment to allow vfxt.py access includes the following
 * Before creating a cluster make sure you have configured the following infrastructure: 
 
   * Check your subscription’s resource quotas and request an increase if needed
-  * Create a role for the cluster nodes. (You must specify the role name when creating the cluster, as described [below](#creating-the-avere-runtime-role-in-azure-active-directory).)
   * Set up a storage account for the cluster cache and, optionally, for cloud-based backend data storage
 
 Note that many of these steps require ownership privileges for the subscription that will host the cluster.
@@ -139,27 +138,33 @@ This table shows example values that can be used when creating an Avere vFXT clu
 | Specify storage resource group  | `--storage-resource-group` | Omit this option if storage is in the same resource group as the cluster  | *group_name* |
 | Specify existing empty container  | `--azurecontainer` | Omit this option (a new container is created by default) | *storage_acct/container_name* |
 
-## Creating the Avere Runtime Role in Azure Active Directory
+## Optional: Creating a non-default Cluster Runtime Role in Azure Active Directory
 
-Before creating a cluster you need to set up a role to assign privileges to the cluster nodes. Refer to the [vFXT Installation Guide for Microsoft Azure](http://aka.ms/averedocs) for more complete information. 
+The Avere vFXT for Azure uses [role-based access control (RBAC)](https://docs.microsoft.com/azure/role-based-access-control/index) to authorize cluster VMs to perform certain tasks. The cluster controller uses the built-in role [Avere Contributor](https://docs.microsoft.com/azure/role-based-access-control/built-in-roles#avere-contributor) and the cluster nodes use the built-in role [Avere Operator](https://docs.microsoft.com/azure/role-based-access-control/built-in-roles#avere-operator). 
 
-The Avere vFXT system uses role-based access control to give vFXT cluster nodes the privileges they need to operate. For example, each cluster node needs the ability to access other vFXT nodes, to manage network infrastructure, and to modify storage resources.  
+> [!NOTE] 
+> The built-in roles are recommended. Do not create a customized role unless you have experience with the Azure Active Directory access control system. 
 
-Create a custom role for the cluster nodes and scope it to the subscription that you will use for the cluster.
+If you want to use a customized operator role, you must define it before you create the cluster. Use the option [``--azure-role``](azure_options.md#azure-environment-options) to include it in the cluster create command.
 
-Copy the lines in this example, substituting your subscription ID in the `AssignableScopes` statement. Save the role in a .json file (for example, averecluster.json).
+This section explains how to create a custom role. It does not explain what statements to include - the example role definition here is the same as the built-in role Avere Operator. If creating a custom role, keep in mind that each cluster node needs the ability to access other vFXT nodes, to manage network infrastructure, and to modify storage resources.  
+
+The cluster nodes role should be scoped to the subscription that you will use for the cluster. Include your subscription ID in the `AssignableScopes` statement. 
+
+Save the role in a .json file (for example, avereclustercustom.json).
 
 ```
 {
     "AssignableScopes": [ "/subscriptions/your-subscription-ID" ],
-    "Name": "avere-cluster",
+    "Name": "avere-cluster-custom",
     "IsCustom": "true",
-    "Description": "Avere cluster runtime role",
+    "Description": "custom Avere cluster runtime role",
     "NotActions": [],
     "Actions": [
         "Microsoft.Compute/virtualMachines/read",
         "Microsoft.Network/networkInterfaces/read",
         "Microsoft.Network/networkInterfaces/write",
+        "Microsoft.Network/virtualNetworks/read",
         "Microsoft.Network/virtualNetworks/subnets/read",
         "Microsoft.Network/virtualNetworks/subnets/join/action",
         "Microsoft.Network/networkSecurityGroups/join/action",
@@ -176,14 +181,14 @@ Copy the lines in this example, substituting your subscription ID in the `Assign
 }
 ```
 
-In the Azure CLI, run this command (as subscription owner) to create the role definition. 
+In the Azure CLI, run this command (as subscription owner) to create the role definition.
 
 `az role definition create --role-definition` *path_to_file*
 
 Example: 
-`az role definition create --role-definition averecluster.json`
+`az role definition create --role-definition avereclustercustom.json`
 
-When you issue the vfxt.py `--create` command, you must pass the role name (from the `Name` value in the .json file)in the `--avere-role` argument.
+When you issue the vfxt.py `--create` command, pass the custom role name (from the `Name` value in the .json file) in the `--avere-role` argument.
 
 Example: 
 
@@ -194,8 +199,8 @@ vfxt.py --cloud-type azure  --from-environment \
 --create \
 --cluster-name "name" --admin-password "password" \
 --instance-type "type" --node-cache-size "size" \
---azure-role avere-cluster  \
+--azure-role avere-cluster-custom  \
 --storage-account "account_name"
 ```
 
-If you exclude the role name in the create command, vfxt.py attempts to create a default role for the cluster (similar to the one in the example above); however, if the vfxt.py user does not have sufficient permissions to create the role, the cluster creation will fail. 
+If you exclude the role name in the create command, vfxt.py uses the default role, [Avere Operator](https://docs.microsoft.com/azure/role-based-access-control/built-in-roles#avere-operator). If the vfxt.py user does not have sufficient permissions to create the role, the cluster creation will fail. 

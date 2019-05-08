@@ -34,7 +34,7 @@ For help with Microsoft Azure-based systems, open a ticket from the Azure portal
 1. Scroll down to the bottom of the left panel to the option **New support request**.
 1. Fill out the request form. 
 
-   **Note:** In the **Service** section on page 1, select **All services** and look under the category **Storage** to find Avere vFXT.
+   **NOTE:** In the **Service** section on page 1, select **All services** and look under the category **Storage** to find Avere vFXT.
 
 ### AWS and GCE users 
 

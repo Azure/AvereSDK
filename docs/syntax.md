@@ -67,7 +67,7 @@ These options are used with the commands above.
 | ---------- | ------------------ |
  `--quick-destroy` | When used with `--destroy`, this option skips flushing changed data from the cluster cache. **CAUTION: Using this option can cause data loss.** |
  `--upgrade-url` *URL* | Specifies the URL for downloading the software update. This value is required when using `--upgrade`. |
- `--upgrade-non-ha` | Upgrades vFXT nodes in parallel instead of one at a time. **Note:** This option disrupts access to the cluster. Client requests will be ignored during some phases of the software update process.  |
+ `--upgrade-non-ha` | Upgrades vFXT nodes in parallel instead of one at a time. **NOTE:** This option disrupts access to the cluster. Client requests will be ignored during some phases of the software update process.  |
 
 ## Cluster Configuration Options
 
@@ -80,7 +80,7 @@ These options apply to any supported cloud provider.
 | ---------- | ------------------ |
 | `--on-instance`        | Query the cloud environment for instance credentials. Use this option when running vfxt.py in a cloud instance instead of passing authentication credentials. Read the setup information for your cloud platform to learn more. |
 | `--from-environment` | Query the local host configuration for service credentials. Use this option when running vfxt.py from a non-cloud host where you have installed your cloud provider's custom command-line tool (that is, Azure [az](<https://docs.microsoft.com/en-us/cli/azure/?view=azure-cli-latest>), Google [gcloud](<https://cloud.google.com/sdk/gcloud/>), or Amazon [aws](<https://aws.amazon.com/cli/>)) and configured it with the appropriate credentials. Read the CLI setup information for your cloud platform (linked in the tool names above) to learn more. |
-| `--admin-password` *cluster_password* | Administrator password for cluster management. This option serves two functions: <br/> • When creating a cluster, this option sets the password for the admin login account. <br/> • When modifying an online cluster, use this option to supply the password in order to authenticate to the cluster. <br/> **Note:** You cannot use this option as a command to change an existing password. Use the Avere Control Panel web interface or the XML-RPC command-line API to change a cluster’s administrator password. |
+| `--admin-password` *cluster_password* | Administrator password for cluster management. This option serves two functions: <br/> • When creating a cluster, this option sets the password for the admin login account. <br/> • When modifying an online cluster, use this option to supply the password in order to authenticate to the cluster. <br/> **NOTE:** You cannot use this option as a command to change an existing password. Use the Avere Control Panel web interface or the XML-RPC command-line API to change a cluster’s administrator password. |
 | `--management-address` *cluster_mgmt_IP* | The cluster's management address. <br/>• When creating a cluster, this option sets the management IP address. <br/> • When modifying an online cluster, use this option to specify which cluster is being modified. |
 | `--instances` *instance1_ID* *instance2_ID* *instance3_ID*  | Instance identifiers for the cluster nodes - use this to specify an offline cluster. Read [Specifying Which Cluster To Modify](using_vfxt_py.md#specifying-which-cluster-to-modify) for more information. |
 `--s3-access-key` *S3_access_key* <br/> `--s3-secret-key` *S3_secret_key* <br/> `--s3-profile` *S3_profile* | Use these options if you need to pass an additional S3 credential for your cluster resources. |
@@ -92,11 +92,11 @@ These options apply to any supported cloud provider.
 | ---------- | ------------------ |
 | `--cluster-name` *cluster_name* | Name for the cluster (also used to tag resources). This name should be compatible with DNS, since some cloud providers process it into a DNS hostname. |
 | `--cluster-range` *IP_range* | IP address range (CIDR format) for the cluster. This range is assigned to the cluster to use for client traffic and cluster management tasks.  |
-| `--cluster-proxy-uri` *URL* | Proxy resource for the cluster - for example, `http://user:pass@172.16.16.20:8080/`. **Note:** Use the IP address rather than hostname in case DNS becomes unreachable. |
+| `--cluster-proxy-uri` *URL* | Proxy resource for the cluster - for example, `http://user:pass@172.16.16.20:8080/`. **NOTE:** Use the IP address rather than hostname in case DNS becomes unreachable. |
 | `--junction` *vserver_junction_path* | Sets the GNS path for the vserver's junction. The path must start with `/`. If not set, the default value is the cloud provider name (`/gce` , `/azure`, or `/aws`), or the last segment of the NFS export path (/smithj for an NFS export with the path /files/smithj)  |
 | `--labels` *key*:*value*  | Specify a key:value pair label for the cluster. Specify one label at a time; you can use as many label statements as needed. |
 | `--no-vserver` | Skips automatically creating a vserver with the cluster |
-| `--root-size` *boot_disk_size_in_GB* | Use this to specify the size of each node's boot disk, in GB. <br/> **Note:** This setting might not be honored by some cloud providers. |
+| `--root-size` *boot_disk_size_in_GB* | Use this to specify the size of each node's boot disk, in GB. <br/> **NOTE:** This setting might not be honored by some cloud providers. |
 | `--timezone` *zone* | Cluster time zone (in TZ database format - for example, `--timezone America/Puerto_Rico`) |
 | `--trace-level` *level* | Trace level for the created cluster |
 | `--vserver` *vserver_name* | Name for the vserver that will be created with the cluster |

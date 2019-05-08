@@ -27,7 +27,7 @@ On the system where you will run vfxt.py, install the [Microsoft Azure SDK for P
 
 `pip install –-user azure`
 
-**Note:** The Azure Marketplace includes preconfigured images that you can use to quickly create an Avere vFXT cluster for Azure, or to create a cluster controller for a customized deploy or for cluster maintenance. 
+**NOTE:** The Azure Marketplace includes preconfigured images that you can use to quickly create an Avere vFXT cluster for Azure, or to create a cluster controller for a customized deploy or for cluster maintenance. 
 
 ## Azure Authentication Options
 
@@ -80,7 +80,7 @@ az account set --subscription id
 Then authenticate using the credentials from that login:
 `vfxt.py --cloud-type azure --from-environment`
 
-> **TIP**: You can use ``az login --identity`` with any VM that has a managed identity.  
+**TIP**: You can use ``az login --identity`` with any VM that has a managed identity.  
 
 ### Service Principal Authentication Option 
 
@@ -142,8 +142,7 @@ This table shows example values that can be used when creating an Avere vFXT clu
 
 The Avere vFXT for Azure uses [role-based access control (RBAC)](https://docs.microsoft.com/azure/role-based-access-control/index) to authorize cluster VMs to perform certain tasks. The cluster controller uses the built-in role [Avere Contributor](https://docs.microsoft.com/azure/role-based-access-control/built-in-roles#avere-contributor) and the cluster nodes use the built-in role [Avere Operator](https://docs.microsoft.com/azure/role-based-access-control/built-in-roles#avere-operator). 
 
-> [!NOTE] 
-> The built-in roles are recommended. Do not create a customized role unless you have experience with the Azure Active Directory access control system. 
+   **NOTE:** The built-in roles are recommended. Do not create a customized role unless you have experience with the Azure Active Directory access control system. 
 
 If you want to use a customized operator role, you must define it before you create the cluster. Use the option [``--azure-role``](azure_options.md#azure-environment-options) to include it in the cluster create command.
 

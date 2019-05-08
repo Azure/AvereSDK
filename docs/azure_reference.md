@@ -2,7 +2,7 @@
 
 This section gives an overview of how to configure a vfxt.py installation to be able to create Avere clusters in a Microsoft Azure environment.
 
-> Note: A wizard for creating an Avere vFXT for Azure clusters is available in the Azure Marketplace. Read the [Avere vFXT for Azure documentation](https://docs.microsoft.com/en-us/azure/avere-vfxt/) for more complete information about the template-based deploy and additional preconfiguration required. The deployment wizard  automates most of these steps. 
+**NOTE:** A wizard for creating an Avere vFXT for Azure clusters is available in the Azure Marketplace. Read the [Avere vFXT for Azure documentation](https://docs.microsoft.com/en-us/azure/avere-vfxt/) for more complete information about the template-based deploy and additional preconfiguration required. The deployment wizard  automates most of these steps. 
 
 Configuring the Azure environment to allow vfxt.py access includes the following steps: 
 * Create a virtual network and subnet for the cluster

@@ -3,7 +3,7 @@
 
 You can run vfxt.py from any UNIX-style console environment that has access to your cloud computing resources. The simplest option is to create a Linux instance within the cloud environment, and install vfxt.py in that virtual machine. Alternatively, you can use a console from a remote Linux or Mac OS environment, as long as it has IP connectivity to your cloud instances. 
 
-> Tip: For Microsoft Azure, a preconfigured Cluster Controller Node virtual machine image is available in the Azure Marketplace. Search for “Avere” and then choose **Avere vFXT for Azure**. This image is preconfigured with required software to create and manage Avere vFXT clusters in Azure.  
+**TIP:** For Microsoft Azure, a preconfigured Cluster Controller Node virtual machine image is available in the Azure Marketplace. Search for “Avere” and then choose **Avere vFXT for Azure**. This image is preconfigured with required software to create and manage Avere vFXT clusters in Azure.  
 > 
 > The Azure Marketplace also has the **Avere vFXT for Azure template**, which is a wizard-based cluster creation tool. That process is described in [Avere vFXT for Azure documentation](https://docs.microsoft.com/en-us/azure/avere-vfxt/).
 
@@ -65,7 +65,7 @@ This command can be used with any of the three cloud providers to install the ne
 
     pip install --user --upgrade boto requests google-api-python-client azure
 
-> Note: The `azure` package is a meta-package that downloads a full set of Azure libraries. If you will not be working with Microsoft Azure, you can omit that term from the command. To install only the Azure packages, use `$ pip install –-user azure`
+ **NOTE:** The `azure` package is a meta-package that downloads a full set of Azure libraries. If you will not be working with Microsoft Azure, you can omit that term from the command. To install only the Azure packages, use `$ pip install –-user azure`
 
 
 ## Downloading and Installing vfxt.py

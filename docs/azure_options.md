@@ -19,7 +19,7 @@ Use the generic option `--on-instance` for local console commands.
 | ---------- | ------------------ |
 | `--azure-network` *vnet_name* | Virtual network that houses the cluster nodes |
 | `--azure-subnet` *subnet_name* | Subnet in the virtual network  |
-| `--azure-role` *role_name* | Existing Azure role for the cluster. If not supplied, a role will be created, or cluster creation will fail if permissions are insufficient to create the role. |
+| `--azure-role` *role_name* | Use a custom RBAC role for the cluster nodes instead of the built- in role [Avere Operator](https://docs.microsoft.com/azure/role-based-access-control/built-in-roles#avere-operator). Define the role before using this option. Learn more about roles and the privileges required for cluster nodes and cluster controllers in the Avere vFXT for Azure documentation - read [VM access roles](https://docs.microsoft.com/azure/avere-vfxt/avere-vfxt-deploy-plan#vm-access-roles) and [Subscription owner permissions](https://docs.microsoft.com/azure/avere-vfxt/avere-vfxt-prereqs#configure-subscription-owner-permissions). |
 | `--location` *location_shortname*    | Azure geographic location |
 | `--network-resource-group` *group_name* | Network resource group (if different from the resource group used for the cluster VMs) |
 | `--resource-group` *group_name* | Resource group for the cluster VMs |

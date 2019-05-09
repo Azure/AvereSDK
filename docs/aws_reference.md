@@ -2,7 +2,7 @@
 
 This section gives an overview of how to configure a vfxt.py installation to be able to create Avere clusters in an AWS Elastic Compute Cloud (EC2) environment.
 
-**Note:** Read the [vFXT Installation Guide for Amazon Web Services](<https://azure.github.io/Avere/#vfxt>) for detailed information about setting up an Amazon cloud computing environment to create vFXT clusters. 
+**NOTE:** Read the [vFXT Installation Guide for Amazon Web Services](<https://azure.github.io/Avere/#vfxt>) for detailed information about setting up an Amazon cloud computing environment to create vFXT clusters. 
 
 Configuring the AWS environment to give vfxt.py the necessary access includes the following steps. Refer to the AWS vFXT Installation Guide for complete information about how to set up these prerequisites: 
 

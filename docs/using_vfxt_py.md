@@ -58,7 +58,7 @@ Use these options with the create command to set up the basic parameters for you
 
     These options let you specify the number of virtual data storage disks to create for each node (count) and the size of each disk (size). 
 
-    > Note: Be careful not to exceed your storage quota or other limits, which can cause the create command to return an error. 
+    **NOTE:** Be careful not to exceed your storage quota or other limits, which can cause the create command to return an error. 
 
     Each node in the cluster will have the same number of data disks, and each disk will be the same size. 
 
@@ -103,7 +103,7 @@ vfxt.py	--cloud-type type         \
 
 vfxt.py can skip the creation of a bucket and the associated cloud core filer configuration. Use this option if you want to create a vFXT cluster and configure its storage afterward by using the Avere Control Panel or the XML-RPC command-line cluster configuration API. 
 
-> Note: If you use the `--nfs-mount` option, vfxt.py does not attempt to create a cloud core filer. 
+**NOTE:** If you use the `--nfs-mount` option, vfxt.py does not attempt to create a cloud core filer. 
 
 ```bash
 
@@ -298,7 +298,7 @@ Example: `--cluster-proxy-uri http://vfxtcluster:goodpw@203.0.113.76:8080/`
 
 Use the `--upgrade` option to update the cluster’s Avere OS software. 
 
-> Note: The cluster must have SSL access to the Avere software download site, https<!-- -->://download.averesystems.com, to obtain the new distribution. Make sure that cluster has outbound and inbound access to this URL. Typically, ports 443 and 22 must be open to allow this; refer to the appendix of the vFXT installation guide for your cloud provider to learn more about required ports and whitelisted URLs.  
+**NOTE:** The cluster must have SSL access to the Avere software download site, https<!-- -->://download.averesystems.com, to obtain the new distribution. Make sure that cluster has outbound and inbound access to this URL. Typically, ports 443 and 22 must be open to allow this; refer to the appendix of the vFXT installation guide for your cloud provider to learn more about required ports and whitelisted URLs.  
 
 The `--upgrade-url` element is required. Supply the URL for downloading the software image (for example, https<!-- -->://download.averesystems.com). Optionally, use `--upgrade-non-ha` to do the upgrade in parallel instead of one node at a time – note that this option has a higher impact on customer-facing latency than the standard upgrade does.  
 

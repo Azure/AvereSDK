@@ -664,12 +664,11 @@ def main():
             logger.error(e)
             parser.exit(1)
 
-        if not args.disable_bucket_encryption and not args.core_filer_key_file:
-            err_msg = 'Container/bucket encryption has been specified but the corefiler' +\
-                      ' key file was not supplied. To use container/bucket encryption you' +\
-                      ' need to also specify a corefiler key file with the --core-filer-key-file option'
-            logger.error(err_msg)
-            parser.exit(1)
+        if not args.no_corefiler:
+            if not args.disable_bucket_encryption and not args.core_filer_key_file:
+                err_msg = 'Container/bucket encryption has been specified but the corefiler key file was not supplied. To use container/bucket encryption you need to also specify a corefiler key file with the --core-filer-key-file option'
+                logger.error(err_msg)
+                parser.exit(1)
 
         # minimum args for create
         if not all([args.instance_type, args.cluster_name, args.admin_password]):

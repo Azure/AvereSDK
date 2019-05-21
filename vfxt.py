@@ -666,7 +666,7 @@ def main():
 
         if not args.no_corefiler:
             if not args.disable_bucket_encryption and not args.core_filer_key_file:
-                err_msg = 'Container/bucket encryption has been specified but the corefiler key file was not supplied. To use container/bucket encryption you need to also specify a corefiler key file with the --core-filer-key-file option'
+                err_msg = 'Container/bucket encryption has been specified but a corefiler key file path was not supplied. To use container/bucket encryption you need to also specify a file path using --core-filer-key-file into which the generated key will be saved.'
                 logger.error(err_msg)
                 parser.exit(1)
 

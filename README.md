@@ -38,7 +38,7 @@ From source (see python setup.py install --help options for customization)
 
     aws = Service(region='fill me in', access_key='fill me in', subnet='subnet-f66a618e', secret_access_key='fill me in')
 
-    cluster = Cluster.create(aws, 'r3.8xlarge', 'averecluster', 'adminpass')
+    cluster = Cluster.create(aws, 'r3.8xlarge', 'averecluster', 'PLACEHOLDER')
     try:
       cluster.make_test_bucket(bucketname='averecluster-s3bucket', corefiler='averecluster-s3bucket')
       cluster.add_vserver('vserver')
@@ -60,7 +60,7 @@ From source (see python setup.py install --help options for customization)
         resource_group='', storage_account='',
         location='', network='', subnet='',
     )
-    cluster = Cluster.create(azure, 'Standard_D16s_v3', 'avereclustaer', 'adminpass')
+    cluster = Cluster.create(azure, 'Standard_D16s_v3', 'avereclustaer', 'PLACEHOLDER')
 
     with open('/home/user/.ssh/id_rsa.pub','r') as f: # must be rsa
         sshpubkey = f.read()
@@ -72,7 +72,7 @@ From source (see python setup.py install --help options for customization)
     from vFXT.gce import Service
 
     gce = Service(client_email='fill me in', key_file='path-to.json', zone='us-central1-b', project_id='fill me in', network_id='fill me in')
-    cluster = Cluster.create(gce, 'n1-highmem-8', 'averecluster', 'adminpass')
+    cluster = Cluster.create(gce, 'n1-highmem-8', 'averecluster', 'PLACEHOLDER')
     cluster.stop()
     cluster.destroy()
 
@@ -142,7 +142,7 @@ The first part of the invocations are the cloud-type and the authentication opti
     \
     --create                                \
     --cluster-name avereclustrer  \
-    --admin-password adminpass              \
+    --admin-password PLACEHOLDER              \
     --nodes 3                               \
     --instance-type 'r4.2xlarge'
 
@@ -154,7 +154,7 @@ The first part of the invocations are the cloud-type and the authentication opti
     \
     --destroy                         \
     --management-address 10.50.248.50 \
-    --admin-password adminpass
+    --admin-password PLACEHOLDER
 
 ### AWS add nodes
 
@@ -165,7 +165,7 @@ The first part of the invocations are the cloud-type and the authentication opti
     --add-nodes                       \
     --nodes 3                         \
     --management-address 10.50.248.50 \
-    --admin-password adminpass
+    --admin-password PLACEHOLDER
 
 ## Azure examples
 
@@ -181,7 +181,7 @@ The first part of the invocations are the cloud-type and the authentication opti
     \
     --create                                \
     --cluster-name avereclustrer  \
-    --admin-password adminpass              \
+    --admin-password PLACEHOLDER              \
     --nodes 3                               \
     --instance-type 'Standard_E32s_v3' 
 
@@ -195,7 +195,7 @@ The first part of the invocations are the cloud-type and the authentication opti
     \
     --create                                \
     --image-id vfxt-4614                    \
-    --admin-password adminpass              \
+    --admin-password PLACEHOLDER              \
     --cluster-name averecluster  \
     --nodes 3                               \
     --gce-tag use-nat                       \
@@ -209,7 +209,7 @@ The first part of the invocations are the cloud-type and the authentication opti
     \
     --destroy                         \
     --management-address 10.52.16.103 \
-    --admin-password adminpass
+    --admin-password PLACEHOLDER
 
 ### GCE add nodes
 
@@ -221,7 +221,7 @@ The first part of the invocations are the cloud-type and the authentication opti
     --add-nodes                       \
     --nodes 3                         \
     --management-address 10.52.16.115 \
-    --admin-password 'adminpass'
+    --admin-password 'PLACEHOLDER'
 
 # Contributing
 

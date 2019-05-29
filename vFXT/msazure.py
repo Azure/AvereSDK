@@ -178,6 +178,7 @@ class Service(ServiceBase):
     CONTAINER_NAME_RE = re.compile(r'[a-zA-Z0-9][-a-zA-Z0-9]*$')
     SYSTEM_CONTAINER = 'system'
     ENDPOINT_TEST_HOSTS = ['management.azure.com']
+    DEFAULT_ROLE = 'Avere Operator'
     ROLE_PERMISSIONS = [{
         'notActions': [],
         'actions': [
@@ -1004,7 +1005,7 @@ class Service(ServiceBase):
     def _instance_identity_custom_role(self, instance):
         '''Return the custom role of the instance
 
-            This is currently the role applied the system managed identity of the instance
+            This is currently the role applied the system managed identity of the instance.
         '''
         conn = self.connection('authorization')
         if not hasattr(instance, 'identity') and not hasattr(instance.identity, 'principal_id'):
@@ -1014,9 +1015,9 @@ class Service(ServiceBase):
         role_assignments = [_ for _ in conn.role_assignments.list("principalId eq '{}'".format(principal_id))]
         roles = [conn.role_definitions.get_by_id(_.role_definition_id) for _ in role_assignments]
         custom_roles = [_ for _ in roles if _.role_type == 'CustomRole']
-        if not custom_roles:
-            raise vFXTConfigurationException("Unable to find custom role for {}".format(self.name(instance)))
-        return custom_roles[0]
+        if custom_roles:
+            return custom_roles[0]
+        return None
 
     def fqdn(self, instance):
         '''Provide the fully qualified domain name of the instance
@@ -1551,7 +1552,7 @@ class Service(ServiceBase):
                 options['admin_ssh_data'] = instance.os_profile.linux_configuration.ssh.public_keys[0].key_data
         except Exception: pass
 
-        if cluster.role:
+        if not options.get('azure_role'):
             options['azure_role'] = cluster.role.role_name
 
         # set network security group for added nodes
@@ -1707,9 +1708,9 @@ class Service(ServiceBase):
             cluster.name = self.CLUSTER_NODE_NAME_RE.search(cluster.nodes[0].name()).groups()[0]
             cluster.role = None
             try: # try and find the cluster role
-                cluster.role = self._instance_identity_custom_role(instances[0])
+                cluster.role = self._instance_identity_custom_role(instances[0]) or self._get_role(self.DEFAULT_ROLE)
             except Exception as e:
-                log.debug("Failed to lookup cluster role: {}".format(e))
+                raise vFXTConfigurationException("Failed to lookup cluster role: {}".format(e))
 
             # try and find the network security group
             try:

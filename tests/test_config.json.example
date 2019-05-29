@@ -15,7 +15,6 @@
         "subnet": "",
         "subnets": [],
         "storage_account": "",
-        "role": "",
         "instance_type": "",
         "image": "",
         "existing_instances": [],

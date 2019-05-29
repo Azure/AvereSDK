@@ -162,7 +162,7 @@ class Cluster_test(tests.vFXTTestCase.Base):
 
         service = self.mk_azure_service()
         name = 'vfxt-unittest-{}'.format(int(time.time()))
-        cluster = Cluster.create(service, self.azure['instance_type'], name, 'adminpass', root_image=self.azure['vfxt_image'], size=3, wait_for_state='yellow', azure_role=self.azure['role'])
+        cluster = Cluster.create(service, self.azure['instance_type'], name, 'adminpass', root_image=self.azure['vfxt_image'], size=3, wait_for_state='yellow')
 
         self.assertIsInstance(cluster, Cluster)
         self.assertTrue(cluster.is_on())
@@ -367,7 +367,7 @@ class Cluster_test(tests.vFXTTestCase.Base):
         existing_address = service.ip(instances[0])
 
         name = 'vfxt-unittest-{}'.format(int(time.time()))
-        cluster = Cluster.create(service, self.azure['instance_type'], name, 'adminpass', root_image=self.azure['vfxt_image'], size=3, wait_for_state='yellow', azure_role=self.azure['role'])
+        cluster = Cluster.create(service, self.azure['instance_type'], name, 'adminpass', root_image=self.azure['vfxt_image'], size=3, wait_for_state='yellow')
         try:
             def _should_fail_instance_in_use():
                 cluster.add_nodes(1, instance_addresses=[existing_address])

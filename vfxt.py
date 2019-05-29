@@ -935,6 +935,7 @@ def main():
             'key_name': args.ssh_key, # aws ssh key
             'admin_ssh_data': args.ssh_key, # azure ssh key
             'instance_addresses': args.instance_addresses,
+            'azure_role': args.azure_role,
         }
         # prune out unfortunate command line defaults
         options = {k: v for k, v in viewitems(options) if v is not None and v != ''}

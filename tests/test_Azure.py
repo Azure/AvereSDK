@@ -179,17 +179,6 @@ class Azure_test(tests.vFXTTestCase.Base):
         self.assertTrue(service._create_availability_set(name))
         service._delete_availability_set(name)
 
-    def test_create_role(self):
-        return self.skipTest("skipping _create_role") # no longer able to test in current environment
-        #service = self.mk_azure_service()
-        #name = 'vfxttest-role-{}'.format(int(time.time()))
-        #self.assertTrue(service._create_role(name))
-        #self.assertTrue(service._get_role(name))
-        #try:
-        #    service._delete_role(name)
-        #except Exception as e:
-        #    logging.warn("Ignoring failure to remove role in case of missing permissions: {}".format(e))
-
     def test_move_route(self):
         service = self.mk_azure_service()
         i1 = None

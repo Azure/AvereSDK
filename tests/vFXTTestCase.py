@@ -63,7 +63,6 @@ class Base(unittest.TestCase):
             self.azure['location']                      = test_config['azure']['location']
             self.azure['network']                       = test_config['azure']['network']
             self.azure['subnet']                        = test_config['azure']['subnet']
-            self.azure['role']                          = test_config['azure']['role']
             self.azure['storage_account']               = test_config['azure']['storage_account']
             self.azure['instance_type']                 = test_config['azure']['instance_type']
             self.azure['existing']                      = test_config['azure']['existing_instances']

@@ -179,25 +179,6 @@ class Service(ServiceBase):
     SYSTEM_CONTAINER = 'system'
     ENDPOINT_TEST_HOSTS = ['management.azure.com']
     DEFAULT_ROLE = 'Avere Operator'
-    ROLE_PERMISSIONS = [{
-        'notActions': [],
-        'actions': [
-            'Microsoft.Compute/virtualMachines/read',
-            'Microsoft.Network/networkInterfaces/read',
-            'Microsoft.Network/networkInterfaces/write',
-            'Microsoft.Network/virtualNetworks/subnets/read',
-            'Microsoft.Network/virtualNetworks/subnets/join/action',
-            'Microsoft.Resources/subscriptions/resourceGroups/read',
-            'Microsoft.Storage/storageAccounts/blobServices/containers/delete',
-            'Microsoft.Storage/storageAccounts/blobServices/containers/read',
-            'Microsoft.Storage/storageAccounts/blobServices/containers/write',
-        ],
-        'data_actions': [
-            'Microsoft.Storage/storageAccounts/blobServices/containers/blobs/delete',
-            'Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read',
-            'Microsoft.Storage/storageAccounts/blobServices/containers/blobs/write',
-        ],
-    }]
     WAIT_FOR_SUCCESS = 2400 # override ServiceBase.WAIT_FOR_SUCCESS
     WAIT_FOR_START = 2400 # override ServiceBase.WAIT_FOR_START
     WAIT_FOR_STOP = 2400 # override ServiceBase.WAIT_FOR_STOP
@@ -1397,7 +1378,7 @@ class Service(ServiceBase):
                 root_disk_caching (str, optional): None, ReadOnly, ReadWrite (defaults to DEFAULT_CACHING_OPTION)
                 wait_for_state (str, optional): red, yellow, green cluster state (defaults to yellow)
                 skip_cleanup (bool, optional): do not clean up on failure
-                azure_role (str, optional): Azure role name for the service principal (otherwise one is created)
+                azure_role (str, optional): Azure role name for the service principal (otherwise DEFAULT_ROLE is used)
                 availability_set (str, optional): existing availability set for the cluster instances
                 subnets ([str], optional): one or more subnets
                 location (str, optional): location for availability set
@@ -1454,17 +1435,10 @@ class Service(ServiceBase):
         log.debug("Generated cluster config: {}".format(cfg.replace(cluster.admin_password, '[redacted]')))
 
         try:
-            role = options.get('azure_role') or None
-            if not role:
-                # create a role if we were not provided one, later we will
-                # assign it to the instance identity
-                role_name = '{}-cluster-role'.format(cluster.name)
-                log.info('Creating cluster role {}'.format(role_name))
-                cluster.role = self._create_role(role_name)
-                options['azure_role'] = role_name # pass it along to the nodes
-            else:
-                log.info('Using existing cluster role {}'.format(role))
-                cluster.role = self._get_role(role)
+            role = options.get('azure_role') or self.DEFAULT_ROLE
+            log.info('Using cluster role {}'.format(role))
+            cluster.role = self._get_role(role)
+            options['azure_role'] = role # pass it along to the nodes
 
             # availability set (we can keep creating it as it is just an update operation)
             availability_set = options.get('availability_set') or '{}-availability_set'.format(cluster.name)
@@ -2556,57 +2530,6 @@ class Service(ServiceBase):
                         log.error("Failed to delete route for nic {}: {}".format(name, route_del_e))
         except Exception as e:
             log.error("Failed to clean up routes for nic {}: {}".format(name, e))
-
-    def _create_role(self, name, **options):
-        '''Create an Azure role
-
-            Arguments:
-                name (str): role name
-                permissions ([{}]): permissions for role (defaults to vFXT.msazure.ROLE_PERMISSIONS)
-
-            Returns
-                role dictionary
-
-            Raises: vFXTServiceFailure
-        '''
-        conn = self.connection('authorization')
-
-        role_id     = str(uuid.uuid4())
-        permissions = options.get('permissions') or self.ROLE_PERMISSIONS
-
-        body = {
-            'type': 'CustomRole',
-            'role_name': name,
-            'description': 'Automatically created for Avere {}'.format(name),
-            'permissions': permissions,
-            'assignable_scopes': [self._resource_group_scope()],
-        }
-        if self.network_resource_group != self.resource_group:
-            body['assignable_scopes'].append(self._network_resource_group_scope())
-
-        retries = options.get('retries') or ServiceBase.CLOUD_API_RETRIES
-        while True:
-            try:
-                r = conn.role_definitions.create_or_update(self._resource_group_scope(), role_id, body)
-                if not r:
-                    raise Exception("Failed to create role {}".format(name))
-                log.debug("Created role {} with body {}".format(r.id, body))
-                return r
-            except Exception as e:
-                log.debug(e)
-
-                # check if it already exists, if so we reuse that ID and update the definition on
-                # retry
-                try:
-                    existing = self._get_role(name, retries=1)
-                    role_id = existing.id.split('/')[-1]
-                    log.warning("Role {} exists with id {}, updating the definition".format(name, role_id))
-                except vFXTConfigurationException: pass
-
-                time.sleep(self.POLLTIME)
-                if retries == 0:
-                    raise vFXTServiceFailure("Failed to create role {}: {}".format(name, e))
-            retries -= 1
 
     def _get_role(self, role_name, retries=ServiceBase.CLOUD_API_RETRIES):
         '''Retrieve a role

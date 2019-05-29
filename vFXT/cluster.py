@@ -72,7 +72,7 @@ cluster.reload()
 
 
 # Full AWS example
-cluster = Cluster.create(aws, 'r3.2xlarge', 'mycluster', 'adminpass',
+cluster = Cluster.create(aws, 'r3.2xlarge', 'mycluster', 'PLACEHOLDER',
                         subnet='subnet-f99a618e',
                         placement_group='perf1',
                         wait_for_state='yellow')

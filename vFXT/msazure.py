@@ -1934,7 +1934,7 @@ class Service(ServiceBase):
             if storage_account_props.sku.tier.name == 'premium':
                 raise Exception("Premium tier storage accounts are not supported")
 
-            log.debug("storage account type {}".format(storage_account_props.sku.name.value))
+            log.debug("storage account type {}".format(storage_account_props.sku.name))
         except Exception as e:
             log.debug("Failed to validate storage account: {}".format(e))
             raise vFXTConfigurationException("{} is not a valid storage account: {}".format(storage_account, e))

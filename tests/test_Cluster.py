@@ -22,6 +22,16 @@ class Cluster_test(tests.vFXTTestCase.Base):
         cluster = Cluster(service=aws)
         self.assertIsInstance(cluster, Cluster)
 
+    def _check_all_nodes_have_cluster_addresses(self, cluster, retries=300):
+        while True:
+            if all([len(_.in_use_addresses()) > 1 for _ in cluster.nodes]):
+                break
+            if retries == 0:
+                self.assertTrue(False, msg="All nodes have cluster addresses assigned")
+            retries -= 1
+            cluster._sleep(1)
+
+
     def _run_cluster_steps(self, cluster, skip_corefiler=False, use_instance_for_mgmt=False, custom_corefiler_name=None):
         service = cluster.service
 
@@ -46,6 +56,9 @@ class Cluster_test(tests.vFXTTestCase.Base):
         initted_export['nodes'].sort() # may be out of order
         self.assertDictEqual(cluster_export, initted_export)
 
+        # check that all nodes have more than one address
+        self._check_all_nodes_have_cluster_addresses(cluster)
+
         # add vserver, corefiler
         cluster.add_vserver('vserver')
         cluster.wait_for_healthcheck(state='green', duration=10)
@@ -67,6 +80,9 @@ class Cluster_test(tests.vFXTTestCase.Base):
         new_node_count = len(cluster.nodes)
         self.assertTrue(new_node_count > node_count)
         self.assertTrue(new_node_count == len(cluster.xmlrpc().node.list()))
+
+        # check that all nodes have more than one address
+        self._check_all_nodes_have_cluster_addresses(cluster)
 
         if self.shelve:
             cluster.shelve()

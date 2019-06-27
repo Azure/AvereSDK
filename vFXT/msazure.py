@@ -1170,6 +1170,19 @@ class Service(ServiceBase):
             img = self._create_image_from_vhd(local_blob_url)
             body['storage_profile']['image_reference'] = {'id': img.id}
 
+        # if its a azure resource path: /subscriptions/<>/resoureceGroups/<>/providers/Microsoft.Compute/images/<>
+        elif boot_disk_image.startswith('/subscriptions/') and '/providers/Microsoft.Compute/images/' in boot_disk_image and len(boot_disk_image.split('/')) == 9:
+            parts = boot_disk_image.split('/')
+            boot_disk_image_resource_group, boot_disk_image_name = parts[4], parts[8]
+
+            try:
+                # we cannot look across subscriptions, only resource groups
+                img = conn.images.get(boot_disk_image_resource_group, boot_disk_image_name)
+                body['storage_profile']['image_reference'] = {'id': img.id}
+            except Exception as e:
+                log.debug("Failed to find image: {}".format(e))
+                raise vFXTConfigurationException("Unable to handle boot disk {}".format(boot_disk_image))
+
         # if its a marketplace path like OpenLogic:CentOS:7.1:latest
         elif boot_disk_image.count(':') == 3: # must be marketplace
             log.info("Using marketplace URN {}".format(boot_disk_image))

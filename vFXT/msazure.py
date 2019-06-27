@@ -2841,7 +2841,9 @@ class Service(ServiceBase):
                     'blob_uri': vhd_url,
                     'storage_account_type': self.DEFAULT_STORAGE_ACCOUNT_TYPE,
                 }
-            }
+            },
+            # https://docs.microsoft.com/en-us/windows-server/virtualization/hyper-v/plan/should-i-create-a-generation-1-or-2-virtual-machine-in-hyper-v#BKMK_FreeBSD
+            'hyper_vgeneration': 'V1',
         }
 
         log.debug("Creating image {} with parameters {}".format(name, params))

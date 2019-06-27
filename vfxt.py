@@ -36,7 +36,8 @@ def _validate_url(url):
 
 def _validate_ascii(s):
     try:
-        return s.encode('ascii', errors='ignore')
+        _ = s.encode('ascii')
+        return s
     except Exception:
         raise argparse.ArgumentTypeError("Value must be ASCII: {}".format(s))
 

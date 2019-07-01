@@ -649,7 +649,7 @@ def main():
     if args.node_cache_size:
         if any([args.data_disk_count, args.data_disk_size]):
             logger.warning("Overriding --data-disk-count and --data-disk-size with --node-cache-size")
-        disk_config = service._cache_to_disk_config(args.node_cache_size, disk_type=args.data_disk_type)
+        disk_config = service._cache_to_disk_config(args.node_cache_size, disk_type=args.data_disk_type, machine_type=args.instance_type)
         args.data_disk_count = disk_config[0]
         args.data_disk_size = disk_config[1]
         logger.debug("Cache size {} specified, setting disk count and size to {}, {}".format(args.node_cache_size, args.data_disk_count, args.data_disk_size))

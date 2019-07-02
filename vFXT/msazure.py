@@ -129,23 +129,23 @@ class Service(ServiceBase):
         'Standard_A9': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
         'Standard_A10': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
         'Standard_A11': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_D4': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_D4_v2': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_D5_v2': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_D13': {'data_disk_size': 512, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4},
+        'Standard_D4': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_D4_v2': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_D5_v2': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_D13': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4},
         'Standard_D13_v2': {'data_disk_size': 512, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4},
-        'Standard_D14': {'data_disk_size': 512, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4},
-        'Standard_D14_v2': {'data_disk_size': 512, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4},
-        'Standard_DS1': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_DS4': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_DS4_v2': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_DS5_v2': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_D2s_v3': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
-        'Standard_D4s_v3': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 8},
-        'Standard_D8s_v3': {'data_disk_size': 256, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 16},
-        'Standard_D16s_v3': {'data_disk_size': 256, 'data_disk_count': 4, 'node_count': 3, 'max_data_disk_count': 32},
-        'Standard_D32s_v3': {'data_disk_size': 512, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
-        'Standard_D64s_v3': {'data_disk_size': 512, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
+        'Standard_D14': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4},
+        'Standard_D14_v2': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 4},
+        'Standard_DS1': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_DS4': {'data_disk_size': 128, 'data_disk_count': 1, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_DS4_v2': {'data_disk_size': 128, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_DS5_v2': {'data_disk_size': 128, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_D2s_v3': {'data_disk_size': 128, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
+        'Standard_D4s_v3': {'data_disk_size': 128, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 8},
+        'Standard_D8s_v3': {'data_disk_size': 128, 'data_disk_count': 4, 'node_count': 0, 'max_data_disk_count': 16},
+        'Standard_D16s_v3': {'data_disk_size': 128, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
+        'Standard_D32s_v3': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
+        'Standard_D64s_v3': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
         'Standard_DS13': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 32},
         'Standard_DS13_v2': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 32},
         'Standard_DS14': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 64},
@@ -155,8 +155,8 @@ class Service(ServiceBase):
         'Standard_E4s_v3': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 8},
         'Standard_E8s_v3': {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 16},
         'Standard_E16s_v3': {'data_disk_size': 256, 'data_disk_count': 4, 'node_count': 3, 'max_data_disk_count': 32},
-        'Standard_E32s_v3': {'data_disk_size': 512, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
-        'Standard_E64s_v3': {'data_disk_size': 512, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
+        'Standard_E32s_v3': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
+        'Standard_E64s_v3': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
         'Standard_E64is_v3': {'data_disk_size': 512, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32},
         'Standard_G3': {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
         'Standard_G4': {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4},
@@ -2738,9 +2738,9 @@ class Service(ServiceBase):
         # If it wasn't a perfect multiple of one of the sizes, choose
         # the closest match and round up
         if not best_size:
-            for i in reversed(range(len(sizes))):
-                if cache_size <= sizes[i]:
-                    best_size = sizes[i]
+            for s in sorted(sizes):
+                if cache_size <= s:
+                    best_size = s
                     break
         # If the cache is bigger than the biggest disk, just use the
         # big disks.
@@ -2750,14 +2750,31 @@ class Service(ServiceBase):
         size = best_size
 
         if 256 <= cache_size <= 1024:
+            size = 128
+        elif 1024 < cache_size <= 3968:
             size = 256
-        # better to use 512GB disks if possible, up to a point
-        elif 1024 < cache_size <= 4096:
-            size = 512
-        elif 4096 < cache_size <= 8192:
+        elif 3968 < cache_size <= 8192:
             size = 1024
+        elif 8192 < cache_size <= 12288:
+            size = 2048
 
         count = int((cache_size + size - 1) / size)
+        # make sure (if we know) we do not exceed the maximum data disk count
+        if machine_type:
+            max_disk_count = self.MACHINE_DEFAULTS.get(machine_type, {}).get('max_data_disk_count') or count
+            if max_disk_count < count:
+                count = max_disk_count
+                size = int(cache_size / max_disk_count)
+                if size not in sizes:
+                    for s in sorted(sizes):
+                        # find the smallest count, size combo
+                        candidate_counts = [_ for _ in range(1, count+1) if _*s >= cache_size]
+                        if candidate_counts:
+                            size = s
+                            count = candidate_counts[0]
+                            break
+                    else:
+                        raise vFXTConfigurationException("Invalid cache size: {}".format(cache_size))
         return tuple([count, size])
 
     def _get_network(self, network=None, resource_group=None):

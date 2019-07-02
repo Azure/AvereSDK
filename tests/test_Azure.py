@@ -213,15 +213,26 @@ class Azure_test(tests.vFXTTestCase.Base):
         service = self.mk_azure_service()
         self.assertTrue(service._cache_to_disk_config(100) == (1, 128))
         self.assertTrue(service._cache_to_disk_config(250) == (1, 256))
-        self.assertTrue(service._cache_to_disk_config(500) == (2, 256))
-        self.assertTrue(service._cache_to_disk_config(512) == (2, 256))
-        self.assertTrue(service._cache_to_disk_config(750) == (3, 256))
-        self.assertTrue(service._cache_to_disk_config(1000) == (4, 256))
-        self.assertTrue(service._cache_to_disk_config(1500) == (3, 512))
-        self.assertTrue(service._cache_to_disk_config(4000) == (8, 512))
+        self.assertTrue(service._cache_to_disk_config(500) == (4, 128))
+        self.assertTrue(service._cache_to_disk_config(512) == (4, 128))
+        self.assertTrue(service._cache_to_disk_config(750) == (6, 128))
+        self.assertTrue(service._cache_to_disk_config(1000) == (8, 128))
+        self.assertTrue(service._cache_to_disk_config(1500) == (6, 256))
+        self.assertTrue(service._cache_to_disk_config(4000) == (4, 1024))
         self.assertTrue(service._cache_to_disk_config(5000) == (5, 1024))
         self.assertTrue(service._cache_to_disk_config(8000) == (8, 1024))
         self.assertTrue(service._cache_to_disk_config(30000) == (8, 4095))
+
+        self.assertTrue(service._cache_to_disk_config(12000, machine_type='Standard_D16s_v3') == (6, 2048))
+        self.assertTrue(service._cache_to_disk_config(12000, machine_type='Standard_D32s_v3') == (6, 2048))
+        self.assertTrue(service._cache_to_disk_config(750, machine_type='Standard_DS4_v2') == (3, 256)) # 4 disk limit
+        self.assertTrue(service._cache_to_disk_config(1000, machine_type='Standard_DS4_v2') == (4, 256)) # 4 disk limit
+        self.assertTrue(service._cache_to_disk_config(1500, machine_type='Standard_DS4_v2') == (3, 512)) # 4 disk limit
+        self.assertTrue(service._cache_to_disk_config(3000, machine_type='Standard_DS4_v2') == (3, 1024)) # 4 disk limit
+        self.assertTrue(service._cache_to_disk_config(30000, machine_type='Standard_D4s_v3') == (8, 4095)) # 8 disk limit
+        self.assertRaises(vFXT.service.vFXTConfigurationException, service._cache_to_disk_config, 16400, machine_type='Standard_DS4_v2') # 4 disk limit max 32768
+        self.assertRaises(vFXT.service.vFXTConfigurationException, service._cache_to_disk_config, 32800, machine_type='Standard_D4s_v3') # 8 disk limit max 32768
+        self.assertRaises(vFXT.service.vFXTConfigurationException, service._cache_to_disk_config, 132000, machine_type='Standard_D16s_v3') # 32 disk limit max 131072
 
     def test__get_network(self):
         service = self.mk_azure_service()

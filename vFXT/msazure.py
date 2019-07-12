@@ -114,6 +114,8 @@ log = logging.getLogger(__name__)
 
 class ContainerExistsException(Exception): pass
 
+IP_CONFIG_HACK_RE = re.compile(r'which is being cleaned up and was allocated to resource \/subscriptions\/[^\/]*\/resourceGroups\/([^\/]*)\/providers\/Microsoft\.Network\/networkInterfaces\/(.*)\.$')
+
 class Service(ServiceBase):
     '''Azure service backend'''
     ON_STATUS = ['ProvisioningState/succeeded', 'PowerState/running']
@@ -2158,6 +2160,19 @@ class Service(ServiceBase):
                 break
             # check for retry-able/fatal exceptions
             except (msrestazure.azure_exceptions.CloudError, vFXTServiceFailure) as e:
+                # HACK
+                if isinstance(e, msrestazure.azure_exceptions.CloudError):
+                    hack_m = IP_CONFIG_HACK_RE.search(str(e))
+                    if hack_m:
+                        try:
+                            bad_nic_rsg, bad_nic_name = hack_m.groups()
+                            bad_nic = conn.network_interfaces.get(bad_nic_rsg, bad_nic_name)
+                            if bad_nic:
+                                bad_nic_data = bad_nic.serialize()
+                                conn.network_interfaces.create_or_update(bad_nic_rsg, bad_nic_name, bad_nic_data)
+                        except Exception as hack_error:
+                            log.error("Hack failed: {}".format(hack_error))
+
                 nic = self._instance_primary_nic(instance) # refresh on error
                 log.debug("Failed to add address {} to {}: {}".format(address, self.name(instance), e))
                 if retries == 0:

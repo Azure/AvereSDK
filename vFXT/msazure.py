@@ -1112,8 +1112,6 @@ class Service(ServiceBase):
         if body['tags']:
             if len(body['tags']) > 15:
                 raise vFXTConfigurationException("Resources cannot have more than 15 tags")
-            if any([len(_) > 512 for _ in body['tags']]):
-                raise vFXTConfigurationException("Tag names cannot exceed 512 characters")
             if any([len(body['tags'][_]) > 256 for _ in body['tags']]):
                 raise vFXTConfigurationException("Tag names cannot exceed 256 characters")
 

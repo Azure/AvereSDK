@@ -1962,6 +1962,9 @@ class Service(ServiceBase):
                 if cred['type'] == self.COREFILER_CRED_MSI:
                     return cred['name']
 
+        if isinstance(blob_srv.authentication, msrestazure.azure_active_directory.MSIAuthentication):
+            raise vFXTConfigurationException("Could not create credential, no MSI credential found for resource group {}".format(self.storage_resource_group))
+
         cred_name = 'azure-storage-{}'.format(storage_account)
         # if it exists, use it
         if cred_name in [c['name'] for c in existing_creds]:

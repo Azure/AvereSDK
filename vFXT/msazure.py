@@ -1352,7 +1352,8 @@ class Service(ServiceBase):
 
         data_disk_disks = []
         data_disk_caching = node_opts.get('data_disk_caching') or 'ReadOnly'
-        for idx in range(node_opts['data_disk_count']):
+        data_disk_count = node_opts.get('data_disk_count', machine_defs['data_disk_count'])
+        for idx in range(data_disk_count):
             disk_name = '{}-data_disk-{}-{}'.format(node_name, idx, int(time.time()))
             data_disk = {
                 'name': disk_name,
@@ -1424,7 +1425,7 @@ class Service(ServiceBase):
         # disk sizing
         root_image        = options.get('root_image') or self._get_default_image()
         data_disk_size    = options.get('data_disk_size') or machine_defs['data_disk_size']
-        data_disk_count   = options.get('data_disk_count') or machine_defs['data_disk_count']
+        data_disk_count   = options.get('data_disk_count', machine_defs['data_disk_count'])
         data_disk_caching = options.get('data_disk_caching') or self.DEFAULT_CACHING_OPTION
         options.setdefault('root_disk_caching', self.DEFAULT_CACHING_OPTION)
 
@@ -1517,7 +1518,7 @@ class Service(ServiceBase):
 
         # look at cluster.nodes[0].instance
         instance          = cluster.nodes[0].instance
-        data_disk_count   = options.get('data_disk_count') or len(instance.storage_profile.data_disks)
+        data_disk_count   = options.get('data_disk_count', len(instance.storage_profile.data_disks))
         data_disk_size    = options.get('data_disk_size') or instance.storage_profile.data_disks[0].disk_size_gb
         data_disk_caching = options.get('data_disk_caching') or instance.storage_profile.data_disks[0].caching.value
         root_image        = options.get('root_image') or None

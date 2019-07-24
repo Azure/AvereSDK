@@ -643,6 +643,9 @@ def main():
         if args.enable_bucket_encryption:
             args.disable_bucket_encryption = False
 
+        if args.azure_tag:
+            args.azure_tag = {n.split(':')[0]: (n.split(':')[1] or '') for n in args.azure_tag if len(n.split(':')) > 1}
+
     # generic service options
     service.POLLTIME = args.poll_time
 

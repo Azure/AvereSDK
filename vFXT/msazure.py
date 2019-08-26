@@ -623,6 +623,7 @@ class Service(ServiceBase):
                 proxy_uri (str, optional): URI of proxy resource
                 no_connection_test (bool, optional): skip connection tests, defaults to False
                 skip_load_defaults (bool, optional): do not fetch defaults
+                no_network_setup (bool, optional): do not try and detect network configuration from environment
                 resource_group (str, optional): Resource group
                 network_resource_group (str, optional): Network resource group (if different from instance resource_group)
                 storage_resource_group (str, optional): Azure Storage account resource group (if different from the instance resource_group)
@@ -673,20 +674,21 @@ class Service(ServiceBase):
             if not instance:
                 raise vFXTConfigurationException("Unable to retrieve current instance")
 
-            nic_id    = instance.network_profile.network_interfaces[0].id
-            nic_name  = nic_id.split('/')[-1]
-            nic_rsg   = nic_id.split('/')[4]
-            nic       = service.connection('network').network_interfaces.get(nic_rsg, nic_name)
-            subnet_id = nic.ip_configurations[0].subnet.id
+            if not options.get('no_network_setup'):
+                nic_id    = instance.network_profile.network_interfaces[0].id
+                nic_name  = nic_id.split('/')[-1]
+                nic_rsg   = nic_id.split('/')[4]
+                nic       = service.connection('network').network_interfaces.get(nic_rsg, nic_name)
+                subnet_id = nic.ip_configurations[0].subnet.id
 
-            if not subnet:
-                service.subnets = [subnet_id.split('/')[-1]]
-            if not network:
-                service.network = subnet_id.split('/')[-3]
-            if nic.network_security_group:
-                service.network_security_group = nic.network_security_group.id.split('/')[-1]
-            if not network_resource_group:
-                service.network_resource_group = subnet_id.split('/')[4] # our subnet/network may be in different resource groups
+                if not subnet:
+                    service.subnets = [subnet_id.split('/')[-1]]
+                if not network:
+                    service.network = subnet_id.split('/')[-3]
+                if nic.network_security_group:
+                    service.network_security_group = nic.network_security_group.id.split('/')[-1]
+                if not network_resource_group:
+                    service.network_resource_group = subnet_id.split('/')[4] # our subnet/network may be in different resource groups
 
             service.tenant_id = instance.identity.tenant_id
 

@@ -5,6 +5,7 @@
 from future.moves.urllib import parse as urlparse
 from future.utils import viewitems
 import argparse
+import base64
 import logging
 import getpass
 import ssl
@@ -173,7 +174,7 @@ def _add_bucket_corefiler(cluster, logger, args):
     if key and args.core_filer_key_file:
         try:
             with open(args.core_filer_key_file, 'wb') as f:
-                f.write(key['recoveryFile'].decode('base64'))
+                f.write(base64.b64decode(key['recoveryFile']))
             logger.info("Saved encryption key for {} to {}".format(bucketname, args.core_filer_key_file))
         except Exception as e:
             if args.debug:

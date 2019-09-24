@@ -72,6 +72,7 @@ import json
 from future.moves.urllib import parse as urlparse
 import filecmp
 from itertools import cycle
+import uuid
 
 import boto
 import boto.ec2
@@ -84,7 +85,7 @@ logging.getLogger('boto').setLevel(logging.CRITICAL)
 
 from vFXT.cidr import Cidr
 from vFXT.serviceInstance import ServiceInstance
-from vFXT.service import *
+from vFXT.service import vFXTServiceTimeout, vFXTServiceConnectionFailure, vFXTServiceFailure, vFXTServiceMetaDataFailure, vFXTConfigurationException, vFXTCreateFailure, vFXTNodeExistsException, ShelveErrors, ServiceBase, backoff, load_defaults, CONNECTION_TIMEOUT
 
 log = logging.getLogger(__name__)
 
@@ -371,7 +372,7 @@ class Service(ServiceBase):
         return data
 
     @classmethod
-    def environment_init(cls, profile='default', **kwargs):
+    def environment_init(cls, profile='default', **kwargs): #pylint: disable=arguments-differ
         '''Init an AWS service object using the local environment credentials
 
             Arguments:
@@ -408,7 +409,7 @@ class Service(ServiceBase):
         return Service(access_key=access_key, secret_access_key=secret_key, security_token=token, **kwargs)
 
     @classmethod
-    def on_instance_init(cls, source_address=None, no_connection_test=False, proxy_uri=None, **options):
+    def on_instance_init(cls, source_address=None, no_connection_test=False, proxy_uri=None, **options): #pylint: disable=arguments-differ
         '''Init an AWS service object from instance metadata
             Arguments:
                 source_address (str, optional): source address for data request
@@ -507,7 +508,7 @@ class Service(ServiceBase):
             else:
                 boto_config.remove_option('Boto', 'num_retries')
 
-    def check(self, percentage=0.6, instances=0, machine_type=None, data_disk_type=None, data_disk_size=None, data_disk_count=None): #pylint: disable=unused-argument
+    def check(self, percentage=0.6, instances=0, machine_type=None, data_disk_type=None, data_disk_size=None, data_disk_count=None): #pylint: disable=unused-argument,arguments-differ
         '''Check quotas and API access
 
             Arguments:
@@ -547,7 +548,6 @@ class Service(ServiceBase):
             log.error("Failed API test: {}".format(e))
 
         log.info("Performing IAM create/delete policy test")
-        import uuid
         role_name = 'avere_iam_check_{}'.format(str(uuid.uuid4()).lower().replace('-', '')[0:63])
         role = None
         try:
@@ -573,7 +573,7 @@ class Service(ServiceBase):
             except Exception as e:
                 log.error("Failed to delete bucket {}: {}".format(bucket_name, e))
 
-    def connection(self, connection_type='ec2'):
+    def connection(self, connection_type='ec2'): #pylint: disable=arguments-differ
         '''Connection factory, returns a new connection or thread local copy
 
             Arguments:
@@ -748,10 +748,9 @@ class Service(ServiceBase):
             if retries == 0:
                 if instance.reboots_tried == 3:
                     raise vFXTServiceTimeout("Failed waiting for {} status checks".format(instance_id))
-                else:
-                    instance.reboots_tried += 1
-                    log.debug("Attempt {} to restart instance {}".format(instance.reboots_tried, instance_id))
-                    self.restart(instance)
+                instance.reboots_tried += 1
+                log.debug("Attempt {} to restart instance {}".format(instance.reboots_tried, instance_id))
+                self.restart(instance)
             try:
                 statuses = _aws_do(conn.get_all_instance_status, instance_id)
                 if statuses:
@@ -802,7 +801,7 @@ class Service(ServiceBase):
         instance.reboot()
         self.wait_for_status(instance, self.ON_STATUS, wait)
 
-    def destroy(self, instance, wait=ServiceBase.WAIT_FOR_DESTROY, keep_root_disk=False):
+    def destroy(self, instance, wait=ServiceBase.WAIT_FOR_DESTROY, keep_root_disk=False): #pylint: disable=arguments-differ
         '''Destroy an instance
 
             Arguments:
@@ -923,7 +922,7 @@ class Service(ServiceBase):
             return instance.private_dns_name
 
     # storage/buckets
-    def create_bucket(self, name, **options):
+    def create_bucket(self, name, **options): #pylint: disable=arguments-differ
         '''Create a bucket
 
             Arguments:
@@ -974,7 +973,7 @@ class Service(ServiceBase):
                     raise vFXTServiceFailure("Failed to create bucket {}: {}".format(name, e))
                 retries -= 1
 
-    def authorize_bucket(self, cluster, name, write_only=False, retries=ServiceBase.CLOUD_API_RETRIES, xmlrpc=None):
+    def authorize_bucket(self, cluster, name, write_only=False, retries=ServiceBase.CLOUD_API_RETRIES, xmlrpc=None): #pylint: disable=arguments-differ
         '''Perform any backend work for the bucket, and register a credential
         for it to the cluster
 
@@ -1065,7 +1064,7 @@ class Service(ServiceBase):
         except Exception as e:
             raise vFXTServiceFailure("Failed to delete bucket {}: {}".format(name, e))
 
-    def create_instance(self, machine_type, name, boot_disk_image, other_disks=None, tags=None, **options):
+    def create_instance(self, machine_type, name, boot_disk_image, other_disks=None, tags=None, **options): #pylint: disable=arguments-differ
         '''Create and return an AWS instance
 
             Arguments:
@@ -1131,7 +1130,7 @@ class Service(ServiceBase):
         tenancy         = 'dedicated' if options.get('dedicated_tenancy') else None
 
         if security_groups and not isinstance(security_groups, list):
-            security_groups = [_ for _ in security_groups.split(' ')]
+            security_groups = security_groups.split(' ')
 
         interfaces = None
         if options.get('auto_public_address', False):
@@ -1671,7 +1670,7 @@ class Service(ServiceBase):
         _aws_do(conn.create_tags, instance.id, tag)
         log.debug("Creating instance tags: {}".format(tag))
 
-    def unshelve(self, instance, count_override=None, size_override=None, type_override=None, **options):
+    def unshelve(self, instance, count_override=None, size_override=None, type_override=None, **options): #pylint: disable=arguments-differ
         ''' bring our instance back to life.  This requires a tag called
             shelved that contains the number of disks and their size/type
 
@@ -1818,7 +1817,7 @@ class Service(ServiceBase):
         except Exception as e:
             raise vFXTConfigurationException("Check that the subnet or specified address range has enough free addresses: {}".format(e))
 
-    def get_dns_servers(self, subnet_id=None):
+    def get_dns_servers(self, subnet_id=None): #pylint: disable=arguments-differ
         '''Get DNS server addresses
 
             Arguments:
@@ -1839,7 +1838,7 @@ class Service(ServiceBase):
         except Exception as e:
             raise vFXTServiceFailure("Failed to determine DNS configuration: {}".format(e))
 
-    def get_ntp_servers(self, subnet_id=None):
+    def get_ntp_servers(self, subnet_id=None): #pylint: disable=arguments-differ
         '''Get NTP server addresses
             Arguments:
                 subnet_id (str): subnet id (optional if given to constructor)
@@ -1854,7 +1853,7 @@ class Service(ServiceBase):
         except Exception:
             return self.NTP_SERVERS
 
-    def get_default_router(self, subnet_id=None):
+    def get_default_router(self, subnet_id=None): #pylint: disable=arguments-differ
         '''Get default route address
 
             Arguments:
@@ -1945,7 +1944,7 @@ class Service(ServiceBase):
         subnet = _aws_do(vpc.get_all_subnets, subnet_ids=[subnet_id])[0]
         return subnet
 
-    def in_use_addresses(self, cidr_block, category='all'):
+    def in_use_addresses(self, cidr_block, category='all'): #pylint: disable=arguments-differ
         '''Return a list of in use addresses within the specified cidr
 
             Arguments:

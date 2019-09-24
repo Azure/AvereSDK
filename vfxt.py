@@ -14,7 +14,7 @@ import uuid
 
 import vFXT
 from vFXT import Cluster
-from vFXT.service import *
+from vFXT.service import vFXTStatusFailure, vFXTConnectionFailure
 from vFXT import Cidr
 
 def _validate_ip(addr):
@@ -960,7 +960,7 @@ def main():
             cluster.rebalance_directory_managers()
         except vFXTStatusFailure as e:
             logger.error(e)
-            if 'A directory manager rebalance operation is already scheduled' in e:
+            if 'A directory manager rebalance operation is already scheduled' in str(e):
                 parser.exit(1)
         if args.wait_for_state:
             cluster.wait_for_healthcheck(state=args.wait_for_state, duration=args.wait_for_state_duration)
@@ -1057,7 +1057,7 @@ if __name__ == '__main__':
         old_py_e = Exception("vFXT requires 2.7.10 or later")
         if sys.version_info.major < 2:
             raise Exception("vFXT requires 2.7.10 or later")
-        elif sys.version_info.major == 2 and (sys.version_info.minor < 7 or sys.version_info.micro < 10):
+        if sys.version_info.major == 2 and (sys.version_info.minor < 7 or sys.version_info.micro < 10):
             raise Exception("vFXT requires 2.7.10 or later")
         if not hasattr(ssl, 'PROTOCOL_TLSv1_2'):
             raise Exception("vFXT requires OpenSSL with TLSv1.2 support")

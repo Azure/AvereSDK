@@ -85,7 +85,7 @@ logging.getLogger('googleapiclient').setLevel(logging.CRITICAL)
 
 from vFXT.cidr import Cidr
 from vFXT.serviceInstance import ServiceInstance
-from vFXT.service import *
+from vFXT.service import vFXTServiceTimeout, vFXTServiceConnectionFailure, vFXTServiceFailure, vFXTServiceMetaDataFailure, vFXTConfigurationException, vFXTCreateFailure, vFXTNodeExistsException, ShelveErrors, ServiceBase, backoff, load_defaults, CONNECTION_TIMEOUT
 
 log = logging.getLogger(__name__)
 
@@ -384,7 +384,7 @@ class Service(ServiceBase):
         return Service(**kwargs)
 
     @classmethod
-    def on_instance_init(cls, source_address=None, no_connection_test=False, proxy_uri=None, **kwargs):
+    def on_instance_init(cls, source_address=None, no_connection_test=False, proxy_uri=None, **kwargs): #pylint: disable=arguments-differ
         '''Init a GCE service object from instance metadata
             Arguments:
                 source_address (str, optional): source address for data request
@@ -500,7 +500,7 @@ class Service(ServiceBase):
                 log.exception(e)
             raise vFXTServiceConnectionFailure("Failed to establish connection to service: {}".format(e))
 
-    def check(self, percentage=0.6, instances=0, machine_type=None, data_disk_type=None, data_disk_size=None, data_disk_count=None):
+    def check(self, percentage=0.6, instances=0, machine_type=None, data_disk_type=None, data_disk_size=None, data_disk_count=None): #pylint: disable=arguments-differ
         '''Check quotas and API access
 
             Arguments:
@@ -616,7 +616,7 @@ class Service(ServiceBase):
                 disable_ssl_certificate_validation=self.DISABLE_SSL_CERTIFICATE_VALIDATION, timeout=CONNECTION_TIMEOUT)
         return creds.authorize(http_transport)
 
-    def connection(self, connection_type='compute', version='v1', retries=CONNECTION_TIMEOUT, scopes=None):
+    def connection(self, connection_type='compute', version='v1', retries=CONNECTION_TIMEOUT, scopes=None): #pylint: disable=arguments-differ
         '''Connection factory, returns a new connection or thread local copy
 
             Arguments:
@@ -656,7 +656,7 @@ class Service(ServiceBase):
 
         return self.local.connections[connection_sig]
 
-    def find_instances(self, search=None, all_regions=True):
+    def find_instances(self, search=None, all_regions=True): #pylint: disable=arguments-differ
         '''Returns all or filtered list of instances
 
             Arguments:
@@ -686,7 +686,7 @@ class Service(ServiceBase):
                     break
         return instances
 
-    def get_instances(self, instance_ids, all_regions=True):
+    def get_instances(self, instance_ids, all_regions=True): #pylint: disable=arguments-differ
         '''Returns a list of instances with the given instance ID list
 
             Arguments:
@@ -709,7 +709,7 @@ class Service(ServiceBase):
                 pass
         return instances
 
-    def get_instance(self, instance_id, all_regions=True):
+    def get_instance(self, instance_id, all_regions=True): #pylint: disable=arguments-differ
         '''Get a specific instance by instance ID
 
             Arguments:
@@ -782,8 +782,7 @@ class Service(ServiceBase):
                 if int(e.resp['status']) < 500:
                     if 'httpErrorMessage' in response:
                         raise vFXTServiceFailure("{}: {}".format(response['httpErrorMessage'], response['error']['errors'][0]['message']))
-                    else:
-                        raise vFXTServiceFailure(e)
+                    raise vFXTServiceFailure(e)
                 errors += 1
                 time.sleep(backoff(errors))
             retries -= 1
@@ -847,7 +846,7 @@ class Service(ServiceBase):
         self.stop(instance)
         self.start(instance)
 
-    def destroy(self, instance, wait=ServiceBase.WAIT_FOR_DESTROY, keep_root_disk=False):
+    def destroy(self, instance, wait=ServiceBase.WAIT_FOR_DESTROY, keep_root_disk=False): #pylint: disable=arguments-differ
         '''Destroy an instance
 
             Arguments:
@@ -1050,7 +1049,7 @@ class Service(ServiceBase):
         instance = self.refresh(instance)
         self._set_metadata(instance, "shelved", shelved)
 
-    def unshelve(self, instance, count_override=None, size_override=None, type_override=None, **options): #pylint: disable=unused-argument
+    def unshelve(self, instance, count_override=None, size_override=None, type_override=None, **options): #pylint: disable=unused-argument,arguments-differ
         ''' bring our instance back to life.  This requires a metadata tag called
             shelved that contains the number of disks and their size/type
 
@@ -1132,7 +1131,7 @@ class Service(ServiceBase):
     def wait_for_service_checks(self, instance, retries=ServiceBase.WAIT_FOR_SERVICE_CHECKS): pass
 
     # storage/buckets
-    def create_bucket(self, name, **options):
+    def create_bucket(self, name, **options): #pylint: disable=arguments-differ
         '''Create a bucket
 
             Arguments:
@@ -1226,7 +1225,7 @@ class Service(ServiceBase):
         return existing_creds[0]['name']
 
     # networking
-    def get_default_router(self, subnetwork=None):
+    def get_default_router(self, subnetwork=None): #pylint: disable=arguments-differ
         '''Get default route address
 
             Arguments:
@@ -1277,7 +1276,7 @@ class Service(ServiceBase):
         '''
         return self.NTP_SERVERS
 
-    def in_use_addresses(self, cidr_block, category='all'):
+    def in_use_addresses(self, cidr_block, category='all'): #pylint: disable=arguments-differ
         '''Return a list of in use addresses within the specified cidr
 
             Arguments:
@@ -1424,7 +1423,7 @@ class Service(ServiceBase):
             data['subnetwork_id'] = self.subnetwork_id
         return data
 
-    def create_instance(self, machine_type, name, boot_disk_image, other_disks=None, **options):
+    def create_instance(self, machine_type, name, boot_disk_image, other_disks=None, **options): #pylint: disable=arguments-differ
         '''Create and return a GCE instance
 
             Arguments:
@@ -1517,7 +1516,7 @@ class Service(ServiceBase):
             body['networkInterfaces'][0]['network'] = subnetwork['network']
         else:
             subnetwork_region = self._zone_to_region(zone)
-            subnetworks = [_ for _ in self._get_subnetworks(subnetwork_region)]
+            subnetworks = self._get_subnetworks(subnetwork_region)
             if subnetworks: # no subnetwork specified, but we have them so use one
                 subnetwork = subnetworks[0]
                 log.warninging("No subnetwork specified, picking {}".format(subnetwork['selfLink']))
@@ -2127,7 +2126,7 @@ class Service(ServiceBase):
         '''
         if not hasattr(self.local, '_zone_names'):
             conn = self.connection()
-            self.local._zone_names = [_ for _ in self.zones]
+            self.local._zone_names = list(self.zones)
             regions = _gce_do(conn.regions().list, project=self.project_id)['items']
             all_zones = [zone.split('/')[-1] for region in regions if 'zones' in region for zone in region['zones']]
             self.local._zone_names.extend([_ for _ in all_zones if _ not in self.zones])
@@ -2287,7 +2286,7 @@ class Service(ServiceBase):
                 subnetwork = self._get_subnetwork(self.subnetwork_id)
             if not subnetwork:
                 subnetwork_region = self._zone_to_region(zone)
-                subnetworks = [_ for _ in self._get_subnetworks(subnetwork_region)]
+                subnetworks = self._get_subnetworks(subnetwork_region)
                 if subnetworks: # no subnetwork specified, but we have them so use one
                     subnetwork = subnetworks[0]
             if subnetwork:
@@ -2579,7 +2578,7 @@ class Service(ServiceBase):
         category = 'instance' if self._cidr_overlaps_network('{}/32'.format(address)) else 'all'
 
         # look in all zones in the current region, starting with our current zones
-        zones = [_ for _ in self.zones]
+        zones = list(self.zones)
         for zone in self._zone_names(all_regions=False):
             if zone not in zones:
                 zones.append(zone)

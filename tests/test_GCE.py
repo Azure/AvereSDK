@@ -2,6 +2,7 @@
 # Copyright (c) 2015-2019 Avere Systems, Inc.  All Rights Reserved.
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License. See LICENSE in the project root for license information.
+import json
 import unittest
 import uuid
 import time
@@ -55,7 +56,6 @@ class GCE_test(tests.vFXTTestCase.Base):
         fd, name = tempfile.mkstemp(suffix='.json')
         try:
             with os.fdopen(fd, 'w') as f:
-                import json
                 key_data = json.load(open(self.gce['key_file']))
                 del key_data['client_email']
                 json.dump(key_data, f)
@@ -65,14 +65,12 @@ class GCE_test(tests.vFXTTestCase.Base):
 
     def test__init___with_key_data(self):
         service = self.mk_gce_service()
-        import json
         key_data = json.load(open(self.gce['key_file']))
         withkey = Service(key_data=key_data, zone=service.zones[0], network_id=service.network_id)
         self.assertIsInstance(withkey, vFXT.gce.Service)
 
     def test__init___with_bad_key_data(self):
         service = self.mk_gce_service()
-        import json
         key_data = json.load(open(self.gce['key_file']))
         del key_data['client_email']
         self.assertRaises(vFXT.service.vFXTConfigurationException, Service, key_data=key_data, zone=service.zones[0], network_id=service.network_id)
@@ -353,7 +351,7 @@ class GCE_test(tests.vFXTTestCase.Base):
         service = self.mk_gce_service()
 
         subnetwork_region = service._zone_to_region(service.zones[0])
-        subnetworks = [_ for _ in service._get_subnetworks(subnetwork_region)]
+        subnetworks = service._get_subnetworks(subnetwork_region)
         if not subnetworks:
             self.skipTest("skipping tests for no subnetwork configuration")
         ipalias_range = subnetworks[0].get('ipCidrRange')

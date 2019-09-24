@@ -101,12 +101,12 @@ import itertools
 
 import vFXT.xmlrpcClt
 from vFXT.serviceInstance import ServiceInstance
-from vFXT.service import *
+from vFXT.service import vFXTServiceFailure, vFXTConfigurationException, vFXTCreateFailure, vFXTStatusFailure, vFXTConnectionFailure, ServiceBase, validate_proxy
 from vFXT.cidr import Cidr
 
 log = logging.getLogger(__name__)
 
-class Cluster(object):
+class Cluster(object): #pylint: disable=useless-object-inheritance
     '''Cluster representation
 
         Cluster composes the backend service object and performs all
@@ -402,8 +402,7 @@ class Cluster(object):
                     xmlrpc = self.xmlrpc(conn_retries)
                 if alert_codes:
                     raise vFXTStatusFailure("Healthcheck for state {} failed: {}".format(state, alert_codes))
-                else:
-                    raise vFXTStatusFailure("Healthcheck for state {} failed".format(state))
+                raise vFXTStatusFailure("Healthcheck for state {} failed".format(state))
             self._sleep()
 
     @classmethod
@@ -801,7 +800,7 @@ class Cluster(object):
                 def signal_handler(signum, stack):
                     log.debug("Signal handler for sig {}: {}".format(signum, stack))
                     raise vFXTConnectionFailure("Connection alarm raised")
-                import signal
+                import signal #pylint: disable=import-outside-toplevel
                 if hasattr(signal, 'alarm') and hasattr(signal, 'SIGALRM'):
                     signal.signal(signal.SIGALRM, signal_handler)
                     signal.alarm(60)

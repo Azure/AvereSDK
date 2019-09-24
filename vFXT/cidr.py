@@ -29,7 +29,7 @@ import socket
 import logging
 log = logging.getLogger(__name__)
 
-class Cidr(object):
+class Cidr(object): #pylint: disable=useless-object-inheritance
     '''A utility class for cidr notation'''
     def __init__(self, cidr, netmask=None):
         '''
@@ -93,9 +93,6 @@ class Cidr(object):
         end   = self.end()
         for i in range(start, end + 1):
             yield i
-    def range_list(self):
-        '''Returns list from range'''
-        return [n for n in self.range()]
 
     def addresses(self):
         '''range of address strings in the block
@@ -103,9 +100,6 @@ class Cidr(object):
         '''
         for i in self.range():
             yield self.to_address(i)
-    def addresses_list(self):
-        '''Returns list from addresses'''
-        return [n for n in self.addresses()]
 
     def contains(self, ip):
         '''

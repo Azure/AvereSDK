@@ -27,7 +27,7 @@ class Cluster_test(tests.vFXTTestCase.Base):
             if all([len(_.in_use_addresses()) > 1 for _ in cluster.nodes]):
                 break
             if retries == 0:
-                self.assertTrue(False, msg="All nodes have cluster addresses assigned")
+                self.fail("All nodes have cluster addresses assigned")
             retries -= 1
             cluster._sleep(1)
 

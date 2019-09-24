@@ -54,23 +54,23 @@ class cidr_test(tests.vFXTTestCase.Base):
 
     def test_range(self):
         c = Cidr('10.1.1.0/24')
-        self.assertTrue(len(c.range_list()) == 256)
+        self.assertTrue(len(list(c.range())) == 256)
         c = Cidr('10.1.1.0/16')
-        self.assertTrue(len(c.range_list()) == 65536)
+        self.assertTrue(len(list(c.range())) == 65536)
         #c = Cidr('10.1.1.0/8')
-        #self.assertTrue(len(c.range_list()) == 16777216)
+        #self.assertTrue(len(list(c.range())) == 16777216)
         c = Cidr('10.1.1.0/32')
-        self.assertTrue(len(c.range_list()) == 1)
+        self.assertTrue(len(list(c.range())) == 1)
 
     def test_addresses(self):
         c = Cidr('10.1.1.0/24')
-        self.assertTrue(len(c.addresses_list()) == 256)
+        self.assertTrue(len(list(c.addresses())) == 256)
         c = Cidr('10.1.1.0/16')
-        self.assertTrue(len(c.addresses_list()) == 65536)
+        self.assertTrue(len(list(c.addresses())) == 65536)
         #c = Cidr('10.1.1.0/8')
-        #self.assertTrue(len(c.addresses_list()) == 16777216)
+        #self.assertTrue(len(list(c.addresses())) == 16777216)
         c = Cidr('10.1.1.0/32')
-        self.assertTrue(len(c.addresses_list()) == 1)
+        self.assertTrue(len(list(c.addresses())) == 1)
 
     def test_contains(self):
         c = Cidr('10.1.1.0/24')
@@ -119,7 +119,7 @@ class cidr_test(tests.vFXTTestCase.Base):
 
     def test_available(self):
         c = Cidr('10.1.1.200/28')
-        self.assertTrue(len(c.addresses_list()) == 16)
+        self.assertTrue(len(list(c.addresses())) == 16)
         used = ['10.1.1.196', '10.1.1.200']
         self.assertTrue(self.cmp(c.available(used=used), ['10.1.1.197']) == 0)
         self.assertTrue(self.cmp(c.available(count=1, used=used), ['10.1.1.197']) == 0)

@@ -5,6 +5,7 @@
 import unittest
 import logging
 import os
+import socket
 import tempfile
 
 import vFXT.service
@@ -39,7 +40,6 @@ class service_test(tests.vFXTTestCase.Base):
         self.assertTrue(vFXT.service.gethostbyname('www.google.com'))
         self.assertTrue(vFXT.service.gethostbyname('127.0.0.1'))
 
-        import socket
         self.assertRaises(socket.gaierror, vFXT.service.gethostbyname, '-')
 
     def test_url_fetch(self):

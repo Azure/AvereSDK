@@ -16,7 +16,7 @@ logging.getLogger('urllib3').setLevel(logging.WARNING)
 class RequestsTransport(xmlrpc.client.SafeTransport):
 
     class CustomAdapter(requests.adapters.HTTPAdapter):
-        def init_poolmanager(self, *args, **kwargs):
+        def init_poolmanager(self, *args, **kwargs): #pylint: disable=arguments-differ
             kwargs['socket_options'] = [
                 (socket.SOL_TCP, socket.TCP_NODELAY, 1),     # disable Nagle algorithm and send small requests immediately
                 (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1), # check for dead servers

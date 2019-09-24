@@ -74,7 +74,7 @@ def gethostbyname(host, timeout=DNS_TIMEOUT):
     '''
     try:
         from dns.resolver import Resolver
-        import dns.inet
+        import dns.inet #pylint: disable=import-outside-toplevel
         r = Resolver()
         r.timeout = r.lifetime = timeout
 
@@ -112,7 +112,7 @@ def load_defaults(service):
 
 
 class BarrierTimeout(Exception): pass
-class Barrier(object):
+class Barrier(object): #pylint: disable=useless-object-inheritance
     def __init__(self, size=1, timeout=None, errmsg="Timed out waiting for synchronization"):
         self.size = size
         self.counter = 0
@@ -129,7 +129,7 @@ class Barrier(object):
             raise BarrierTimeout(self.errmsg)
 
 
-class ServiceBase(object):
+class ServiceBase(object): #pylint: disable=useless-object-inheritance
     '''Basic service interface'''
     CLUSTER_NODE_NAME_RE = re.compile(r'^(.*?)\-([0-9]+)$')
     BUCKET_NAME_RE = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9_-]{1,253}[a-zA-Z0-9]$') # no periods for S3 Transfer acceleration

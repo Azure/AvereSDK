@@ -51,9 +51,9 @@ inst.add_address('172.16.16.20')
 inst.remove_address('172.16.16.20')
 '''
 
-from vFXT.service import *
+from vFXT.service import vFXTConfigurationException
 
-class ServiceInstance(object):
+class ServiceInstance(object): #pylint: disable=useless-object-inheritance
     '''Presents service specific instance objects in a general way.  This may
         or may not be a vFXT (and so is usable for general purpose cloud instances)
 

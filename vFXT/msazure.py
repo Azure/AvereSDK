@@ -108,7 +108,7 @@ requests.packages.urllib3.disable_warnings() # pylint: disable=no-member
 
 from vFXT.cidr import Cidr
 from vFXT.serviceInstance import ServiceInstance
-from vFXT.service import *
+from vFXT.service import vFXTServiceTimeout, vFXTServiceConnectionFailure, vFXTServiceFailure, vFXTServiceMetaDataFailure, vFXTConfigurationException, vFXTCreateFailure, vFXTNodeExistsException, ShelveErrors, BarrierTimeout, Barrier, ServiceBase, backoff, CONNECTION_TIMEOUT
 
 log = logging.getLogger(__name__)
 
@@ -329,7 +329,7 @@ class Service(ServiceBase):
 
         return True
 
-    def check(self, percentage=0.6, instances=0, machine_type=None, data_disk_type=None, data_disk_size=None, data_disk_count=None): #pylint: disable=unused-argument
+    def check(self, percentage=0.6, instances=0, machine_type=None, data_disk_type=None, data_disk_size=None, data_disk_count=None): #pylint: disable=unused-argument,arguments-differ
         '''Check quotas and API access
 
             Arguments:
@@ -369,7 +369,7 @@ class Service(ServiceBase):
         except Exception as e:
             log.debug(e)
 
-    def connection(self, connection_type='compute', **options):
+    def connection(self, connection_type='compute', **options): #pylint: disable=arguments-differ
         '''Connection factory, returns a new connection or thread local copy
 
             Arguments:
@@ -494,7 +494,7 @@ class Service(ServiceBase):
         return self.local.connections[connection_type]
 
     @classmethod
-    def get_instance_data(cls, **options):
+    def get_instance_data(cls, **options): #pylint: disable=arguments-differ
         '''Detect the instance data
 
             Arguments:
@@ -616,7 +616,7 @@ class Service(ServiceBase):
         return instance_data
 
     @classmethod
-    def on_instance_init(cls, **options):
+    def on_instance_init(cls, **options): #pylint: disable=arguments-differ
         '''Init an Azure service object from instance metadata
             Arguments:
                 source_address (str, optional): source address for data request
@@ -997,7 +997,7 @@ class Service(ServiceBase):
             raise vFXTConfigurationException("Instance {} has no identity configuration".format(self.name(instance)))
 
         principal_id = instance.identity.principal_id
-        role_assignments = [_ for _ in conn.role_assignments.list("principalId eq '{}'".format(principal_id))]
+        role_assignments = conn.role_assignments.list("principalId eq '{}'".format(principal_id))
         roles = [conn.role_definitions.get_by_id(_.role_definition_id) for _ in role_assignments]
         custom_roles = [_ for _ in roles if _.role_type == 'CustomRole']
         if custom_roles:
@@ -1037,7 +1037,7 @@ class Service(ServiceBase):
         '''
         return True
 
-    def create_instance(self, machine_type, name, boot_disk_image, other_disks=None, **options):
+    def create_instance(self, machine_type, name, boot_disk_image, other_disks=None, **options): #pylint: disable=arguments-differ
         '''Create and return an Azure instance
 
             Arguments:
@@ -1811,7 +1811,7 @@ class Service(ServiceBase):
             log.debug(e)
         return False
 
-    def unshelve(self, instance, count_override=None, size_override=None, type_override=None, **options): #pylint: disable=unused-argument
+    def unshelve(self, instance, count_override=None, size_override=None, type_override=None, **options): #pylint: disable=unused-argument,arguments-differ
         ''' bring our instance back to life.  This requires a tag called
             shelved that contains the number of disks and their size/type
 
@@ -1991,7 +1991,7 @@ class Service(ServiceBase):
     delete_bucket = delete_container
     authorize_bucket = authorize_container
 
-    def get_default_router(self, subnet_id=None):
+    def get_default_router(self, subnet_id=None): #pylint: disable=arguments-differ
         '''Get default route address
 
             Arguments:
@@ -2234,7 +2234,7 @@ class Service(ServiceBase):
             time.sleep(self.POLLTIME)
             retries -= 1
 
-    def in_use_addresses(self, cidr_block, **options): #pylint: disable=unused-argument
+    def in_use_addresses(self, cidr_block, **options): #pylint: disable=unused-argument,arguments-differ
         '''Return a list of in use addresses within the specified cidr
 
             Arguments:

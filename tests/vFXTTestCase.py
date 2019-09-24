@@ -1,6 +1,7 @@
 # Copyright (c) 2015-2019 Avere Systems, Inc.  All Rights Reserved.
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License. See LICENSE in the project root for license information.
+import json
 import unittest
 import warnings
 
@@ -13,7 +14,6 @@ class Base(unittest.TestCase):
     def setUp(self):
         '''Load the test_config.json file which has our required test options'''
         try:
-            import json
             f = open('tests/test_config.json', 'rb')
             test_config = json.load(f)
             self.create_clusters                = test_config['create_clusters']

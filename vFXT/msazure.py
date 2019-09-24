@@ -1352,6 +1352,8 @@ class Service(ServiceBase):
         if self.get_instance(node_name):
             raise vFXTNodeExistsException("Node {} exists".format(node_name))
 
+        machine_type    = node_opts['machine_type']
+        machine_defs    = self.MACHINE_DEFAULTS[machine_type]
         data_disk_disks = []
         data_disk_caching = node_opts.get('data_disk_caching') or 'ReadOnly'
         data_disk_count = node_opts.get('data_disk_count', machine_defs['data_disk_count'])
@@ -1368,7 +1370,7 @@ class Service(ServiceBase):
             data_disk_disks.append(data_disk)
 
         log.info("Creating node {}".format(node_name))
-        n = self.create_instance(machine_type=node_opts['machine_type'],
+        n = self.create_instance(machine_type=machine_type,
             name=node_name,
             boot_disk_image=node_opts['root_image'],
             other_disks=data_disk_disks,

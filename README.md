@@ -15,13 +15,19 @@ You can find the user documentation in this repository under [docs](/docs/README
 
 # Installation
 
-With pip
+## With pip
 
 ```pip install vFXT```
 
-From source (see python setup.py install --help options for customization)
+## From source
 
-```python setup.py install```
+Use pip within the source directory to install all of the required dependencies.
+The use of `--user` is encouraged.  This installs the script `vfxt.py` in
+`~/.local/bin` on Unix (`~/Library/Python/{major.minor}/bin` on Mac) and
+`%APPDATA%/Python/Python{major minor}/bin` on Windows.  This path will
+need to be added to the PATH environment variable.
+
+```pip install --user .```
 
 ## Authentication requirements - specific for each service backend
 

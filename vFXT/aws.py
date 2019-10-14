@@ -299,10 +299,10 @@ class Service(ServiceBase):
                 if resp.status != 200:
                     data[attr] = ''
                     continue
-                value = resp.read()
+                value = resp.read().decode()
                 try:
                     value = json.loads(value)
-                except Exception:
+                except ValueError:
                     if str(value).find('\n') > -1: # make a list of multi-values
                         value = str(value).split('\n')
                 data[attr] = value
@@ -310,28 +310,28 @@ class Service(ServiceBase):
             conn.request('GET', '/latest/dynamic/instance-identity/document')
             resp = conn.getresponse()
             if resp.status == 200:
-                data['document'] = json.loads(resp.read())
+                data['document'] = json.loads(resp.read().decode())
 
             conn.request('GET', '/latest/user-data')
             resp = conn.getresponse()
             data['user-data'] = ''
             if resp.status == 200:
-                data['user-data'] = resp.read()
+                data['user-data'] = resp.read().decode()
 
             data['network'] = {'interfaces': {'macs': {}}}
             conn.request('GET', '/latest/meta-data/network/interfaces/macs/')
             macs = []
             resp = conn.getresponse()
             if resp.status == 200:
-                macs = [m[:-1] for m in resp.read().split('\n')]
+                macs = [m[:-1] for m in resp.read().decode().split('\n')]
             for mac in macs:
                 attr_data = {}
                 for attr in mac_attrs:
                     conn.request('GET', '/latest/meta-data/network/interfaces/macs/{}/{}'.format(mac, attr))
-                    r = conn.getresponse().read()
+                    r = conn.getresponse().read().decode()
                     try:
                         r = json.loads(r)
-                    except Exception:
+                    except ValueError:
                         if str(r).find('\n') > -1:
                             r = str(r).split('\n')
                     attr_data[attr] = r
@@ -341,20 +341,20 @@ class Service(ServiceBase):
             creds = []
             resp = conn.getresponse()
             if resp.status == 200:
-                creds = resp.read().split('\n')
+                creds = resp.read().decode().split('\n')
             data['iam'] = {'security-credentials': {}}
             for cred in creds:
                 conn.request('GET', '/latest/meta-data/iam/security-credentials/{}'.format(cred))
-                data['iam']['security-credentials'][cred] = json.loads(conn.getresponse().read())
+                data['iam']['security-credentials'][cred] = json.loads(conn.getresponse().read().decode())
 
             conn.request('GET', '/latest/meta-data/iam/info')
             resp = conn.getresponse()
             data['arn'] = None
             if resp.status == 200:
                 try:
-                    r = json.loads(resp.read())
+                    r = json.loads(resp.read().decode())
                     data['arn'] = r['InstanceProfileArn'].split(':')[1]
-                except Exception: pass
+                except ValueError: pass
 
             data['region']      = data['document']['region']
             data['hostname']    = data['hostname'].split(' ')[0]

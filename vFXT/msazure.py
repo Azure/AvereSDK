@@ -535,7 +535,7 @@ class Service(ServiceBase):
                     conn.request('GET', '{}'.format(url_path), headers=headers)
                     response = conn.getresponse()
                     if response.status == 200:
-                        instance_data = json.loads(response.read())
+                        instance_data = json.loads(response.read().decode())
                         break
                     raise vFXTServiceFailure("Failed to fetch instance data: {}".format(response.reason))
                 except Exception as e:
@@ -561,7 +561,7 @@ class Service(ServiceBase):
                         endpoint_conn.request('GET', '/metadata/endpoints?api-version=2017-12-01')
                         response = endpoint_conn.getresponse()
                         if response.status == 200:
-                            endpoint_data = json.loads(response.read())
+                            endpoint_data = json.loads(response.read().decode())
                             for endpoint_name in endpoint_data['cloudEndpoint']:
                                 endpoint = endpoint_data['cloudEndpoint'][endpoint_name]
                                 if instance_location in [_.lower() for _ in endpoint['locations']]: # force lowercase comparison
@@ -587,7 +587,7 @@ class Service(ServiceBase):
                     conn.request('GET', '{}'.format(url_path), headers=headers)
                     response = conn.getresponse()
                     if response.status == 200:
-                        instance_data['access_token'] = json.loads(response.read())
+                        instance_data['access_token'] = json.loads(response.read().decode())
                         break
                     # If MSI is not enabled, you get '400 Identity not found'.  We could
                     # conceivably set instance_data['access_token'] = None and return,

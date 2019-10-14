@@ -312,7 +312,7 @@ class Service(ServiceBase):
                 conn.request('GET', '{}'.format(v), headers=headers)
                 response = conn.getresponse()
                 if response.status == 200:
-                    content = response.read()
+                    content = response.read().decode()
                     try:
                         instance_data[k] = json.loads(content)
                     except ValueError as e:
@@ -324,7 +324,7 @@ class Service(ServiceBase):
                 conn.request('GET', '{}'.format(path), headers=headers)
                 response = conn.getresponse()
                 if response.status == 200:
-                    content = response.read()
+                    content = response.read().decode()
                     try:
                         instance_data['metadata'][key] = json.loads(content)
                     except ValueError as e:
@@ -340,7 +340,7 @@ class Service(ServiceBase):
                     s = socket.socket()
                     s.connect(('localhost', int(os.getenv('DEVSHELL_CLIENT_PORT', '0'))))
                     s.sendall('2\n[]')
-                    data = json.loads(s.recv(1024).split('\n')[1])
+                    data = json.loads(s.recv(1024).decode().split('\n')[1])
                     instance_data['email'] = data[0]
                     instance_data['project-id'] = data[1]
                     instance_data['access_token'] = data[2]

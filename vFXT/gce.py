@@ -339,7 +339,7 @@ class Service(ServiceBase):
                 try:
                     s = socket.socket()
                     s.connect(('localhost', int(os.getenv('DEVSHELL_CLIENT_PORT', '0'))))
-                    s.sendall('2\n[]')
+                    s.sendall('2\n[]'.encode())
                     data = json.loads(s.recv(1024).decode().split('\n')[1])
                     instance_data['email'] = data[0]
                     instance_data['project-id'] = data[1]

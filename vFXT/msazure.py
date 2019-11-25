@@ -531,7 +531,7 @@ class Service(ServiceBase):
             attempts = 0
             while True:
                 try:
-                    url_path = '/metadata/instance?api-version=2018-10-01'
+                    url_path = '/metadata/instance?api-version=2019-02-01'
                     conn.request('GET', '{}'.format(url_path), headers=headers)
                     response = conn.getresponse()
                     if response.status == 200:
@@ -609,6 +609,8 @@ class Service(ServiceBase):
             instance_data['hostname'] = instance_data['compute']['name']
             instance_data['ssh_keys'] = [_['keyData'].strip() for _ in instance_data['compute'].get('publicKeys', [])]
             instance_data['cluster_cfg'] = ''
+            if 'customData' in instance_data['compute']:
+                instance_data['cluster_cfg'] = base64.b64decode(instance_data['compute']['customData']).decode()
         except Exception as e:
             log.exception(e)
             raise vFXTServiceMetaDataFailure("Not on an Azure instance")

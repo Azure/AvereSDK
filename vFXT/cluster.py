@@ -87,6 +87,7 @@ except Exception as e:
 
 '''
 from builtins import range #pylint: disable=redefined-builtin
+from future.utils import raise_from
 import base64
 import threading
 import queue as Queue
@@ -250,7 +251,7 @@ class Cluster(object): #pylint: disable=useless-object-inheritance
                 raise
             except Exception as e:
                 log.debug(e)
-                raise vFXTConfigurationException("Invalid instance addresses: {}".format(options['instance_addresses']))
+                raise_from(vFXTConfigurationException("Invalid instance addresses: {}".format(options['instance_addresses'])), e)
             c.instance_addresses = options['instance_addresses']
 
         # determine how many addresses we need
@@ -283,7 +284,7 @@ class Cluster(object): #pylint: disable=useless-object-inheritance
                 raise
             except Exception as e:
                 log.debug(e)
-                raise vFXTConfigurationException("Invalid instance addresses: {}".format(options['instance_addresses']))
+                raise_from(vFXTConfigurationException("Invalid instance addresses: {}".format(options['instance_addresses'])), e)
         else:
             in_use_addresses = []
             if c.mgmt_ip:
@@ -340,7 +341,7 @@ class Cluster(object): #pylint: disable=useless-object-inheritance
                     c.telemetry()
                 except Exception as te:
                     log.debug(te)
-            raise vFXTCreateFailure(e)
+            raise_from(vFXTCreateFailure(e), e)
 
         return c
 
@@ -565,7 +566,7 @@ class Cluster(object): #pylint: disable=useless-object-inheritance
                 except Exception as e:
                     log.debug("Retrying failed XMLRPC connection to {}: {}".format(addr, e))
                     if retries == 0:
-                        raise vFXTConnectionFailure("Failed to make remote API connection: {}".format(e))
+                        raise_from(vFXTConnectionFailure("Failed to make remote API connection: {}".format(e)), e)
             retries -= 1
             self._sleep()
 
@@ -699,7 +700,7 @@ class Cluster(object): #pylint: disable=useless-object-inheritance
                     self._sleep()
         except Exception as e:
             log.debug("Telemetry failed: {}".format(e))
-            raise vFXTStatusFailure('Telemetry failed: {}'.format(e))
+            raise_from(vFXTStatusFailure('Telemetry failed: {}'.format(e)), e)
 
     def upgrade_alternate_image(self, upgrade_url, retries=None):
         '''Upgrade the cluster alternate image
@@ -930,7 +931,7 @@ class Cluster(object): #pylint: disable=useless-object-inheritance
                 raise
             except Exception as e:
                 log.debug(e)
-                raise vFXTConfigurationException("Invalid instance addresses: {}".format(options['instance_addresses']))
+                raise_from(vFXTConfigurationException("Invalid instance addresses: {}".format(options['instance_addresses'])), e)
             need_instance = 0
 
         added = [] # cluster and vserver extensions (for undo)
@@ -1010,7 +1011,7 @@ class Cluster(object): #pylint: disable=useless-object-inheritance
                     self.telemetry()
                 except Exception as te:
                     log.debug(te)
-                raise vFXTCreateFailure(e)
+                raise_from(vFXTCreateFailure(e), e)
 
             log.info("Undoing configuration changes for node addition")
 
@@ -1060,7 +1061,7 @@ class Cluster(object): #pylint: disable=useless-object-inheritance
                                 except Exception as e:
                                     log.error(e)
 
-            raise vFXTCreateFailure(e)
+            raise_from(vFXTCreateFailure(e), e)
 
     def parallel_call(self, serviceinstances, method, **options):
         '''Run the named method across all nodes

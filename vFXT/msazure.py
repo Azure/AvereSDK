@@ -67,6 +67,7 @@ newmsazure = vFXT.msazure.Service(**serializeme)
 import base64
 from builtins import range #pylint: disable=redefined-builtin
 from future.moves.urllib import parse as urlparse
+from future.utils import raise_from
 import time
 import threading
 import queue as Queue
@@ -350,7 +351,7 @@ class Service(ServiceBase):
                 self.dns_check(self.DNS_TIMEOUT)
             self.connection()
         except Exception as e:
-            raise vFXTServiceConnectionFailure("Failed to establish connection to service: {}".format(e))
+            raise_from(vFXTServiceConnectionFailure("Failed to establish connection to service: {}".format(e)), e)
 
         return True
 
@@ -640,7 +641,7 @@ class Service(ServiceBase):
                 instance_data['cluster_cfg'] = base64.b64decode(instance_data['compute']['customData']).decode()
         except Exception as e:
             log.exception(e)
-            raise vFXTServiceMetaDataFailure("Not on an Azure instance")
+            raise_from(vFXTServiceMetaDataFailure("Not on an Azure instance"), e)
         finally:
             conn.close()
 
@@ -729,7 +730,7 @@ class Service(ServiceBase):
             raise
         except Exception as e:
             log.exception("Failed on instance initialization: {}".format(e))
-            raise vFXTConfigurationException(e)
+            raise_from(vFXTConfigurationException(e), e)
 
     @classmethod
     def environment_init(cls, **options):
@@ -749,7 +750,7 @@ class Service(ServiceBase):
                 s.tenant_id = next(s.connection('subscription').tenants.list()).tenant_id
             except Exception as e:
                 log.debug(e)
-                raise vFXTServiceFailure("Failed to lookup tenant")
+                raise_from(vFXTServiceFailure("Failed to lookup tenant, check your login credentials"), e)
         return s
 
     def find_instances(self, search=None):
@@ -1188,7 +1189,7 @@ class Service(ServiceBase):
                 a_set = conn.availability_sets.get(resource_group, availability_set)
                 body['availability_set'] = {'id': a_set.id}
             except Exception as e:
-                raise vFXTServiceFailure("Failed to lookup availability set {}: {}".format(availability_set, e))
+                raise_from(vFXTServiceFailure("Failed to lookup availability set {}: {}".format(availability_set, e)), e)
         if zone:
             body['zones'] = [zone]
 
@@ -1220,7 +1221,7 @@ class Service(ServiceBase):
                 try:
                     self._copy_blob(boot_disk_image, blob_name, container=self.SYSTEM_CONTAINER, storage_account=self.storage_account)
                 except Exception as e:
-                    raise vFXTServiceFailure("Failed to copy image {}: {}".format(boot_disk_image, e))
+                    raise_from(vFXTServiceFailure("Failed to copy image {}: {}".format(boot_disk_image, e)), e)
             else:
                 log.debug("Using existing blob {} in storage account {}".format(blob_name, self.storage_account))
 
@@ -1238,7 +1239,7 @@ class Service(ServiceBase):
                 body['storage_profile']['image_reference'] = {'id': img.id}
             except Exception as e:
                 log.debug("Failed to find image: {}".format(e))
-                raise vFXTConfigurationException("Unable to handle boot disk {}".format(boot_disk_image))
+                raise_from(vFXTConfigurationException("Unable to handle boot disk {}".format(boot_disk_image)), e)
 
         # if its a marketplace path like OpenLogic:CentOS:7.1:latest
         elif boot_disk_image.count(':') == 3: # must be marketplace
@@ -1263,7 +1264,7 @@ class Service(ServiceBase):
                 body['storage_profile']['image_reference'] = {'id': img.id}
             except Exception as e:
                 log.debug("Failed to find image: {}".format(e))
-                raise vFXTConfigurationException("Unable to handle boot disk {}".format(boot_disk_image))
+                raise_from(vFXTConfigurationException("Unable to handle boot disk {}".format(boot_disk_image)), e)
 
         # if we turn on boot diagnostics, log to our non-premium account
         if options.get('enable_boot_diagnostics'):
@@ -1307,7 +1308,7 @@ class Service(ServiceBase):
             body['network_profile']['network_interfaces'].append(nic_cfg)
         except Exception as e:
             log.debug(e)
-            raise vFXTServiceFailure("Failed to create NIC: {}".format(e))
+            raise_from(vFXTServiceFailure("Failed to create NIC: {}".format(e)), e)
 
         log.debug("Create instance request body: {}".format(body))
 
@@ -1597,7 +1598,7 @@ class Service(ServiceBase):
             log.error("Failed to create nodes: {}".format(e))
             if not options.get('skip_cleanup', False):
                 cluster.destroy(quick_destroy=True)
-            raise vFXTCreateFailure(e)
+            raise_from(vFXTCreateFailure(e), e)
 
 
     def add_cluster_nodes(self, cluster, count, **options):
@@ -1810,7 +1811,7 @@ class Service(ServiceBase):
             try: # try and find the cluster role
                 cluster.role = self._instance_identity_custom_role(instances[0]) or self._get_role(self.DEFAULT_ROLE)
             except Exception as e:
-                raise vFXTConfigurationException("Failed to lookup cluster role: {}".format(e))
+                raise_from(vFXTConfigurationException("Failed to lookup cluster role: {}".format(e)), e)
 
             # try and find the network security group
             try:
@@ -1837,7 +1838,7 @@ class Service(ServiceBase):
             self._wait_for_operation(op, msg="{} to be updated".format(self.name(instance)), retries=self.WAIT_FOR_SUCCESS)
             return self.refresh(instance)
         except Exception as e:
-            raise vFXTServiceFailure("Failed to commit instance changes: {}".format(e))
+            raise_from(vFXTServiceFailure("Failed to commit instance changes: {}".format(e)), e)
 
     def shelve(self, instance):
         ''' shelve the instance; shut it down, detach and delete
@@ -1896,7 +1897,7 @@ class Service(ServiceBase):
             self.wait_for_status(instance, self.OFF_STATUS)
         except Exception as e:
             log.debug(e)
-            raise vFXTServiceFailure("Failed to shelve instance {}: {}".format(instance['name'], e))
+            raise_from(vFXTServiceFailure("Failed to shelve instance {}: {}".format(instance['name'], e)), e)
 
     def can_shelve(self, instance):
         ''' Some instance configurations cannot be shelved. Check if this is one.
@@ -1979,7 +1980,7 @@ class Service(ServiceBase):
             self.wait_for_status(instance, self.OFF_STATUS)
         except Exception as e:
             log.debug(e)
-            raise vFXTServiceFailure("Failed to shelve instance {}: {}".format(instance['name'], e))
+            raise_from(vFXTServiceFailure("Failed to shelve instance {}: {}".format(instance['name'], e)), e)
         self.start(instance)
 
     def _container_name(self, name):
@@ -2066,7 +2067,7 @@ class Service(ServiceBase):
             log.debug("storage account type {}".format(storage_account_props.sku.name))
         except Exception as e:
             log.debug("Failed to validate storage account: {}".format(e))
-            raise vFXTConfigurationException("{} is not a valid storage account: {}".format(storage_account, e))
+            raise_from(vFXTConfigurationException("{} is not a valid storage account: {}".format(storage_account, e)), e)
 
         xmlrpc = cluster.xmlrpc() if xmlrpc is None else xmlrpc
 
@@ -2199,7 +2200,7 @@ class Service(ServiceBase):
         except vFXTConfigurationException:
             raise
         except Exception as e:
-            raise vFXTConfigurationException("Check that the subnet or specified address range has enough free addresses: {}".format(e))
+            raise_from(vFXTConfigurationException("Check that the subnet or specified address range has enough free addresses: {}".format(e)), e)
 
     def add_instance_address(self, instance, address, **options):
         '''Add a new address to the instance
@@ -2293,9 +2294,9 @@ class Service(ServiceBase):
                 nic = self._instance_primary_nic(instance) # refresh on error
                 log.debug("Failed to add address {} to {}: {}".format(address, self.name(instance), e))
                 if retries == 0:
-                    raise vFXTServiceFailure("Exceeded retries when adding address {} to {}: {}".format(address, self.name(instance), e))
+                    raise_from(vFXTServiceFailure("Exceeded retries when adding address {} to {}: {}".format(address, self.name(instance), e)), e)
             except (vFXTServiceTimeout, Exception) as e:
-                raise vFXTServiceFailure("Failed to add address {} to {}: {}".format(address, self.name(instance), e))
+                raise_from(vFXTServiceFailure("Failed to add address {} to {}: {}".format(address, self.name(instance), e)), e)
             time.sleep(self.POLLTIME)
             retries -= 1
 
@@ -2341,7 +2342,7 @@ class Service(ServiceBase):
                 if retries == 0:
                     raise vFXTServiceFailure("Exceeded retries when removing address {} from {}: {}".format(address, nic.name, e))
             except (vFXTServiceTimeout, Exception) as e:
-                raise vFXTServiceFailure("Failed to remove address {} from {}: {}".format(address, nic.name, e))
+                raise_from(vFXTServiceFailure("Failed to remove address {} from {}: {}".format(address, nic.name, e)), e)
             time.sleep(self.POLLTIME)
             retries -= 1
 
@@ -2694,7 +2695,7 @@ class Service(ServiceBase):
                 log.debug(e)
                 time.sleep(self.POLLTIME)
                 if retries == 0:
-                    raise vFXTConfigurationException("Role {} not found".format(role_name))
+                    raise_from(vFXTConfigurationException("Role {} not found".format(role_name)), e)
                 log.warning("Failed to lookup role {}, retrying".format(role_name))
             retries -= 1
 
@@ -2722,7 +2723,7 @@ class Service(ServiceBase):
             conn.role_definitions.delete(self._resource_group_scope(), role.id)
         except Exception as e:
             log.debug(e)
-            raise vFXTServiceFailure("Failed to delete role {}: {}".format(role_name, e))
+            raise_from(vFXTServiceFailure("Failed to delete role {}: {}".format(role_name, e)), e)
 
     def _assign_role(self, principal, role_name, **options):
         '''Assign a role to a service principal
@@ -2800,7 +2801,7 @@ class Service(ServiceBase):
             log.debug("Availability set config: {}".format(body))
             return conn.availability_sets.create_or_update(self.resource_group, name, body)
         except Exception as e:
-            raise vFXTServiceFailure("Failed to create availability set {}: {}".format(name, e))
+            raise_from(vFXTServiceFailure("Failed to create availability set {}: {}".format(name, e)), e)
 
     def _delete_availability_set(self, name):
         '''Delete an availability set
@@ -2815,7 +2816,7 @@ class Service(ServiceBase):
             conn.availability_sets.delete(self.resource_group, name)
             log.debug("Deleted availability set {}".format(name))
         except Exception as e:
-            raise vFXTServiceFailure("Failed to delete availability set {}: {}".format(name, e))
+            raise_from(vFXTServiceFailure("Failed to delete availability set {}: {}".format(name, e)), e)
 
     def _location_names(self):
         '''Get a list of location names

@@ -61,7 +61,7 @@ newgce = vFXT.gce.Service(**serializeme)
 '''
 import base64
 from builtins import range #pylint: disable=redefined-builtin
-from future.utils import viewitems
+from future.utils import viewitems, raise_from
 import http.client
 import httplib2
 import httplib2.socks
@@ -248,7 +248,7 @@ class Service(ServiceBase):
         try:
             self.network_project_id = self.network_project_id or self._get_network_project()
         except vFXTServiceTimeout as e:
-            raise vFXTServiceConnectionFailure(e)
+            raise_from(vFXTServiceConnectionFailure(e), e)
 
         if not no_connection_test:
             self.connection_test()
@@ -367,7 +367,7 @@ class Service(ServiceBase):
                 instance_data['cluster_cfg'] = base64.b64decode(instance_data['cluster_cfg'].encode('utf-8')).decode()
 
         except Exception as e:
-            raise vFXTServiceMetaDataFailure('Unable to read instance metadata: {}'.format(e))
+            raise_from(vFXTServiceMetaDataFailure('Unable to read instance metadata: {}'.format(e)), e)
         finally:
             conn.close()
 
@@ -476,7 +476,7 @@ class Service(ServiceBase):
         except (vFXTServiceFailure, vFXTServiceConnectionFailure) as e:
             raise
         except Exception as e:
-            raise vFXTConfigurationException(e)
+            raise_from(vFXTConfigurationException(e), e)
 
     def connection_test(self):
         '''Connection test
@@ -497,7 +497,7 @@ class Service(ServiceBase):
         except Exception as e:
             if isinstance(e, IOError):
                 log.exception(e)
-            raise vFXTServiceConnectionFailure("Failed to establish connection to service: {}".format(e))
+            raise_from(vFXTServiceConnectionFailure("Failed to establish connection to service: {}".format(e)), e)
 
     def check(self, percentage=0.6, instances=0, machine_type=None, data_disk_type=None, data_disk_size=None, data_disk_count=None): #pylint: disable=arguments-differ
         '''Check quotas and API access
@@ -648,7 +648,7 @@ class Service(ServiceBase):
                     break
                 except Exception as e:
                     if connection_attempts == retries:
-                        raise vFXTServiceConnectionFailure("Failed to establish connection to service: {}".format(e))
+                        raise_from(vFXTServiceConnectionFailure("Failed to establish connection to service: {}".format(e)), e)
                     log.debug("Retrying failed connection attempt: {}".format(e))
                     connection_attempts += 1
                     time.sleep(backoff(connection_attempts))
@@ -780,8 +780,8 @@ class Service(ServiceBase):
             except googleapiclient.errors.HttpError as e:
                 if int(e.resp['status']) < 500:
                     if 'httpErrorMessage' in response:
-                        raise vFXTServiceFailure("{}: {}".format(response['httpErrorMessage'], response['error']['errors'][0]['message']))
-                    raise vFXTServiceFailure(e)
+                        raise_from(vFXTServiceFailure("{}: {}".format(response['httpErrorMessage'], response['error']['errors'][0]['message'])), e)
+                    raise_from(vFXTServiceFailure(e), e)
                 errors += 1
                 time.sleep(backoff(errors))
             retries -= 1
@@ -1120,7 +1120,7 @@ class Service(ServiceBase):
                     self._wait_for_operation(r, msg='disk to be detached', zone=zone)
                 r = _gce_do(d_srv.delete, project=self.project_id, zone=zone, disk=d['name'])
                 self._wait_for_operation(r, msg='disk to be deleted', zone=zone)
-            raise vFXTServiceFailure(e)
+            raise_from(vFXTServiceFailure(e), e)
 
         self.start(instance)
         instance = self.refresh(instance)
@@ -1179,7 +1179,7 @@ class Service(ServiceBase):
             storage_service = self.connection(connection_type='storage')
             _gce_do(storage_service.buckets().delete, bucket=name)
         except Exception as e:
-            raise vFXTServiceFailure("Failed to delete bucket {}: {}".format(name, e))
+            raise_from(vFXTServiceFailure("Failed to delete bucket {}: {}".format(name, e)), e)
 
     def authorize_bucket(self, cluster, name, retries=ServiceBase.CLOUD_API_RETRIES, xmlrpc=None):
         '''Perform any backend work for the bucket, and register a credential
@@ -1391,7 +1391,7 @@ class Service(ServiceBase):
             netmask = "255.255.255.255" # hardcoded for gce /32
             return (avail, netmask)
         except Exception as e:
-            raise vFXTConfigurationException("Check that the subnetwork or specified address range has enough free addresses: {}".format(e))
+            raise_from(vFXTConfigurationException("Check that the subnetwork or specified address range has enough free addresses: {}".format(e)), e)
 
     def export(self):
         '''Export the service object in an easy to serialize format
@@ -1578,7 +1578,7 @@ class Service(ServiceBase):
                 time.sleep(self.POLLTIME)
             raise vFXTServiceFailure("Unable to locate the created instance {}".format(name))
         except Exception as e:
-            raise vFXTServiceFailure("Create instance failed: {}".format(e))
+            raise_from(vFXTServiceFailure("Create instance failed: {}".format(e)), e)
 
     def create_node(self, node_name, cfg, node_opts, instance_options):
         '''Create a cluster node
@@ -1794,7 +1794,7 @@ class Service(ServiceBase):
             log.error("Failed to create nodes: {}".format(e))
             if not options.get('skip_cleanup', False):
                 cluster.destroy(quick_destroy=True)
-            raise vFXTCreateFailure(e)
+            raise_from(vFXTCreateFailure(e), e)
 
     def post_destroy_cluster(self, cluster):
         '''Post cluster destroy cleanup'''
@@ -2173,7 +2173,7 @@ class Service(ServiceBase):
                     log.debug("{:>3}% of {} downloaded".format(status.progress() * 100, obj))
             except googleapiclient.http.HttpError as e:
                 if int(e.resp['status']) < 500:
-                    raise vFXTServiceFailure("Failed to fetch object {}: {}".format(obj, e))
+                    raise_from(vFXTServiceFailure("Failed to fetch object {}: {}".format(obj, e)), e)
                 errors += 1
                 time.sleep(backoff(errors))
             except Exception as e:
@@ -2205,7 +2205,7 @@ class Service(ServiceBase):
                 raise Exception('Both bucket and object not parsed')
         except Exception as e:
             log.debug("Failed parsing google storage url: {}".format(e))
-            raise vFXTConfigurationException("Invalid google storage URL: {}".format(url))
+            raise_from(vFXTConfigurationException("Invalid google storage URL: {}".format(url)), e)
 
         sig_file = filename + '.sig'
         sig_obj  = obj + '.sig'
@@ -2258,7 +2258,7 @@ class Service(ServiceBase):
             r = _gce_do(self.connection().images().delete, project=self.project_id, image=image)
             self._wait_for_operation(r, msg='image to be deleted', op_type='globalOperations')
         except Exception as e:
-            raise vFXTServiceFailure("Failed to destroy image {}: {}".format(image, e))
+            raise_from(vFXTServiceFailure("Failed to destroy image {}: {}".format(image, e)), e)
 
     def add_instance_address(self, instance, address, **options):
         '''Add a new route to the instance
@@ -2345,7 +2345,7 @@ class Service(ServiceBase):
         except vFXTConfigurationException as e:
             raise
         except Exception as e:
-            raise vFXTServiceFailure("Failed to add address: {}".format(e))
+            raise_from(vFXTServiceFailure("Failed to add address: {}".format(e)), e)
 
     def remove_instance_address(self, instance, address):
         '''Remove an instance route address
@@ -2386,7 +2386,7 @@ class Service(ServiceBase):
         except vFXTConfigurationException as e:
             raise
         except Exception as e:
-            raise vFXTServiceFailure("Failed to remove address: {}".format(e))
+            raise_from(vFXTServiceFailure("Failed to remove address: {}".format(e)), e)
 
     def instance_in_use_addresses(self, instance, category='all'):
         '''Get the in use addresses for the instance
@@ -2527,7 +2527,7 @@ class Service(ServiceBase):
                 autoDelete=False)
         self._wait_for_operation(op, msg='auto delete attribute to be disabled', zone=instance_zone)
 
-    def _get_subnetwork(self, subnetwork):
+    def _get_subnetwork(self, subnetwork): #pylint: disable=inconsistent-return-statements
         '''Get the labeled subnetwork
 
             Arguments:
@@ -2560,7 +2560,7 @@ class Service(ServiceBase):
                 raise Exception("Unknown subnetwork configuration")
         except Exception as e:
             log.debug("Failed to find subnetwork {}: {}".format(subnetwork, e))
-            raise vFXTConfigurationException("Failed to find subnetwork {}: {}".format(subnetwork, e))
+            raise_from(vFXTConfigurationException("Failed to find subnetwork {}: {}".format(subnetwork, e)), e)
 
     def _who_has_ip(self, address):
         '''Helper to determine which instance owns a particular IP address
@@ -2626,11 +2626,11 @@ def _gce_do(f, retries=ServiceBase.CLOUD_API_RETRIES, **options):
             return f(**options).execute()
         except googleapiclient.errors.HttpError as e:
             if int(e.resp['status']) < 500:
-                raise vFXTServiceFailure(e)
+                raise_from(vFXTServiceFailure(e), e)
             errors += 1
             time.sleep(backoff(errors))
             if retries == 0:
-                raise vFXTServiceTimeout('{} failed, exhausted retries: {}'.format(f.__name__, e))
+                raise_from(vFXTServiceTimeout('{} failed, exhausted retries: {}'.format(f.__name__, e)), e)
         except Exception as e:
             log.debug("Unknown GCE retry-able function call failure: {}".format(e))
         retries -= 1

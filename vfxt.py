@@ -120,7 +120,7 @@ def _get_cluster(service, logger, args):
             return None
     except Exception as load_exception:
         logger.exception(load_exception)
-        raise load_exception
+        raise
 
     return cluster
 

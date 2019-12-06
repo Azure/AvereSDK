@@ -59,7 +59,7 @@ serializeme = aws.export()
 newaws = vFXT.aws.Service(**serializeme)
 '''
 from builtins import range #pylint: disable=redefined-builtin
-from future.utils import viewitems
+from future.utils import viewitems, raise_from
 import threading
 import queue as Queue
 import re
@@ -365,7 +365,7 @@ class Service(ServiceBase):
             data['cluster_cfg'] = data['user-data']
 
         except Exception as e:
-            raise vFXTServiceMetaDataFailure('Unable to read instance metadata: {}'.format(e))
+            raise_from(vFXTServiceMetaDataFailure('Unable to read instance metadata: {}'.format(e)), e)
         finally:
             conn.close()
 
@@ -473,7 +473,7 @@ class Service(ServiceBase):
         except (vFXTServiceFailure, vFXTServiceConnectionFailure) as e:
             raise
         except Exception as e:
-            raise vFXTConfigurationException(e)
+            raise_from(vFXTConfigurationException(e), e)
 
     def connection_test(self):
         '''Connection test
@@ -497,7 +497,7 @@ class Service(ServiceBase):
             conn.get_all_reservations(filters={'tag:invalid_tag': '. .'}) # invalid name for filter
         except Exception as e:
             log.debug(e)
-            raise vFXTServiceConnectionFailure("Failed to establish connection to service: {}".format(e))
+            raise_from(vFXTServiceConnectionFailure("Failed to establish connection to service: {}".format(e)), e)
         finally:
             if exiting_timeout:
                 boto_config.set('Boto', 'http_socket_timeout', exiting_timeout)
@@ -900,7 +900,7 @@ class Service(ServiceBase):
             # which may have expired credentials
             return self.get_instance(instance.id)
         except Exception as e:
-            raise vFXTConfigurationException("Failed to find instance: {}".format(e))
+            raise_from(vFXTConfigurationException("Failed to find instance: {}".format(e)), e)
 
     def ip(self, instance):
         '''Return the primary IP address of the instance
@@ -970,7 +970,7 @@ class Service(ServiceBase):
             except Exception as e:
                 if retries == 0:
                     log.debug(e)
-                    raise vFXTServiceFailure("Failed to create bucket {}: {}".format(name, e))
+                    raise_from(vFXTServiceFailure("Failed to create bucket {}: {}".format(name, e)), e)
                 retries -= 1
 
     def authorize_bucket(self, cluster, name, write_only=False, retries=ServiceBase.CLOUD_API_RETRIES, xmlrpc=None): #pylint: disable=arguments-differ
@@ -1002,7 +1002,7 @@ class Service(ServiceBase):
             elif policy_name not in policies:
                 raise Exception("Unable to determine which policy to use")
         except Exception as e:
-            raise vFXTConfigurationException("Could not find role policy for {}: {}".format(iamrole, e))
+            raise_from(vFXTConfigurationException("Could not find role policy for {}: {}".format(iamrole, e)), e)
 
         response = _aws_do(iam.get_role_policy, iamrole, policy_name)
         if not response:
@@ -1062,7 +1062,7 @@ class Service(ServiceBase):
             b = _aws_do(s3.get_bucket, name)
             _aws_do(b.delete)
         except Exception as e:
-            raise vFXTServiceFailure("Failed to delete bucket {}: {}".format(name, e))
+            raise_from(vFXTServiceFailure("Failed to delete bucket {}: {}".format(name, e)), e)
 
     def create_instance(self, machine_type, name, boot_disk_image, other_disks=None, tags=None, **options): #pylint: disable=arguments-differ
         '''Create and return an AWS instance
@@ -1176,7 +1176,7 @@ class Service(ServiceBase):
                     continue
 
                 log.debug("Create instance failed: {}".format(e))
-                raise vFXTServiceFailure(e)
+                raise_from(vFXTServiceFailure(e), e)
 
         instance = r.instances[0]
 
@@ -1207,7 +1207,7 @@ class Service(ServiceBase):
             log.exception(e)
             _aws_do(instance.terminate)
             self.wait_for_status(instance, self.DESTROY_STATUS, 600)
-            raise vFXTServiceFailure(e)
+            raise_from(vFXTServiceFailure(e), e)
 
         if options.get('disableSourceDestCheck'):
             dsd_retries = ServiceBase.CLOUD_API_RETRIES
@@ -1428,7 +1428,7 @@ class Service(ServiceBase):
             log.error("Failed to create nodes: {}".format(e))
             if not options.get('skip_cleanup', False):
                 cluster.destroy(quick_destroy=True)
-            raise vFXTCreateFailure(e)
+            raise_from(vFXTCreateFailure(e), e)
 
     def post_destroy_cluster(self, cluster):
         '''Post cluster destroy cleanup'''
@@ -1769,7 +1769,7 @@ class Service(ServiceBase):
                     self.wait_for_status(vol, "available")
                 log.debug("Deleting volume {}".format(vol.id))
                 vol.delete()
-            raise vFXTServiceFailure(e)
+            raise_from(vFXTServiceFailure(e), e)
 
         _aws_do(conn.delete_tags, instance.id, ['shelved'])
         _aws_do(instance.start)
@@ -1815,7 +1815,7 @@ class Service(ServiceBase):
                 netmask = addr_cidr.netmask
             return (avail, netmask)
         except Exception as e:
-            raise vFXTConfigurationException("Check that the subnet or specified address range has enough free addresses: {}".format(e))
+            raise_from(vFXTConfigurationException("Check that the subnet or specified address range has enough free addresses: {}".format(e)), e)
 
     def get_dns_servers(self, subnet_id=None): #pylint: disable=arguments-differ
         '''Get DNS server addresses
@@ -1836,7 +1836,7 @@ class Service(ServiceBase):
                 dns = [default_addr]
             return dns
         except Exception as e:
-            raise vFXTServiceFailure("Failed to determine DNS configuration: {}".format(e))
+            raise_from(vFXTServiceFailure("Failed to determine DNS configuration: {}".format(e)), e)
 
     def get_ntp_servers(self, subnet_id=None): #pylint: disable=arguments-differ
         '''Get NTP server addresses
@@ -1966,7 +1966,7 @@ class Service(ServiceBase):
                 used.update(addrs)
             except Exception as e:
                 log.error('Failed to determine in use addresses by routes: {}'.format(e))
-                raise vFXTServiceFailure('Failed to determine in use addresses by routes: {}'.format(e))
+                raise_from(vFXTServiceFailure('Failed to determine in use addresses by routes: {}'.format(e)), e)
 
         # search all network interface private ip addresses that fail within the specified block
         # XXX whole lotta expensiveness
@@ -1980,7 +1980,7 @@ class Service(ServiceBase):
                 used.update(addrs)
             except Exception as e:
                 log.error('Failed to determine in use addresses by instances: {}'.format(e))
-                raise vFXTServiceFailure('Failed to determine in use addresses by instances: {}'.format(e))
+                raise_from(vFXTServiceFailure('Failed to determine in use addresses by instances: {}'.format(e)), e)
 
         return list(used)
 
@@ -2002,7 +2002,7 @@ class Service(ServiceBase):
                 return role['get_role_response']['get_role_result']['role']
             except Exception as e:
                 if retries == 0:
-                    raise vFXTServiceTimeout(e)
+                    raise_from(vFXTServiceTimeout(e), e)
                 retries -= 1
 
     def _create_iamrole(self, name):
@@ -2121,7 +2121,7 @@ class Service(ServiceBase):
         except vFXTConfigurationException:
             raise
         except Exception as e:
-            raise vFXTServiceFailure("Failed to create new address for instance {}.  Check the IAM policy for required permissions (including ec2:DescribeSubnets).  Error: {}".format(self.name(instance), e))
+            raise_from(vFXTServiceFailure("Failed to create new address for instance {}.  Check the IAM policy for required permissions (including ec2:DescribeSubnets).  Error: {}".format(self.name(instance), e)), e)
 
     def remove_instance_address(self, instance, address):
         '''Remove an instance private address or route
@@ -2154,7 +2154,7 @@ class Service(ServiceBase):
             else:
                 raise vFXTServiceFailure("Address {} is not associated with instance {}".format(addr.address, self.name(instance)))
         except Exception as e:
-            raise vFXTServiceFailure("Failed to remove address from instance {}: {}".format(self.name(instance), e))
+            raise_from(vFXTServiceFailure("Failed to remove address from instance {}: {}".format(self.name(instance), e)), e)
 
     def instance_in_use_addresses(self, instance, category='all'):
         '''Get the in use addresses for the instance
@@ -2294,11 +2294,11 @@ class Service(ServiceBase):
                 image = _aws_do(conn.get_all_images, filters={'name': name})[0].id
             except Exception as e:
                 log.debug(e)
-                raise vFXTServiceFailure("Failed to find installation image {}".format(name))
+                raise_from(vFXTServiceFailure("Failed to find installation image {}".format(name)), e)
         try:
             _aws_do(conn.deregister_image, image, delete_snapshot=True)
         except Exception as e:
-            raise vFXTServiceFailure("Failed to destroy image {}: {}".format(name, e))
+            raise_from(vFXTServiceFailure("Failed to destroy image {}: {}".format(name, e)), e)
 
     def _cache_to_disk_config(self, cache_size, machine_type=None, disk_type=None): #pylint: disable=unused-argument
         '''For a given cache size, output the default data disk count and size

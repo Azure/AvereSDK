@@ -1094,6 +1094,7 @@ class Service(ServiceBase):
                 availability_set (str, optional): availability set name
                 subnet (str, optional): Subnet name
                 zone (str, optional): Zone name
+                proximity_placement_group (str, optional): proximity placement group name
                 network_security_group (str, optional): network security group name
                 location (str, optional): Azure location
                 wait_for_success (int, optional): wait time for the instance to report success (default WAIT_FOR_SUCCESS)
@@ -1192,6 +1193,14 @@ class Service(ServiceBase):
                 raise_from(vFXTServiceFailure("Failed to lookup availability set {}: {}".format(availability_set, e)), e)
         if zone:
             body['zones'] = [zone]
+
+        proximity_placement_group = options.get('proximity_placement_group')
+        if proximity_placement_group:
+            try:
+                ppg = conn.proximity_placement_groups.get(resource_group, proximity_placement_group)
+                body['proximity_placement_group'] = {'id': ppg.id}
+            except Exception as e:
+                raise_from(vFXTServiceFailure("Failed to lookup proximity placement group {}: {}".format(proximity_placement_group, e)), e)
 
         identity = options.get('identity') or None
         if identity:
@@ -1488,6 +1497,7 @@ class Service(ServiceBase):
                 skip_cleanup (bool, optional): do not clean up on failure
                 azure_role (str, optional): Azure role name for the service principal (otherwise DEFAULT_ROLE is used)
                 availability_set (str, optional): existing availability set for the cluster instances
+                proximity_placement_group (str, optional): existing proximity placement group for the cluster instances
                 subnets ([str], optional): one or more subnets
                 zones ([str], optional): one or more zones
                 location (str, optional): location for availability set
@@ -1502,6 +1512,7 @@ class Service(ServiceBase):
             Raises: vFXTConfigurationException, vFXTCreateFailure
         '''
         cluster.availability_set = None
+        cluster.proximity_placement_group = None
         cluster.role = None
 
         if not all([cluster.mgmt_ip, cluster.mgmt_netmask, cluster.cluster_ip_start, cluster.cluster_ip_end]):
@@ -1555,9 +1566,14 @@ class Service(ServiceBase):
 
             # if we are not using availability zones, make an availability set
             if not zones:
+                # proximity placement group (we can keep creating it as it is just an update operation)
+                proximity_placement_group = options.get('proximity_placement_group') or '{}-placement'.format(cluster.name)
+                cluster.proximity_placement_group = self._create_proximity_placement_group(proximity_placement_group)
+                options['proximity_placement_group'] = proximity_placement_group
+
                 # not exist check... we can keep creating it as it is just an update operation
                 availability_set = options.get('availability_set') or '{}-availability_set'.format(cluster.name)
-                cluster.availability_set = self._create_availability_set(availability_set)
+                cluster.availability_set = self._create_availability_set(availability_set, proximity_placement_group=cluster.proximity_placement_group.id)
                 options['availability_set'] = availability_set
 
             # create the initial node
@@ -1636,6 +1652,7 @@ class Service(ServiceBase):
         tags              = options.get('tags') or instance.tags or {}
         machine_type      = cluster.machine_type
         availability_set  = cluster.availability_set.name if cluster.availability_set else None
+        proximity_placement_group = cluster.proximity_placement_group.name if cluster.proximity_placement_group else None
 
         instance_addresses = options.pop('instance_addresses', [None] * count)
         if len(instance_addresses) != count:
@@ -1661,6 +1678,8 @@ class Service(ServiceBase):
             options['tags'] = tags
         if availability_set and 'availability_set' not in options:
             options['availability_set'] = availability_set
+        if proximity_placement_group and 'proximity_placement_group' not in options:
+            options['proximity_placement_group'] = proximity_placement_group
 
         if not root_image:
             if instance.storage_profile.os_disk.image: # old vhd style
@@ -1760,8 +1779,11 @@ class Service(ServiceBase):
             if hasattr(cluster, 'availability_set'):
                 if cluster.availability_set:
                     self._delete_availability_set(cluster.availability_set.name)
+            if hasattr(cluster, 'proximity_placement_group'):
+                if cluster.proximity_placement_group:
+                    self._delete_proximity_placement_group(cluster.proximity_placement_group.name)
         except Exception as e:
-            log.debug('Ignoring availability set cleanup error: {}'.format(e))
+            log.debug('Ignoring availability set, proximity placement group cleanup error: {}'.format(e))
 
     def load_cluster_information(self, cluster, **options):
         '''Loads cluster information from the service and cluster itself
@@ -1805,6 +1827,10 @@ class Service(ServiceBase):
             if instances[0].availability_set:
                 availability_set = instances[0].availability_set.id.split('/')[-1]
                 cluster.availability_set = self.connection().availability_sets.get(cluster.service.resource_group, availability_set)
+            cluster.proximity_placement_group = None
+            if instances[0].proximity_placement_group:
+                proximity_placement_group = instances[0].proximity_placement_group.id.split('/')[-1]
+                cluster.proximity_placement_group = self.connection().proximity_placement_groups.get(cluster.service.resource_group, proximity_placement_group)
 
             cluster.name = self.CLUSTER_NODE_NAME_RE.search(cluster.nodes[0].name()).groups()[0]
             cluster.role = None
@@ -2782,6 +2808,7 @@ class Service(ServiceBase):
             Arguments:
                 name (str): availability set name
                 location (str, optional): location for availability set
+                proximity_placement_group (str, optional): proximity placement group id
 
             Raises: vFXTServiceFailure
         '''
@@ -2796,6 +2823,9 @@ class Service(ServiceBase):
             'platform_update_domain_count': self.MAX_UPDATE_DOMAIN_COUNT,
             'sku': {'name': 'aligned'},
         }
+        proximity_placement_group = options.get('proximity_placement_group')
+        if proximity_placement_group:
+            body['proximity_placement_group'] = {'id': proximity_placement_group}
         try:
             log.info('Creating cluster availability set {}'.format(name))
             log.debug("Availability set config: {}".format(body))
@@ -2817,6 +2847,38 @@ class Service(ServiceBase):
             log.debug("Deleted availability set {}".format(name))
         except Exception as e:
             raise_from(vFXTServiceFailure("Failed to delete availability set {}: {}".format(name, e)), e)
+
+    def _create_proximity_placement_group(self, name, **options):
+        '''Create a proximity placement group
+            Arguments:
+                name (str): proximity placement group name
+                location (str, optional): location for availability set
+                group_type (str, optional): Group type (defaults to Standard)
+        '''
+        conn = self.connection()
+        location = options.get('location') or self.location
+        body = {
+            'location': location,
+            'proximity_placement_group_type': options.get('group_type') or 'Standard' # Standard, Ultra (Future)
+        }
+        try:
+            log.info('Creating proximity placement group {}'.format(name))
+            log.debug("Proximity placement group config: {}".format(body))
+            return conn.proximity_placement_groups.create_or_update(self.resource_group, name, body)
+        except Exception as e:
+            raise_from(vFXTServiceFailure("Failed to create proximity placement group {}: {}".format(name, e)), e)
+
+    def _delete_proximity_placement_group(self, name):
+        '''Delete a proximity placement group
+            Arguments:
+                name (str): proximity placement group name
+        '''
+        conn = self.connection()
+        try:
+            conn.proximity_placement_groups.delete(self.resource_group, name)
+            log.debug("Deleted proximity placement group {}".format(name))
+        except Exception as e:
+            raise_from(vFXTServiceFailure("Failed to delete proximity placement group {}: {}".format(name, e)), e)
 
     def _location_names(self):
         '''Get a list of location names

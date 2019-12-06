@@ -170,6 +170,12 @@ class Azure_test(tests.vFXTTestCase.Base):
         self.assertTrue(service._create_availability_set(name))
         service._delete_availability_set(name)
 
+    def test_proximity_placement_group(self):
+        service = self.mk_azure_service()
+        name = 'vfxttest-proximity-placement-group-test-{}'.format(int(time.time()))
+        self.assertTrue(service._create_proximity_placement_group(name))
+        service._delete_proximity_placement_group(name)
+
     def test_move_route(self):
         service = self.mk_azure_service()
         i1 = None

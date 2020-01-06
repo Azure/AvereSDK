@@ -426,8 +426,7 @@ class Service(ServiceBase):
                     "Connect to a host on a given (SSL) port."
                     if self.proxy_info and self.proxy_info.isgood():
                         sock = httplib2.socks.socksocket(socket.AF_INET, socket.SOCK_STREAM)
-                        proxy_type, proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass = self.proxy_info.astuple()
-                        sock.setproxy(proxy_type, proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass)
+                        sock.setproxy(self.proxy_info.proxy_type, self.proxy_info.proxy_host, self.proxy_info.proxy_port, self.proxy_info.proxy_rdns, self.proxy_info.proxy_user, self.proxy_info.proxy_pass)
                     else:
                         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)

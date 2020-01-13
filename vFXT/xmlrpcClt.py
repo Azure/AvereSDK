@@ -32,6 +32,7 @@ class RequestsTransport(xmlrpc.client.SafeTransport):
         self._requests_session = requests.session()
         self._requests_session.mount('http://', socket_opts_adapter)
         self._requests_session.mount('https://', socket_opts_adapter)
+        self._requests_session.cookies.set('int64Representation', 'i8')
         self.verbose = False
 
     def request(self, host, handler, request_body, verbose=0):

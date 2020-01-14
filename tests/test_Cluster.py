@@ -30,6 +30,7 @@ class Cluster_test(tests.vFXTTestCase.Base):
                 self.fail("All nodes have cluster addresses assigned")
             retries -= 1
             cluster._sleep(1)
+            cluster.refresh()
 
 
     def _run_cluster_steps(self, cluster, skip_corefiler=False, use_instance_for_mgmt=False, custom_corefiler_name=None):
@@ -44,6 +45,7 @@ class Cluster_test(tests.vFXTTestCase.Base):
         # verify we can load the cluster and get the same info back
         mgmt_ip = cluster.nodes[0].ip() if use_instance_for_mgmt else cluster.mgmt_ip
         loaded = Cluster.load(service, mgmt_ip=mgmt_ip, admin_password=cluster.admin_password)
+        loaded.refresh()
         self.assertTrue(len(loaded.nodes) == len(cluster.nodes))
         loaded_export  = loaded.export()
         cluster_export = cluster.export()

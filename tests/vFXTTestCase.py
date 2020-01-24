@@ -14,8 +14,8 @@ class Base(unittest.TestCase):
     def setUp(self):
         '''Load the test_config.json file which has our required test options'''
         try:
-            f = open('tests/test_config.json', 'rb')
-            test_config = json.load(f)
+            with open('tests/test_config.json') as f:
+                test_config = json.load(f)
             self.create_clusters                = test_config['create_clusters']
             self.shelve                         = test_config.get('shelve')
             self.gce = {}                       # gce options
@@ -70,9 +70,6 @@ class Base(unittest.TestCase):
             self.azure['vfxt_image']                    = test_config['azure']['vfxt_image']
             self.azure['check_on_instance']             = test_config['azure']['check_on_instance']
             self.azure['check_from_environment']        = test_config['azure']['check_from_environment']
-
-            f.close()
-
         except Exception as e:
             self.skipTest(e)
 

@@ -104,8 +104,9 @@ def load_defaults(service):
 
         opener = urllib.build_opener(proxy_handler)
         req = urllib.Request(service.DEFAULTS_URL)
-        r = opener.open(req, timeout=CONNECTION_TIMEOUT)
-        service.defaults = json.load(r)
+        with opener.open(req, timeout=CONNECTION_TIMEOUT) as f:
+            data = f.read()
+            service.defaults = json.loads(data.decode())
     except Exception as e:
         logging.getLogger(service.__module__).error("Failed to load up to date defaults, using offline copy: {}".format(e))
         service.defaults = service.OFFLINE_DEFAULTS

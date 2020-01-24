@@ -45,16 +45,7 @@ class Azure_test(tests.vFXTTestCase.Base):
     def test_on_instance_init(self):
         if not self.azure['check_on_instance']:
             self.skipTest("skipping check_on_instance test")
-        service = Service.on_instance_init(
-            subscription_id=str(self.azure['subscription_id']),
-            application_id=self.azure['application_id'],
-            application_secret=self.azure['application_secret'],
-            tenant_id=self.azure['tenant_id'],
-            resource_group=self.azure['resource_group'],
-            location=self.azure['location'],
-            network=self.azure['network'],
-            subnet=self.azure['subnet']
-        )
+        service = Service.on_instance_init()
         self.assertIsInstance(service, vFXT.msazure.Service)
 
     def test_connection(self):

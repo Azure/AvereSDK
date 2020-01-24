@@ -65,16 +65,19 @@ class GCE_test(tests.vFXTTestCase.Base):
 
     def test__init___with_key_data(self):
         service = self.mk_gce_service()
-        key_data = json.load(open(self.gce['key_file']))
+        with open(self.gce['key_file']) as f:
+            key_data = json.load(f)
         withkey = Service(key_data=key_data, zone=service.zones[0], network_id=service.network_id)
         self.assertIsInstance(withkey, vFXT.gce.Service)
 
     def test__init___with_bad_key_data(self):
         service = self.mk_gce_service()
-        key_data = json.load(open(self.gce['key_file']))
+        with open(self.gce['key_file']) as f:
+            key_data = json.load(f)
         del key_data['client_email']
         self.assertRaises(vFXT.service.vFXTConfigurationException, Service, key_data=key_data, zone=service.zones[0], network_id=service.network_id)
-        key_data = json.load(open(self.gce['key_file']))
+        with open(self.gce['key_file']) as f:
+            key_data = json.load(f)
         del key_data['project_id']
         self.assertRaises(vFXT.service.vFXTConfigurationException, Service, key_data=key_data, zone=service.zones[0], network_id=service.network_id)
 

@@ -223,7 +223,7 @@ class Service(ServiceBase):
             except KeyError:
                 raise vFXTConfigurationException("Invalid key data: {}".format(self.key_data))
         elif self.key_file and self.key_file.endswith('.json'):
-            with open(self.key_file, 'rb') as f:
+            with open(self.key_file) as f:
                 log.debug("Reading key data from {}".format(self.key_file))
                 key_data = f.read()
                 self.key_data = json.loads(key_data)
@@ -593,7 +593,7 @@ class Service(ServiceBase):
                     raise vFXTConfigurationException("Unknown key file type: {}".format(self.key_file))
             except Exception as e:
                 log.debug('Failed importing oauth2client.service_account (oauth2client 2.x), falling back to oauth2client 1.x: {}'.format(e))
-                with open(self.key_file, 'rb') as f:
+                with open(self.key_file) as f:
                     key = f.read()
                 if self.key_file.endswith('.json'):
                     key = json.loads(key)['private_key']

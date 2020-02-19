@@ -1518,7 +1518,7 @@ class Service(ServiceBase):
             subnetworks = self._get_subnetworks(subnetwork_region)
             if subnetworks: # no subnetwork specified, but we have them so use one
                 subnetwork = subnetworks[0]
-                log.warninging("No subnetwork specified, picking {}".format(subnetwork['selfLink']))
+                log.warning("No subnetwork specified, picking {}".format(subnetwork['selfLink']))
                 body['networkInterfaces'][0]['subnetwork'] = subnetwork['selfLink']
                 body['networkInterfaces'][0]['network'] = subnetwork['network']
 
@@ -2373,7 +2373,7 @@ class Service(ServiceBase):
                     raise vFXTConfigurationException("Address not assigned via routes: {}".format(address))
                 for route in routes['items']:
                     if instance['selfLink'] != route['nextHopInstance']:
-                        log.warninging("Skipping route destined for other host: {} -> {}".format(address, route['nextHopInstance']))
+                        log.warning("Skipping route destined for other host: {} -> {}".format(address, route['nextHopInstance']))
                         continue
                     log.debug("Deleting route {}".format(route['name']))
                     resp = _gce_do(conn.routes().delete, project=self.network_project_id, route=route['name'])

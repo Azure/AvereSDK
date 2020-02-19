@@ -64,7 +64,7 @@ From source (see python setup.py install --help options for customization)
 
     with open('/home/user/.ssh/id_rsa.pub','r') as f: # must be rsa
         sshpubkey = f.read()
-    client = ServiceInstance.create(azure, 'Standard_DS1', 'client1', 'credativ:Debian:9:latest', admin_ssh_data=sshpubkey)
+    client = ServiceInstance.create(azure, 'Standard_DS1', 'client1', 'debian:debian-10:10:latest', admin_ssh_data=sshpubkey)
 
 ## GCE example:
 
@@ -82,7 +82,7 @@ From source (see python setup.py install --help options for customization)
 
     from vFXT.serviceInstance import ServiceInstance
     # via ServiceInstance which calls the backend .create_instance()
-    client = ServiceInstance.create(gce, 'g1.small', 'client1', 'https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/backports-debian-7-wheezy-v20150710', metadata={'ssh-keys':sshpubkey}, tags=['client'])
+    client = ServiceInstance.create(gce, 'n1-standard-1', 'client1', 'projects/debian-cloud/global/images/debian-10-buster-v20200210', metadata={'ssh-keys':sshpubkey}, tags=['client'])
 
     client_instance.destroy()
 

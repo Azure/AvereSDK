@@ -908,7 +908,7 @@ class Service(ServiceBase):
         except vFXTServiceTimeout as e:
             # Timeouts may just mean the azure python stack lost state...
             log.error(e)
-            log.warninging("Trying to clean up the rest of the resources for {}...".format(self.name(instance)))
+            log.warning("Trying to clean up the rest of the resources for {}...".format(self.name(instance)))
 
         # Also need to delete any leftover disks
         try:

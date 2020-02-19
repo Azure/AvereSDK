@@ -542,16 +542,14 @@ class Service(ServiceBase):
         source_address = options.get('source_address') or None
         token_resource = options.get('token_resource')
         instance_data = {}
+
+        if source_address:
+            source_address = (source_address, 0)
+        connection_host = cls.AZURE_INSTANCE_HOST
+        connection_port = http.client.HTTP_PORT
+        headers = {'Metadata': 'true'}
+        conn = http.client.HTTPConnection(connection_host, connection_port, source_address=source_address, timeout=CONNECTION_TIMEOUT)
         try:
-            if source_address:
-                source_address = (source_address, 0)
-            connection_host = cls.AZURE_INSTANCE_HOST
-            connection_port = http.client.HTTP_PORT
-            headers = {'Metadata': 'true'}
-            conn = http.client.HTTPConnection(connection_host, connection_port, source_address=source_address, timeout=CONNECTION_TIMEOUT)
-
-            instance_data = {}
-
             # instance metadata
             attempts = 0
             while True:
@@ -570,6 +568,7 @@ class Service(ServiceBase):
                         raise
                     time.sleep(backoff(attempts))
                     # reconnect on failure
+                    conn.close()
                     conn = http.client.HTTPConnection(connection_host, connection_port, source_address=source_address, timeout=CONNECTION_TIMEOUT)
 
             instance_location = instance_data['compute']['location'].lower() # region may be mixed case
@@ -600,7 +599,9 @@ class Service(ServiceBase):
                             raise
                         time.sleep(backoff(attempts))
                         # reconnect on failure
+                        endpoint_conn.close()
                         endpoint_conn = http.client.HTTPSConnection(cls.AZURE_ENDPOINT_HOST, source_address=source_address, timeout=CONNECTION_TIMEOUT)
+                endpoint_conn.close()
 
             # token metadata
             attempts = 0
@@ -626,6 +627,7 @@ class Service(ServiceBase):
                         raise
                     time.sleep(backoff(attempts))
                     # reconnect on failure
+                    conn.close()
                     conn = http.client.HTTPConnection(connection_host, connection_port, source_address=source_address, timeout=CONNECTION_TIMEOUT)
 
             instance_data['machine_type'] = instance_data['compute']['vmSize']
@@ -639,6 +641,8 @@ class Service(ServiceBase):
         except Exception as e:
             log.exception(e)
             raise vFXTServiceMetaDataFailure("Not on an Azure instance")
+        finally:
+            conn.close()
 
         return instance_data
 

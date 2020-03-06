@@ -1,4 +1,4 @@
-# Copyright (c) 2015-2019 Avere Systems, Inc.  All Rights Reserved.
+# Copyright (c) 2015-2020 Avere Systems, Inc.  All Rights Reserved.
 # Copyright (c) Microsoft Corporation. All rights reserved.
 import logging
 from setuptools import setup

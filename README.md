@@ -66,7 +66,7 @@ need to be added to the PATH environment variable.
         resource_group='', storage_account='',
         location='', network='', subnet='',
     )
-    cluster = Cluster.create(azure, 'Standard_D16s_v3', 'avereclustaer', 'PLACEHOLDER')
+    cluster = Cluster.create(azure, 'Standard_D16s_v3', 'averecluster', 'PLACEHOLDER')
 
     with open('/home/user/.ssh/id_rsa.pub','r') as f: # must be rsa
         sshpubkey = f.read()

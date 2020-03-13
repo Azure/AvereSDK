@@ -107,6 +107,7 @@ import msrestazure.azure_cloud
 import requests
 requests.packages.urllib3.disable_warnings() # pylint: disable=no-member
 
+from vFXT.service import validate_proxy
 from vFXT.cidr import Cidr
 from vFXT.serviceInstance import ServiceInstance
 from vFXT.service import vFXTServiceTimeout, vFXTServiceConnectionFailure, vFXTServiceFailure, vFXTServiceMetaDataFailure, vFXTConfigurationException, vFXTCreateFailure, vFXTNodeExistsException, ShelveErrors, BarrierTimeout, Barrier, ServiceBase, backoff, CONNECTION_TIMEOUT
@@ -244,6 +245,7 @@ class Service(ServiceBase):
     AZURE_ENVIRONMENTS = {
         'AzureUSGovernment': { 'endpoint': msrestazure.azure_cloud.AZURE_US_GOV_CLOUD.endpoints.resource_manager, 'storage_suffix': msrestazure.azure_cloud.AZURE_US_GOV_CLOUD.suffixes.storage_endpoint},
         'AzureCloud':        { 'endpoint': msrestazure.azure_cloud.AZURE_PUBLIC_CLOUD.endpoints.resource_manager, 'storage_suffix': msrestazure.azure_cloud.AZURE_PUBLIC_CLOUD.suffixes.storage_endpoint},
+        'AzurePublicCloud':  { 'endpoint': msrestazure.azure_cloud.AZURE_PUBLIC_CLOUD.endpoints.resource_manager, 'storage_suffix': msrestazure.azure_cloud.AZURE_PUBLIC_CLOUD.suffixes.storage_endpoint},
         'AzureChinaCloud':   { 'endpoint': msrestazure.azure_cloud.AZURE_CHINA_CLOUD.endpoints.resource_manager, 'storage_suffix': msrestazure.azure_cloud.AZURE_CHINA_CLOUD.suffixes.storage_endpoint},
         'AzureGermanCloud':  { 'endpoint': msrestazure.azure_cloud.AZURE_GERMAN_CLOUD.endpoints.resource_manager, 'storage_suffix': msrestazure.azure_cloud.AZURE_GERMAN_CLOUD.suffixes.storage_endpoint},
         # compat map
@@ -488,7 +490,9 @@ class Service(ServiceBase):
                         if retries == 0:
                             raise
             else:
-                cloud_environment = msrestazure.azure_cloud.get_cloud_from_metadata_endpoint(self.endpoint_base_url) if self.endpoint_base_url else None
+                session = requests.sessions.Session()
+                session.proxies = proxies
+                cloud_environment = msrestazure.azure_cloud.get_cloud_from_metadata_endpoint(self.endpoint_base_url, session=session) if self.endpoint_base_url else None
                 if self.on_instance:
                     if cloud_environment:
                         creds = msrestazure.azure_active_directory.AADTokenCredentials(self.local.instance_data['access_token'], cloud_environment=cloud_environment)
@@ -580,7 +584,16 @@ class Service(ServiceBase):
             else:
                 # must lookup endpoint metadata based on the VM location
                 attempts = 0
-                endpoint_conn = http.client.HTTPSConnection(cls.AZURE_ENDPOINT_HOST, source_address=source_address, timeout=CONNECTION_TIMEOUT)
+                def _make_conn():
+                    if options.get('proxy_uri'):
+                        proxy = validate_proxy(options['proxy_uri'])
+                        endpoint_conn = http.client.HTTPSConnection(proxy.host, port=proxy.port, source_address=source_address, timeout=CONNECTION_TIMEOUT)
+                        endpoint_conn.set_tunnel(cls.AZURE_ENDPOINT_HOST, 443)
+                        return endpoint_conn
+                    else:
+                        endpoint_conn = http.client.HTTPSConnection(cls.AZURE_ENDPOINT_HOST, source_address=source_address, timeout=CONNECTION_TIMEOUT)
+                        return endpoint_conn
+                endpoint_conn = _make_conn()
                 while True:
                     try:
                         endpoint_conn.request('GET', '/metadata/endpoints?api-version=2017-12-01')
@@ -601,7 +614,7 @@ class Service(ServiceBase):
                         time.sleep(backoff(attempts))
                         # reconnect on failure
                         endpoint_conn.close()
-                        endpoint_conn = http.client.HTTPSConnection(cls.AZURE_ENDPOINT_HOST, source_address=source_address, timeout=CONNECTION_TIMEOUT)
+                        endpoint_conn = _make_conn()
                 endpoint_conn.close()
 
             # token metadata
@@ -681,7 +694,7 @@ class Service(ServiceBase):
         network_resource_group = options.get('network_resource_group') or None
         storage_resource_group = options.get('storage_resource_group') or None
 
-        instance_data = cls.get_instance_data(source_address=source_address, no_connection_test=no_connection_test)
+        instance_data = cls.get_instance_data(source_address=source_address, no_connection_test=no_connection_test, proxy_uri=proxy_uri)
         log.debug('Read instance data: {}'.format(instance_data))
         try:
             service = Service(source_address=source_address, proxy_uri=proxy_uri,

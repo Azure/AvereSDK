@@ -235,7 +235,7 @@ class Service(ServiceBase):
     ENDPOINT_FETCH_RETRIES = 2
     TOKEN_RESOURCE = 'https://management.azure.com/'
     AUTO_LICENSE = True
-    WAIT_FOR_NIC = 180
+    WAIT_FOR_NIC = 300
     WAIT_FOR_IPCONFIG = 300
     REGIONS_WITH_3_FAULT_DOMAINS = ['canadacentral', 'centralus', 'eastus', 'eastus2', 'northcentralus', 'northeurope', 'southcentralus', 'westeurope', 'westus']
     MAX_UPDATE_DOMAIN_COUNT = 20

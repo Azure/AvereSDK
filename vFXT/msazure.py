@@ -244,6 +244,7 @@ class Service(ServiceBase):
     NIC_OPERATIONS_RETRY = 60
     AZURE_ENVIRONMENTS = {
         'AzureUSGovernment': { 'endpoint': msrestazure.azure_cloud.AZURE_US_GOV_CLOUD.endpoints.resource_manager, 'storage_suffix': msrestazure.azure_cloud.AZURE_US_GOV_CLOUD.suffixes.storage_endpoint},
+        'AzureUSGovernmentCloud': { 'endpoint': msrestazure.azure_cloud.AZURE_US_GOV_CLOUD.endpoints.resource_manager, 'storage_suffix': msrestazure.azure_cloud.AZURE_US_GOV_CLOUD.suffixes.storage_endpoint},
         'AzureCloud':        { 'endpoint': msrestazure.azure_cloud.AZURE_PUBLIC_CLOUD.endpoints.resource_manager, 'storage_suffix': msrestazure.azure_cloud.AZURE_PUBLIC_CLOUD.suffixes.storage_endpoint},
         'AzurePublicCloud':  { 'endpoint': msrestazure.azure_cloud.AZURE_PUBLIC_CLOUD.endpoints.resource_manager, 'storage_suffix': msrestazure.azure_cloud.AZURE_PUBLIC_CLOUD.suffixes.storage_endpoint},
         'AzureChinaCloud':   { 'endpoint': msrestazure.azure_cloud.AZURE_CHINA_CLOUD.endpoints.resource_manager, 'storage_suffix': msrestazure.azure_cloud.AZURE_CHINA_CLOUD.suffixes.storage_endpoint},

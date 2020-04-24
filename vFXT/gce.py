@@ -78,6 +78,7 @@ import uuid
 import filecmp
 from itertools import cycle
 
+import pkg_resources
 import googleapiclient.discovery
 import oauth2client.client #pylint: disable=unused-import
 import googleapiclient
@@ -238,8 +239,8 @@ class Service(ServiceBase):
                 raise vFXTConfigurationException("You must provide a keyfile or specify client_email and project_id")
 
         # emit third party library version information
-        log.debug("Using googleapiclient version {}".format(googleapiclient.__version__))
-        log.debug("Using oauth2client version {}".format(oauth2client.__version__))
+        log.debug("Using googleapiclient version %s", pkg_resources.get_distribution("google-api-python-client").version)
+        log.debug("Using oauth2client version %s", pkg_resources.get_distribution("oauth2client").version)
 
         if self.proxy_uri:
             self.set_proxy(self.proxy_uri)

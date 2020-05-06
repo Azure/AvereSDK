@@ -1,11 +1,11 @@
 
-# vfxt.py Command Syntax and Options 
+# vfxt.py Command Syntax and Options
 
-This section gives brief descriptions of vfxt.py command syntax. 
+This section gives brief descriptions of vfxt.py command syntax.
 
-Note that options might have changed since this document was created in September 2018. Use the command `vfxt.py --help` to see accurate options for your version of the script.
+Note that options might have changed since this document was created in May 2020. Use the command `vfxt.py --help` to see accurate options for your version of the script.
 
-## Required Parameters 
+## Required Parameters
 
 For all operations (except the help and version commands), these elements are required:
 
@@ -14,25 +14,25 @@ For all operations (except the help and version commands), these elements are re
 * Environment information (varies by provider)
 * Action (create, destroy, stop, start, add nodes)
 
-For operations on existing vFXT clusters, you must supply information to identify the cluster instances. 
+For operations on existing vFXT clusters, you must supply information to identify the cluster instances.
 
 * For an online cluster, use `--management-address` and `--admin-password` to identify the cluster being modified and authorize changes.
-* For an offline cluster, use `--instances` to supply the instance identifier for each node in the cluster. 
+* For an offline cluster, use `--instances` to supply the instance identifier for each node in the cluster.
 
 ## Script Information Options
 
-These options do not require any other parameters. 
+These options do not require any other parameters.
 
-| | | 
+| | |
 | ---------- | ------------------ |
 | `-h`, `--help` | Show a help message and exit |
-| `-v`, `--version` | Show the program's version number and exit |
+| `--version` | Show the program's version number and exit |
 
 ## Script Behavior Options
 
 These arguments affect how vfxt.py behaves.
 
-| <img width=1500 /> | | 
+| <img width=1500 /> | |
 | ---------- | ------------------ |
 | `-d`, `--debug` | Give verbose feedback |
 | `--interact` | Use Python interactive mode |
@@ -73,7 +73,6 @@ These options are used with the commands above.
 
 These options apply to any supported cloud provider.
 
-
 ### Authentication and Environment Options
 
 | <img width=1500 /> | |
@@ -94,7 +93,7 @@ These options apply to any supported cloud provider.
 | `--cluster-range` *IP_range* | IP address range (CIDR format) for the cluster. This range is assigned to the cluster to use for client traffic and cluster management tasks.  |
 | `--cluster-proxy-uri` *URL* | Proxy resource for the cluster - for example, `http://user:pass@172.16.16.20:8080/`. **NOTE:** Use the IP address rather than hostname in case DNS becomes unreachable. |
 | `--junction` *vserver_junction_path* | Sets the GNS path for the vserver's junction. The path must start with `/`. If not set, the default value is the cloud provider name (`/gce` , `/azure`, or `/aws`), or the last segment of the NFS export path (/smithj for an NFS export with the path /files/smithj)  |
-| `--labels` *key*:*value*  | Specify a key:value pair label for the cluster. Specify one label at a time; you can use as many label statements as needed. |
+| **xxx gce only? xxx** `--labels` *key*:*value*  | Specify a key:value pair label for the cluster. Specify one label at a time; you can use as many label statements as needed. |
 | `--no-vserver` | Skips automatically creating a vserver with the cluster |
 | `--root-size` *boot_disk_size_in_GB* | Use this to specify the size of each node's boot disk, in GB. <br/> **NOTE:** This setting might not be honored by some cloud providers. |
 | `--timezone` *zone* | Cluster time zone (in TZ database format - for example, `--timezone America/Puerto_Rico`) |
@@ -112,7 +111,7 @@ These options apply to any supported cloud provider.
 | `--data-disk-type` *volume_type* | Type of storage volumes to create for the vFXT cluster cache. Values depend on the cloud provider; AWS values are `gp2` (default), `io1`, or `standard`. GCE values are `pd-ssd` (default), or `local-ssd`. Azure supports only one disk type (premium LRS) and does not use this option. |
 |`--instance-type` *instance_type* | Type of instance to use when creating nodes. This is required for creating a cluster or when adding nodes to a cluster. Read [Create a Cluster](using_vfxt_py.md#create-a-cluster) for details. |
 | `--image-id` *image_ID_or_URI* | Optionally, use this parameter to specify an image instead of using the default image when creating the cluster. Consult support for guidance before using this advanced option. <br/>The image ID or URL should match what your cloud provider uses. <br/> • AWS image ID example: ami-ff6e9c9f <br/> • GCE image URL example: https<!-- -->://ww<!-- -->w.googleapis.<!-- -->com/compute/v1/projects/tribal-parsec-845/global/images/avere-vfxt-4625 <br/> • Azure URN example: microsoft-avere:vfxt-preview:avere-vfxt-node:latest |
-| `--skip-load-defaults` | Do not look for the defaults.json file in standard online locations. You must specify the installation version manually with the `--image-id` parameter | 
+| `--skip-load-defaults` | Do not look for the defaults.json file in standard online locations. You must specify the installation version manually with the `--image-id` parameter |
 | `--join-instance-address` | Join nodes using the instance address rather than the management address |
 | `--join-wait wait_time` | Set a custom time (in seconds) to wait for nodes to join the cluster. This is a troubleshooting option that should only be used when recommended by support staff. |
 
@@ -129,15 +128,14 @@ These options apply to any supported cloud provider.
 | `--core-filer-key-file` *filepath* | Specify the path to store the encryption key for a newly created core filer. This parameter is required when cloud core filer encryption is enabled. |
 | `--core-filer-encryption-password` *password* | Password to use for core filer encryption. If this parameter is not set, the cluster administrator password is used. |
 | `--bucket-not-empty` | Use the specified storage endpoint, which has existing Avere-formatted data |
-| `--disable-bucket-encryption` | Don't allow encryption for objects written to the storage endpoint | 
+| `--disable-bucket-encryption` | Don't allow encryption for objects written to the storage endpoint |
 | `--disable-bucket-compression` | Don't allow compression for objects written to the storage endpoint |
 | `--disable-bucket-https` | Don't use HTTPS for communication with the storage endpoint |
 | `--disable-bucket-https-verify` | Don't verify encryption certificates for communication with the storage endpoint |
 
-
 ## Provider-specific Options
 
-Read the linked articles to learn about vfxt.py arguments that apply only to specific cloud providers: 
+Read the linked articles to learn about vfxt.py arguments that apply only to specific cloud providers:
 
 * [Azure-specific command options](azure_options.md)
 * [AWS-specific command options](aws_options.md)

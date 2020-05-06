@@ -1,8 +1,8 @@
 # AWS Command Options
 
-These options can be used only if the `--cloud-type` value is `aws`. 
+These options can be used only if the `--cloud-type` value is `aws`.
 
-## AWS Authentication Options 
+## AWS Authentication Options
 
 | | |
 | ---------- | ------------------ |

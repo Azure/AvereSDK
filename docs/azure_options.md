@@ -1,8 +1,8 @@
 # Azure Command Options 
 
-These options can be used only if the `--cloud-type` value is `azure`. 
+These options can be used only if the `--cloud-type` value is `azure`.
 
-## Azure Authentication Options 
+## Azure Authentication Options
 
 |<img width=300/> | |
 | ---------- | ------------------ |
@@ -40,7 +40,8 @@ Use the generic option `--on-instance` for local console commands.
 | `--network-security-group` *group_name* |  Name of the network security group (if needed) |
 | `--root-disk-caching` {`ReadOnly`,`ReadWrite`} | Azure root disk caching mode (defaults to `ReadOnly`) |
 | `--storage-account` *account_ID* | Storage account for Blob-backed core filer and boot diagnostics |
-| `--azure-government` | Use the default base URL and storage suffix for the Azure Government Cloud environment  |
+<!--| `--azure-government` | Use the default base URL and storage suffix for the Azure Government Cloud environment  |-->
+| `--azure-environment` {`public`, `usgovernment`, `china`, `germany`}` | Set the defaults (endpoint base URL and storage suffix) for the Azure environment  **xxx** |
 | `--azure-endpoint-base-url` | Specify the base URL of the API endpoint for a non-public Azure environment | 
 | `--azure-storage-suffix` | Specify the storage suffice for a non-public Azure environment | 
 | `--azurecontainer-not-empty` | Use the specified storage endpoint, which has existing Avere-formatted data | 

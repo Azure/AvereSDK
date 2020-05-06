@@ -51,7 +51,7 @@ Use the `--key-file` option to provide the file to authenticate the remote syste
 
 **NOTE:** Older Google service accounts provided .p12 PKCS#12 files instead of JSON key files. If your service account uses .p12, also use the `--client-email` option to specify the service account email associated with the key.
 
-If you have configured the gcloud utility with your credentials, you can use the `--from-environment` option to import them into vfxt.py. 
+If you have configured the gcloud utility with your credentials, you can use the `--from-environment` option to import them into vfxt.py.
 
    * **NOTE:** You must issue the command `gcloud auth application-default login` to authorize the local application to use your user credentials for API access before invoking vfxt.py. 
 

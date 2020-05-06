@@ -1,4 +1,4 @@
-# Quick Reference - Using vfxt.py with Amazon Web Services 
+# Quick Reference - Using vfxt.py with Amazon Web Services
 
 This section gives an overview of how to configure a vfxt.py installation to be able to create Avere clusters in an AWS Elastic Compute Cloud (EC2) environment.
 
@@ -10,7 +10,7 @@ Configuring the AWS environment to give vfxt.py the necessary access includes th
 * Send your AWS account number to Avere Systems to gain access to the vFXT image.
 * Create a virtual private cloud (VPC) configured with a subnet.
 * Establish an appropriate IAM policy for creating vFXT clusters.
-* Associate the role with the vfxt.py user: 
+* Associate the role with the vfxt.py user:
 
    * If using a cloud instance local to your cloud environment to run vfxt.py, create the VM with the cluster management IAM role. 
    * If using a remote system to run vfxt.py, create a user with that role, and establish the user’s access key and secret key pair. When beginning a vfxt.py session from a remote console, pass the user keys to the cloud system to authenticate the system. 

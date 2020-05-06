@@ -26,6 +26,7 @@ Use the generic option `--on-instance` for local console commands.
 | `--gce-tag` *GCE_instance_tag* | GCE instance tag |
 | `--instance-addresses` *inst1_addr* *inst2_addr* *inst3_addr* [... *instN_addr*] | Instance addresses to assign to the cluster nodes. Separate addresses with spaces.   |
 | `--local-ssd`  | Use local-ssd disks for cache     |
+| `--labels` *key*:*value*  | Specify a key:value pair label for the cluster. Specify one label at a time; you can use as many label statements as needed. |
 | `--metadata` *key1*:*value1* *key2*:*value2* ... | Set one or more metadata values on the instances being created |
 | `--network-project` *project_name* | Specifies the host project name for a Shared VPC configuration |
 | `--project` *project_name* | Google Cloud project name |

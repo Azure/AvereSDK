@@ -1,9 +1,13 @@
+---
+author: ekpgh
+date: 2019-05-09
+---
 
 # Installing and Setting Up the vfxt.py Script
 
 You can run vfxt.py from any UNIX-style console environment that has access to your cloud computing resources. The simplest option is to create a Linux instance within the cloud environment, and install vfxt.py in that virtual machine. Alternatively, you can use a console from a remote Linux or Mac OS environment, as long as it has IP connectivity to your cloud instances.
 
-**TIP:** For Microsoft Azure, a preconfigured Cluster Controller Node virtual machine image is available in the Azure Marketplace. Search for “Avere” and then choose **Avere vFXT for Azure**. This image is preconfigured with required software to create and manage Avere vFXT clusters in Azure.  
+> **TIP:** For Microsoft Azure, a preconfigured Cluster Controller Node virtual machine image is available in the Azure Marketplace. Search for “Avere” and then choose **Avere vFXT for Azure**. This image is preconfigured with required software to create and manage Avere vFXT clusters in Azure.  
 >
 > The Azure Marketplace also has the **Avere vFXT for Azure template**, which is a wizard-based cluster creation tool. That process is described in [Avere vFXT for Azure documentation](https://docs.microsoft.com/azure/avere-vfxt/).
 

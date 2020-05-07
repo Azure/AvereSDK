@@ -44,10 +44,10 @@ vfxt.py [-h] [-d]
 [--data-disk-caching {ReadOnly,ReadWrite}]
 [--azure-instance-addresses INSTANCE_ADDRESSES [INSTANCE_ADDRESSES ...]]
 
-
 [--azure-environment {public,usgovernment,china,germany}]
 [--azure-endpoint-base-url AZURE_ENDPOINT_BASE_URL]
 [--azure-storage-suffix AZURE_STORAGE_SUFFIX]
+
 [--skip-cleanup]
 [--wait-for-state {red,yellow,green}]
 [--wait-for-state-duration WAIT_FOR_STATE_DURATION]
@@ -69,17 +69,21 @@ vfxt.py [-h] [-d]
 [--timezone TIMEZONE]
 [--join-wait JOIN_WAIT]
 [--quick-destroy]
+
 [--no-corefiler] [--core-filer CORE_FILER]
 [--core-filer-key-file CORE_FILER_KEY_FILE]
 [--core-filer-encryption-password CORE_FILER_ENCRYPTION_PASSWORD]
+
 [--subdir SUBDIR] [--junction JUNCTION]
 [--vserver VSERVER] [--no-vserver]
+
 [--bucket STORAGE] [--azurecontainer STORAGE ]
 [--bucket-not-empty] [--azurecontainer-not-empty]
 [--disable-bucket-encryption] [--disable-azurecontainer-encryption]
 [--disable-bucket-compression] [--disable-azurecontainer-compression]
 [--disable-bucket-https] [--disable-azurecontainer-https]
 [--disable-bucket-https-verify] [--disable-azurecontainer-https-verify]
+
 [--nfs-mount NFS_MOUNT]
 [--nfs-type {NetappNonClustered,NetappClustered,EmcIsilon}]
 ```

@@ -6,10 +6,10 @@ These options can be used only if the `--cloud-type` value is `aws`.
 
 | | |
 | ---------- | ------------------ |
-| `--access-key` *AWS_access_key *| AWS access key (required for off-instance authentication) |
+| `--access-key` *AWS_access_key* | AWS access key (required for off-instance authentication) |
 | `--secret-key` *AWS_secret_key* | AWS secret key (required for off-instance authentication) |
 
-For authentication from within a cloud console on the AWS instance, use the generic option `--on-instance` instead of these keys.  
+For authentication from within a cloud console on the AWS instance, use the generic option `--on-instance` instead of these keys.
 
 ## AWS Environment Options
 
@@ -37,8 +37,6 @@ For authentication from within a cloud console on the AWS instance, use the gene
  `--security-group` *group_ID* | Security group ID for the cluster (for example, sg-xxxx). Separate multiple values with spaces |
 | `--dedicated-tenancy`  | Locates all cluster instances on dedicated hardware (not shared with other AWS customers). Using this option increases costs. If resources or quota space is unavailable the cluster creation can fail.  |
 
-
-
 ## Additional AWS Information
 
-Read [Quick Reference - Using vfxt.py with Amazon Web Services](aws_reference.md) for more AWS-specific information. 
+Read [Quick Reference - Using vfxt.py with Amazon Web Services](aws_reference.md) for more AWS-specific information.

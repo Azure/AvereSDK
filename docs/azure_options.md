@@ -1,4 +1,9 @@
-# Azure Command Options 
+---
+author: ekpgh
+date: 2020-05-07
+---
+
+# Azure Command Options
 
 These options can be used only if the `--cloud-type` value is `azure`.
 
@@ -11,26 +16,26 @@ These options can be used only if the `--cloud-type` value is `azure`.
 | `--tenant-id` *tenant_ID* | Active Directory application tenant identifier |
 | `--application-secret` *password*  | Password for the AD service principal (if needed, see [Service Principal Authentication Option](azure_reference.md#service-principal-authentication-option) for details) |
 
-Use the generic option `--on-instance` for local console commands. 
+Use the generic option `--on-instance` for local console commands.
 
 ## Azure Environment Options
 
-| <img width=500/>  | |
+| <img width=500/> | |
 | ---------- | ------------------ |
 | `--azure-network` *vnet_name* | Virtual network that houses the cluster nodes |
 | `--azure-subnet` *subnet_name* | Subnet in the virtual network  |
 | `--azure-role` *role_name* | Use a custom RBAC role for the cluster nodes instead of the built- in role [Avere Operator](https://docs.microsoft.com/azure/role-based-access-control/built-in-roles#avere-operator). Define the role before using this option. Learn more about roles and the privileges required for cluster nodes and cluster controllers in the Avere vFXT for Azure documentation - read [VM access roles](https://docs.microsoft.com/azure/avere-vfxt/avere-vfxt-deploy-plan#vm-access-roles) and [Subscription owner permissions](https://docs.microsoft.com/azure/avere-vfxt/avere-vfxt-prereqs#configure-subscription-owner-permissions). |
-| `--location` *location_shortname*    | Azure geographic location |
+| `--location` *location_shortname* | Azure geographic location |
 | `--network-resource-group` *group_name* | Network resource group (if different from the resource group used for the cluster VMs) |
 | `--resource-group` *group_name* | Resource group for the cluster VMs |
 | `--storage-account` *account_ID* | Azure storage account for this cluster |
-| `--storage-resource-group` *group_name*  | Storage resource group (if different from the resource group used for the cluster VMs) |
+| `--storage-resource-group` *group_name* | Storage resource group (if different from the resource group used for the cluster VMs) |
 | `--application-id` *ID_number* | Active Directory service principal ID, used with `--application-secret` to authenticate if using Service Principal authentication |
 | `--application-secret` *password* | Active Directory service principal password; used with `--application-id` to authenticate if using Service Principal authentication |
 
-## Additional Azure-Specific Options 
+## Additional Azure-Specific Options
 
-| <img width=600/>  | |
+| <img width=600/> | |
 | ---------- | ------------------ |
 | `--azurecontainer` [*storage_acct*/*container_name*] | Specify an existing container to use instead of creating a new one. The container must be empty. |
 | `--azure-instance-addresses` *instance1_ID* *instance2_ID* *instance3_ID* [*... instanceN_ID*] | Specific instance addresses to use rather than assigning them dynamically. Separate addresses with spaces. |
@@ -40,12 +45,12 @@ Use the generic option `--on-instance` for local console commands.
 | `--network-security-group` *group_name* |  Name of the network security group (if needed) |
 | `--root-disk-caching` {`ReadOnly`,`ReadWrite`} | Azure root disk caching mode (defaults to `ReadOnly`) |
 | `--storage-account` *account_ID* | Storage account for Blob-backed core filer and boot diagnostics |
-<!--| `--azure-government` | Use the default base URL and storage suffix for the Azure Government Cloud environment  |-->
-| `--azure-environment` {`public`, `usgovernment`, `china`, `germany`}` | Set the defaults (endpoint base URL and storage suffix) for the Azure environment  **xxx** |
-| `--azure-endpoint-base-url` | Specify the base URL of the API endpoint for a non-public Azure environment | 
-| `--azure-storage-suffix` | Specify the storage suffice for a non-public Azure environment | 
-| `--azurecontainer-not-empty` | Use the specified storage endpoint, which has existing Avere-formatted data | 
-| `--disable-azurecontainer-encryption` | Don't allow encryption for objects written to the storage endpoint | 
+<!--deprecated: | `--azure-government` | Use the default base URL and storage suffix for the Azure Government Cloud environment  |-->
+| `--azure-environment` {`public`, `usgovernment`, `china`, `germany`} | Set the defaults (endpoint base URL and storage suffix) for the Azure environment  **xxx** |
+| `--azure-endpoint-base-url` | Specify the base URL of the API endpoint for a non-public Azure environment |
+| `--azure-storage-suffix` | Specify the storage suffice for a non-public Azure environment |
+| `--azurecontainer-not-empty` | Use the specified storage endpoint, which has existing Avere-formatted data |
+| `--disable-azurecontainer-encryption` | Don't allow encryption for objects written to the storage endpoint |
 | `--disable-azurecontainer-compression` | Don't allow compression for objects written to the storage endpoint |
 | `--disable-azurecontainer-https` | Don't use HTTPS for communication with the storage endpoint |
 | `--disable-azurecontainer-https-verify` | Don't verify encryption certificates for communication with the storage endpoint |

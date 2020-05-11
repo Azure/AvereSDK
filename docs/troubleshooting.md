@@ -1,8 +1,3 @@
----
-author: ekpgh
-date: 2019-05-09
----
-
 # Troubleshooting
 
 If you have trouble using the vfxt.py script, check the following settings and messages before contacting support.

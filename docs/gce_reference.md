@@ -1,8 +1,3 @@
----
-author: ekpgh
-date: 2019-05-09
----
-
 # Quick Reference – Using vfxt.py with Google Cloud Platform
 
 This section gives an overview of how to configure a vfxt.py installation to be able to create Avere clusters in a Google Compute Engine  environment. (Note that vfxt.py terms use GCE to indicate Google services and not "GCP", which is a reference to the full Google Cloud Platform product family.)

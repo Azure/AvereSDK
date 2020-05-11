@@ -1,8 +1,3 @@
----
-author: ekpgh
-date: 2019-05-09
----
-
 # Installing and Setting Up the vfxt.py Script
 
 You can run vfxt.py from any UNIX-style console environment that has access to your cloud computing resources. The simplest option is to create a Linux instance within the cloud environment, and install vfxt.py in that virtual machine. Alternatively, you can use a console from a remote Linux or Mac OS environment, as long as it has IP connectivity to your cloud instances.

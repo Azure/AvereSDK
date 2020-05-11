@@ -1,7 +1,3 @@
----
-author: ekpgh
----
-
 # Cloud Cluster Management with vfxt.py
 
 The vfxt.py script is a command-line tool for creating and managing Avere clusters in cloud-based virtual computing environments.

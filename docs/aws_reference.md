@@ -1,8 +1,3 @@
----
-author: ekpgh
-date: 2019-05-09
----
-
 # Quick Reference - Using vfxt.py with Amazon Web Services
 
 This section gives an overview of how to configure a vfxt.py installation to be able to create Avere clusters in an AWS Elastic Compute Cloud (EC2) environment.

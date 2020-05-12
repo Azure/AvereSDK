@@ -1,15 +1,15 @@
-# GCE Options 
+# GCE Options
 
-These options can be used only if the `--cloud-type` value is `gce`. 
+These options can be used only if the `--cloud-type` value is `gce`.
 
-## GCE Authentication Options 
+## GCE Authentication Options
 
 | <img width=500/>  | |
 | ---------- | ------------------ |
 | `--client-email` *email_address* | OATH2 service account client email for p12 key files (older option for off-instance authentication) |
 | `--key-file` *key_file_path*  | OATH2 service account P12 (deprecated) or JSON key file for off-instance authentication. For P12 keys, you must also provide the client email address with `--client-email` |
 
-Use the generic option `--on-instance` for local console commands. 
+Use the generic option `--on-instance` for local console commands.
 
 ## GCE Environment Options
 
@@ -37,4 +37,4 @@ Use the generic option `--on-instance` for local console commands.
 
 ## Additional Google Compute Engine Information
 
-Read [Quick Reference - Using vfxt.py with Google Cloud Platform](gce_reference.md) for more GCE-specific information. 
+Read [Quick Reference - Using vfxt.py with Google Cloud Platform](gce_reference.md) for more GCE-specific information.

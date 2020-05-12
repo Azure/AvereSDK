@@ -1,8 +1,3 @@
----
-author: ekpgh
-date: 2020-05-07
----
-
 # vfxt.py Command Syntax and Options
 
 This section gives brief descriptions of vfxt.py command syntax.

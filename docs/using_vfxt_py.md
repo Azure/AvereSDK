@@ -1,8 +1,3 @@
----
-author: ekpgh
-date: 2020-05-07
----
-
 # Using vfxt.py
 
 This section describes the syntax for using vfxt.py. It explains frequently used options when performing basic operations like creating or modifying Avere vFXT clusters.

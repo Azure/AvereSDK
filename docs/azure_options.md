@@ -1,8 +1,3 @@
----
-author: ekpgh
-date: 2020-05-07
----
-
 # Azure Command Options
 
 These options can be used only if the `--cloud-type` value is `azure`.

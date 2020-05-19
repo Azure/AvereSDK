@@ -260,6 +260,9 @@ class Service(ServiceBase):
         "southindia": "indiasouth",
         "westindia": "indiawest",
     }
+    # Stop the virtual machines prior to deletion in order to prevent a network resource race if some nodes are not
+    # scheduled to be destroyed at the same time as the rest.
+    STOP_BEFORE_DELETE = True
 
     def __init__(self, subscription_id=None, application_id=None, application_secret=None,
                        tenant_id=None, resource_group=None, storage_account=None,
@@ -971,7 +974,10 @@ class Service(ServiceBase):
                 instance: backend instance
         '''
         status = self.status(instance)
-        return status not in [self.OFF_STATUS, self.STOP_STATUS]
+        # NOTE status is provisioning state/power state... we do not care if we are stuck updating provisioning
+        # if power is on
+        power_state = status[1]
+        return power_state not in [self.OFF_STATUS[1], self.STOP_STATUS[1]]
 
     def is_off(self, instance):
         '''Return True if the instance is currently off
@@ -980,7 +986,10 @@ class Service(ServiceBase):
                 instance: backend instance
         '''
         status = self.status(instance)
-        return status in [self.OFF_STATUS, self.STOP_STATUS]
+        # NOTE status is provisioning state/power state... we do not care if we are stuck updating provisioning
+        # if power is off
+        power_state = status[1]
+        return power_state in [self.OFF_STATUS[1], self.STOP_STATUS[1]]
 
     def name(self, instance):
         '''Returns the instance name (may be different from instance id)

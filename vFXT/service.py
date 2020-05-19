@@ -155,6 +155,7 @@ class ServiceBase(object): #pylint: disable=useless-object-inheritance
     ALLOCATE_INSTANCE_ADDRESSES = False
     S3TYPE_NAME = None
     AUTO_LICENSE = False
+    STOP_BEFORE_DELETE = False
 
     def __init__(self, *args, **kwargs): #pylint: disable=unused-argument
         self.defaults = {}

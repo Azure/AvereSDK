@@ -1200,6 +1200,8 @@ class Cluster(object): #pylint: disable=useless-object-inheritance
                     log.info("Removing corefiler {} on cluster {}".format(corefiler, cluster_name))
                     self.remove_corefiler(corefiler)
 
+        if self.service.STOP_BEFORE_DELETE:
+            self.stop()
         self.parallel_call(self.nodes, 'destroy', **options)
         # any post destroy cleanup activities that may be remaining
         self.service.post_destroy_cluster(self)

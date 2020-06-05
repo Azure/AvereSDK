@@ -1590,9 +1590,10 @@ class Service(ServiceBase):
             # if we are not using availability zones, make an availability set
             if not zones:
                 # proximity placement group (we can keep creating it as it is just an update operation)
-                proximity_placement_group = options.get('proximity_placement_group') or '{}-placement'.format(cluster.name)
-                cluster.proximity_placement_group = self._create_proximity_placement_group(proximity_placement_group)
-                options['proximity_placement_group'] = proximity_placement_group
+                proximity_placement_group = options.get('proximity_placement_group') or None
+                if proximity_placement_group:
+                    cluster.proximity_placement_group = self._create_proximity_placement_group(proximity_placement_group)
+                    options['proximity_placement_group'] = proximity_placement_group
 
                 # not exist check... we can keep creating it as it is just an update operation
                 availability_set = options.get('availability_set') or '{}-availability_set'.format(cluster.name)

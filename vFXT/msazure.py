@@ -1273,6 +1273,10 @@ class Service(ServiceBase):
                 log.debug("Failed to find image: {}".format(e))
                 raise_from(vFXTConfigurationException("Unable to handle boot disk {}".format(boot_disk_image)), e)
 
+        # if its a azure image gallery /subscriptions/<>/resoureceGroups/<>/providers/Microsoft.Compute/galleries/<>
+        elif boot_disk_image.startswith('/subscriptions/') and '/providers/Microsoft.Compute/galleries/' in boot_disk_image and len(boot_disk_image.split('/')) == 11:
+            # TODO: check with conn.galleries.get... but that cannot span subscriptions so just try it and let access errors occur
+            body['storage_profile']['image_reference'] = {'id': boot_disk_image}
         # if its a marketplace path like OpenLogic:CentOS:7.1:latest
         elif boot_disk_image.count(':') == 3: # must be marketplace
             log.info("Using marketplace URN {}".format(boot_disk_image))

@@ -1597,7 +1597,10 @@ class Service(ServiceBase):
 
                 # not exist check... we can keep creating it as it is just an update operation
                 availability_set = options.get('availability_set') or '{}-availability_set'.format(cluster.name)
-                cluster.availability_set = self._create_availability_set(availability_set, proximity_placement_group=cluster.proximity_placement_group.id)
+                if proximity_placement_group:
+                    cluster.availability_set = self._create_availability_set(availability_set, proximity_placement_group=cluster.proximity_placement_group.id)
+                else:
+                    cluster.availability_set = self._create_availability_set(availability_set)
                 options['availability_set'] = availability_set
 
             # create the initial node

@@ -1127,6 +1127,7 @@ class Service(ServiceBase):
                 advanced_networking (bool, optional): Turn on advanced networking (if image supports it)
                 private_ip_address (str, optional): primary private IP address
                 azure_role (str, optional): Azure role name to assign to the system provided identity
+                azure_identity (str, optional): Specify an Azure managed identity instead of a system provided identity
                 identity (str, optional): ARM resource identity reference (full path)
                 storage_account_type (str, optional): Storage account type for managed disks
                 user_data (bytes, optional): Custom data for the instance CustomData field
@@ -1186,6 +1187,15 @@ class Service(ServiceBase):
                 'type': 'SystemAssigned',
             }
         }
+
+        azure_identity = options.get('azure_identity')
+        if azure_identity:
+            identity_conn = self.connection('identity')
+            try:
+                identity_id = identity_conn.user_assigned_identities.get(self.resource_group, azure_identity).id
+            except msrestazure.azure_exceptions.CloudError as ex:
+                identity_id = '{}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{}'.format(self._resource_group_scope(), azure_identity)
+            body['identity'] = {'type': 'UserAssigned', 'user_assigned_identities': {identity_id: {}}}
 
         if body['tags']:
             if len(body['tags']) > 15:
@@ -1362,8 +1372,8 @@ class Service(ServiceBase):
             self._wait_for_operation(op, msg="instance {} to be created".format(name), retries=wait_for_success)
             instance = conn.virtual_machines.get(resource_group, name)
 
-            # assign the role to node managed identity here
-            if role_name:
+            # assign the role to node managed identity here unless we have a user provided identity
+            if role_name and not azure_identity:
                 self._assign_role(instance.identity.principal_id, role_name)
 
             self.wait_for_status(instance, self.ON_STATUS, wait_for_success)
@@ -1523,6 +1533,7 @@ class Service(ServiceBase):
                 wait_for_state (str, optional): red, yellow, green cluster state (defaults to yellow)
                 skip_cleanup (bool, optional): do not clean up on failure
                 azure_role (str, optional): Azure role name for the service principal (otherwise DEFAULT_ROLE is used)
+                azure_identity (str, optional): Specify an Azure managed identity instead of a system provided identity
                 availability_set (str, optional): existing availability set for the cluster instances
                 proximity_placement_group (str, optional): existing proximity placement group for the cluster instances
                 subnets ([str], optional): one or more subnets

@@ -267,6 +267,7 @@ def main():
     azure_opts.add_argument("--storage-resource-group", help='Storage resource group (if different from the vm instance group)', default=None)
     azure_opts.add_argument("--storage-account", help='Azure Storage account', default=None)
     azure_opts.add_argument("--azure-role", help='Existing Azure role for the cluster (otherwise one is created)', default='Avere Operator')
+    azure_opts.add_argument("--azure-identity", help='Existing user created managed identity name (otherwise system assigned identities are used)', default=None)
     azure_opts.add_argument("--location", help='Azure location', default=None)
     azure_opts.add_argument("--azure-network", help='Azure virtual network', default=None)
     azure_opts.add_argument("--azure-subnet", help='Azure virtual network subnet', type=str, default=None)
@@ -728,6 +729,7 @@ def main():
             'timezone': args.timezone,
             'admin_ssh_data': args.ssh_key, # azure ssh key
             'azure_role': args.azure_role,
+            'azure_identity': args.azure_identity,
             'key_name': args.ssh_key, # aws ssh key
             'join_wait': args.join_wait or None,
             'service_account': args.service_account,
@@ -950,6 +952,7 @@ def main():
             'admin_ssh_data': args.ssh_key, # azure ssh key
             'instance_addresses': args.instance_addresses,
             'azure_role': args.azure_role,
+            'azure_identity': args.azure_identity,
         }
         # prune out unfortunate command line defaults
         options = {k: v for k, v in viewitems(options) if v is not None and v != ''}

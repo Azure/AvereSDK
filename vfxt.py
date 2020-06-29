@@ -953,6 +953,7 @@ def main():
             'instance_addresses': args.instance_addresses,
             'azure_role': args.azure_role,
             'azure_identity': args.azure_identity,
+            'zone': args.zone or args.azure_zones,
         }
         # prune out unfortunate command line defaults
         options = {k: v for k, v in viewitems(options) if v is not None and v != ''}

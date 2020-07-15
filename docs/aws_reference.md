@@ -161,7 +161,7 @@ If you want to set them individually, use the following commands instead of the 
 
 ## Extra AWS Configuration Options
 
-Refer to [AWS Command Options](aws_options.md#aws-command-options) or `vfxt.py --help` for details. Extra configuration options for AWS cloud environments include:
+Refer to [AWS Command Options](aws_options.md) or `vfxt.py --help` for details. Extra configuration options for AWS cloud environments include:
 
 * Security groups
 * Placement group

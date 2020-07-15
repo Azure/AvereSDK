@@ -20,6 +20,7 @@ Use the generic option `--on-instance` for local console commands.
 | `--azure-network` *vnet_name* | Virtual network that houses the cluster nodes |
 | `--azure-subnet` *subnet_name* | Subnet in the virtual network  |
 | `--azure-role` *role_name* | Use a custom RBAC role for the cluster nodes instead of the built- in role [Avere Operator](https://docs.microsoft.com/azure/role-based-access-control/built-in-roles#avere-operator). Define the role before using this option. Learn more about roles and the privileges required for cluster nodes and cluster controllers in the Avere vFXT for Azure documentation - read [VM access roles](https://docs.microsoft.com/azure/avere-vfxt/avere-vfxt-deploy-plan#vm-access-roles) and [Subscription owner permissions](https://docs.microsoft.com/azure/avere-vfxt/avere-vfxt-prereqs#configure-subscription-owner-permissions). |
+| `--azure-identity` *identity_name* | Specify a user-assigned [managed identity](https://docs.microsoft.com/azure/active-directory/managed-identities-azure-resources/) for the cluster nodes instead of using a system-assigned managed identity. Create the identity before using this option. The user-assigned managed identity must have the RBAC role [Avere Operator](https://docs.microsoft.com/azure/role-based-access-control/built-in-roles#avere-operator) and the account that creates the cluster must have the role [Managed Identity Operator](https://docs.microsoft.com/azure/role-based-access-control/built-in-roles#managed-identity-operator). |
 | `--location` *location_shortname* | Azure geographic location |
 | `--network-resource-group` *group_name* | Network resource group (if different from the resource group used for the cluster VMs) |
 | `--resource-group` *group_name* | Resource group for the cluster VMs |
@@ -41,7 +42,7 @@ Use the generic option `--on-instance` for local console commands.
 | `--root-disk-caching` {`ReadOnly`,`ReadWrite`} | Azure root disk caching mode (defaults to `ReadOnly`) |
 | `--storage-account` *account_ID* | Storage account for Blob-backed core filer and boot diagnostics |
 <!--deprecated: | `--azure-government` | Use the default base URL and storage suffix for the Azure Government Cloud environment  |-->
-| `--azure-environment` {`public`, `usgovernment`, `china`, `germany`} | Set the defaults (endpoint base URL and storage suffix) for the Azure environment  **xxx** |
+| `--azure-environment` {`public`, `usgovernment`, `china`, `germany`} | Set the defaults (endpoint base URL and storage suffix) for the Azure environment |
 | `--azure-endpoint-base-url` | Specify the base URL of the API endpoint for a non-public Azure environment |
 | `--azure-storage-suffix` | Specify the storage suffice for a non-public Azure environment |
 | `--azurecontainer-not-empty` | Use the specified storage endpoint, which has existing Avere-formatted data |

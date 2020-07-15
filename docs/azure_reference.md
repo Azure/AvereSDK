@@ -18,7 +18,7 @@ Note that many of these steps require ownership privileges for the subscription 
 
 ## Choosing a vfxt.py Command Console
 
-The system that you use to issue vfxt.py commands must be a Linux-style system that meets the installation prerequisites described in vfxt.py Software Requirements at the beginning of this document. It also must have secure access to the cluster instances – for example, an Azure VM that is located in the same resource group, network, and subnet where your cluster will reside.
+The system that you use to issue vfxt.py commands must be a Linux-style system that meets the installation prerequisites described in [vfxt.py Software Requirements](installation.md#vfxtpy-software-requirements) in the installation and setup article. It also must have secure access to the cluster instances – for example, an Azure VM that is located in the same resource group, network, and subnet where your cluster will reside.
 
 If creating a cloud-based VM for vfxt.py commands, you can use any instance type that can run a Linux operating system for command-line access; it does not need much processing power or storage. You can choose a general purpose A0 or A1 VM with HDD type disks. The VM should be created from the same subscription that you will use to create the cluster.
 

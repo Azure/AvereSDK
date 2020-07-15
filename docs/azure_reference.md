@@ -106,7 +106,7 @@ Required environment options for each vfxt.py command in Azure include the resou
 
 ## Extra Azure Configuration Options
 
-Refer to [Azure Options](syntax.md#azure-options) or `vfxt.py --help` for details. Extra configuration options for Azure cloud environments include:
+Refer to [Azure Options](azure_options.md) or `vfxt.py --help` for details. Extra configuration options for Azure cloud environments include:
 
 * Security groups
 * Tagging

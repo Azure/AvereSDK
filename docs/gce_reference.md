@@ -75,7 +75,7 @@ Optionally, use the `--subnetwork` option to specify a subnet.
 
 ## Additional GCE Configuration Options
 
-Refer to the list of commands in GCE Options or `vfxt.py --help` for details about other Google-specific parameters.
+Refer to the list of commands in [GCE Options](gce_options.md) or `vfxt.py --help` for details about other Google-specific parameters.
 
 Extra GCE-specific options include:
 

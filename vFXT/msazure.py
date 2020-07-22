@@ -2320,7 +2320,9 @@ class Service(ServiceBase):
             try:
                 # TODO, when InUseByResource is included in the response inspect it for which nic the backend
                 # believes is still holding the ip configuration.
+                log.info("Starting add_instance_address.check_ip_address_availability for address {}".format(address))
                 check = conn.virtual_networks.check_ip_address_availability(network_rsg, network_name, address)
+                log.info("Completed add_instance_address.check_ip_address_availability for address {}, available={}".format(address,check.available))
                 if check.available:
                     break
                 if check.available is None: # call failed b/c no virtualNetwork/read permissions
@@ -2341,8 +2343,10 @@ class Service(ServiceBase):
             nic_data = nic.serialize()
             nic_data['properties']['ipConfigurations'].append(new_ip)
             try:
+                log.info("Starting add_instance_address.create_or_update for address {} to {}".format(address, nic.name))
                 op = conn.network_interfaces.create_or_update(nic_rsg, nic.name, nic_data)
                 self._wait_for_operation(op, retries=self.WAIT_FOR_IPCONFIG, msg='{} to be assigned to {}'.format(address, nic.name))
+                log.info("Completed add_instance_address.create_or_update for address {} to {}".format(address, nic.name))
                 break
             # check for retry-able/fatal exceptions
             except (msrestazure.azure_exceptions.CloudError, vFXTServiceFailure) as e:
@@ -2400,8 +2404,10 @@ class Service(ServiceBase):
             nic_data['properties']['ipConfigurations'] = [_ for _ in nic_data['properties']['ipConfigurations'] if _['properties']['privateIPAddress'] != address]
 
             try:
+                log.info("Starting _remove_address_from_nic.create_or_update for address {} on {}".format(address,nic.name))
                 op = conn.network_interfaces.create_or_update(nic_rsg, nic.name, nic_data)
                 self._wait_for_operation(op, retries=self.WAIT_FOR_IPCONFIG, msg='{} to be removed from {}'.format(address, nic.name))
+                log.info("Completed _remove_address_from_nic.create_or_update for address {} on {}".format(address,nic.name))
                 break
             # check for retry-able/fatal exceptions
             except (msrestazure.azure_exceptions.CloudError, vFXTServiceFailure) as e:

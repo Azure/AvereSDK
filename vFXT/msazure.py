@@ -90,6 +90,7 @@ logging.getLogger('requests_oauthlib.oauth2_session').setLevel(logging.CRITICAL)
 logging.getLogger('msrestazure.azure_active_directory').setLevel(logging.CRITICAL)
 logging.getLogger('keyring.backend').setLevel(logging.CRITICAL)
 
+import azure.identity
 import azure.storage.blob
 import azure.storage.common
 import azure.common.client_factory
@@ -463,9 +464,9 @@ class Service(ServiceBase):
             if connection_type == 'blobstorage':
                 storage_account = options.get('storage_account') or self.storage_account
                 resource_group = options.get('resource_group') or self.storage_resource_group
-                auth = {}
+                credential = None
                 if self.on_instance: # use MSI for auth
-                    auth['token_credential'] = msrestazure.azure_active_directory.MSIAuthentication(resource='https://storage.azure.com/')
+                    credential = azure.identity.ManagedIdentityCredential()
                 else:
                     try:
                         keys = self.connection('storage').storage_accounts.list_keys(resource_group, storage_account).keys
@@ -473,10 +474,10 @@ class Service(ServiceBase):
                             raise Exception()
                     except Exception:
                         raise vFXTConfigurationException("Unable to look up storage keys for {}".format(storage_account))
-                    auth['account_key'] = keys[0].value # just use the first one, may be multiple
-                if self.storage_suffix:
-                    auth['endpoint_suffix'] = self.storage_suffix
-                return azure.storage.blob.blockblobservice.BlockBlobService(storage_account, **auth)
+                    credential = keys[0].value # just use the first one, may be multiple
+                blob_host = 'blob.{}'.format(self.storage_suffix) if self.storage_suffix else self.BLOB_HOST
+                storage_uri = 'https://{}.{}'.format(storage_account, blob_host)
+                return azure.storage.blob.BlobServiceClient(storage_uri, credential=credential)
 
             connection_settings = connection_types[connection_type]
             connection_cls = connection_settings['cls']
@@ -2144,10 +2145,10 @@ class Service(ServiceBase):
         if container in [_.name for _ in blob_srv.list_containers()]:
             raise ContainerExistsException("The container {} already exists for storage account {}".format(container, storage_account))
 
-        rv = blob_srv.create_container(container, metadata=options.get('tags'))
-        if not rv:
+        container_obj = blob_srv.create_container(container, metadata=options.get('tags'))
+        if not container_obj:
             raise vFXTServiceFailure("Failed to create container {}".format(container))
-        return blob_srv.get_container_properties(container)
+        return container_obj.get_container_properties()
 
     def delete_container(self, name):
         '''Delete a container
@@ -2162,11 +2163,14 @@ class Service(ServiceBase):
         container, storage_account = self._container_name(name)
 
         blob_srv = self.connection('blobstorage', storage_account=storage_account)
+        if container not in [_.name for _ in blob_srv.list_containers()]:
+            return
+        container_obj = blob_srv.get_container_client(container)
 
-        if next(iter(blob_srv.list_blobs(container)), None):
+        if next(iter(container_obj.list_blobs()), None):
             raise vFXTConfigurationException("Container {} not empty".format(container))
-        rv = blob_srv.delete_container(container)
-        if not rv:
+        blob_srv.delete_container(container)
+        if container in [_.name for _ in blob_srv.list_containers()]:
             raise vFXTServiceFailure("Failed to delete container {}".format(container))
 
     def authorize_container(self, cluster, name, retries=ServiceBase.CLOUD_API_RETRIES, xmlrpc=None):
@@ -2206,8 +2210,8 @@ class Service(ServiceBase):
                 if cred['type'] == self.COREFILER_CRED_MSI:
                     return cred['name']
 
-        if isinstance(blob_srv.authentication, msrestazure.azure_active_directory.MSIAuthentication):
-            raise vFXTConfigurationException("Could not create credential, no MSI credential found for resource group {}".format(self.storage_resource_group))
+        if not hasattr(blob_srv.credential, 'account_key'):
+            raise vFXTConfigurationException("Could not create credential, no credential found for storage account {}".format(storage_account))
 
         cred_name = 'azure-storage-{}'.format(storage_account)
         # if it exists, use it
@@ -2217,7 +2221,7 @@ class Service(ServiceBase):
         cred_body = {
             'subscription': self.subscription_id,
             'tenant': self.tenant_id,
-            'storageKey': 'BASE64:{}'.format(blob_srv.authentication.account_key),
+            'storageKey': 'BASE64:{}'.format(blob_srv.credential.account_key),
         }
         log.debug("Creating credential {}".format(cred_name))
         r = cluster._xmlrpc_do(xmlrpc.corefiler.createCredential, cred_name, self.COREFILER_CRED_TYPE, cred_body, _xmlrpc_do_retries=retries)
@@ -2688,31 +2692,31 @@ class Service(ServiceBase):
         blob_srv = self.connection('blobstorage', storage_account=storage_account)
 
         if container not in [_.name for _ in blob_srv.list_containers()]:
-            rv = blob_srv.create_container(container)
-            if not rv:
+            container_obj = blob_srv.create_container(container)
+            if not container_obj:
                 raise vFXTServiceFailure("Failed to create container {}".format(container))
+        else:
+            container_obj = blob_srv.get_container_client(container)
 
         stall_count = 0
         last_progress = None
         rate_limit = 0
-        copy_op = blob_srv.copy_blob(container, dest_blob, src)
-        while copy_op.status != 'success':
-            if not rate_limit % 10:
-                log.debug("copy {} {}: {}".format(dest_blob, copy_op.status, copy_op.progress or 'starting'))
 
-            try:
-                blob_prop = blob_srv.get_blob_properties(container, dest_blob)
-                copy_op = blob_prop.properties.copy
-            except Exception as e:
-                log.error("Failed to get blob properties for {}: {}".format(dest_blob, e))
-                raise
+        dest_blob_client = container_obj.get_blob_client(dest_blob)
+        dest_blob_client.start_copy_from_url(src)
+
+        blob_copy = dest_blob_client.get_blob_properties().get('copy', {})
+        while blob_copy.get('status') != 'success':
+            blob_copy = dest_blob_client.get_blob_properties().get('copy', {})
+            if not rate_limit % 10:
+                log.debug("copy {} {}: {}".format(dest_blob, blob_copy.get('status'), blob_copy.get('progress') or 'starting'))
 
             # check for stalled
-            if last_progress == copy_op.status:
+            if last_progress == blob_copy.get('status'):
                 stall_count += 1
             else:
                 stall_count = 0
-                last_progress = copy_op.status
+                last_progress = blob_copy.get('status')
             if stall_count == timeout:
                 raise vFXTServiceTimeout("Failed waiting for {} to copy".format(dest_blob))
 
@@ -3120,17 +3124,18 @@ class Service(ServiceBase):
         blob_srv = self.connection('blobstorage', storage_account=storage_account)
 
         try:
-            rv = blob_srv.get_blob_properties(container, blob)
-            if not rv:
-                return False
-            return True
+            rv = blob_srv.get_blob_client(container, blob).get_blob_properties()
+            if rv:
+                return True
+            return False
         except Exception:
             return False
 
     def _delete_blob(self, storage_account, container, blob):
         blob_srv = self.connection('blobstorage', storage_account=storage_account)
         log.debug("Deleting blob {}/{} from storage account {}".format(container, blob, storage_account))
-        blob_srv.delete_blob(container, blob, delete_snapshots='Include')
+        container_obj = blob_srv.get_container_client(container)
+        container_obj.delete_blob(blob, delete_snapshots='include')
 
     def _create_image_from_vhd(self, vhd_url, name=None, caching='None'):
         '''Create a local image from a remove vhd url

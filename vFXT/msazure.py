@@ -888,8 +888,18 @@ class Service(ServiceBase):
             raise vFXTConfigurationException("Node configuration prevents them from being stopped")
         log.info("Stopping instance {}".format(self.name(instance)))
         conn = self.connection()
-        # use deallocate (instead of stop) so that we do not get charged for the vm
-        op = conn.virtual_machines.deallocate(self._instance_resource_group(instance), self.name(instance))
+
+        retries = self.CLOUD_API_RETRIES
+        while True:
+            try:
+                # use deallocate (instead of stop) so that we do not get charged for the vm
+                op = conn.virtual_machines.deallocate(self._instance_resource_group(instance), self.name(instance))
+                break
+            except msrestazure.azure_exceptions.CloudError:
+                if retries == 0:
+                    raise
+            retries -= 1
+            time.sleep(self.POLLTIME)
         self._wait_for_operation(op, msg='{} to stop'.format(self.name(instance)), retries=wait)
 
     def start(self, instance, wait=WAIT_FOR_START):
@@ -901,7 +911,17 @@ class Service(ServiceBase):
         '''
         log.info("Starting instance {}".format(self.name(instance)))
         conn = self.connection()
-        op = conn.virtual_machines.start(self._instance_resource_group(instance), self.name(instance))
+
+        retries = self.CLOUD_API_RETRIES
+        while True:
+            try:
+                op = conn.virtual_machines.start(self._instance_resource_group(instance), self.name(instance))
+                break
+            except msrestazure.azure_exceptions.CloudError:
+                if retries == 0:
+                    raise
+            retries -= 1
+            time.sleep(self.POLLTIME)
         self._wait_for_operation(op, msg='{} to start'.format(self.name(instance)), retries=wait)
 
     def restart(self, instance, wait=ServiceBase.WAIT_FOR_RESTART):
@@ -915,7 +935,17 @@ class Service(ServiceBase):
             raise vFXTConfigurationException("Node configuration prevents them from being restarted")
         log.info("Restarting instance {}".format(self.name(instance)))
         conn = self.connection()
-        op = conn.virtual_machines.restart(self._instance_resource_group(instance), self.name(instance))
+
+        retries = self.CLOUD_API_RETRIES
+        while True:
+            try:
+                op = conn.virtual_machines.restart(self._instance_resource_group(instance), self.name(instance))
+                break
+            except msrestazure.azure_exceptions.CloudError:
+                if retries == 0:
+                    raise
+            retries -= 1
+            time.sleep(self.POLLTIME)
         self._wait_for_operation(op, msg='{} to restart'.format(self.name(instance)), retries=wait)
 
     def destroy(self, instance, wait=WAIT_FOR_DESTROY):

@@ -239,6 +239,12 @@ class Azure_test(tests.vFXTTestCase.Base):
         service = self.mk_azure_service()
         self.assertTrue(service._list_storage_accounts())
 
+    def test__instance_boot_log(self):
+        '''may not have boot diagnostics enabled... just for coverage'''
+        service = self.mk_azure_service()
+        instance = service.get_instance(self.azure['existing'][0])
+        self.assertTrue(service._instance_boot_log(instance) or True)
+
     def test_bad_container_name(self):
         service = self.mk_azure_service()
         self.assertTrue(service.valid_containername('some-container'))

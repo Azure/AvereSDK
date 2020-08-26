@@ -1068,6 +1068,21 @@ class Service(ServiceBase):
             return custom_roles[0]
         return None
 
+    def _instance_boot_log(self, instance):
+        '''Return the boot log (if boot diagnostics is enabled) of the virtual machine instance
+        '''
+        if not (instance.diagnostics_profile and instance.diagnostics_profile.boot_diagnostics and instance.diagnostics_profile.boot_diagnostics.enabled):
+            return None
+
+        conn = self.connection()
+        resource_group = self._instance_resource_group(instance)
+        op = conn.virtual_machines.retrieve_boot_diagnostics_data(resource_group, instance.name)
+        self._wait_for_operation(op, msg="boot log SAS URL for {} to be created".format(instance.name))
+        boot_diagnostics_info = op.result()
+        response = requests.get(boot_diagnostics_info.serial_console_log_blob_uri)
+        response.raise_for_status()
+        return response.content.decode()
+
     def fqdn(self, instance):
         '''Provide the fully qualified domain name of the instance
 

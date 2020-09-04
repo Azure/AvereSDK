@@ -1101,13 +1101,21 @@ class Service(ServiceBase):
     def _instance_identity_custom_role(self, instance):
         '''Return the custom role of the instance
 
-            This is currently the role applied the system managed identity of the instance.
+            This is currently the role applied the system managed identity of the instance or if a user assigned
+            identity is in use we return None.
         '''
         conn = self.connection('authorization')
-        if not hasattr(instance, 'identity') and not hasattr(instance.identity, 'principal_id'):
+        if not hasattr(instance, 'identity'):
             raise vFXTConfigurationException("Instance {} has no identity configuration".format(self.name(instance)))
 
-        principal_id = instance.identity.principal_id
+        identity = instance.identity
+        if getattr(identity, 'user_assigned_identities', None):
+            return None
+
+        if not getattr(identity, 'principal_id', None):
+            raise vFXTConfigurationException("Instance {} has no identity configuration".format(self.name(instance)))
+
+        principal_id = identity.principal_id
         role_assignments = conn.role_assignments.list("principalId eq '{}'".format(principal_id))
         roles = [conn.role_definitions.get_by_id(_.role_definition_id) for _ in role_assignments]
         custom_roles = [_ for _ in roles if _.role_type == 'CustomRole']
@@ -1256,7 +1264,11 @@ class Service(ServiceBase):
             try:
                 identity_id = identity_conn.user_assigned_identities.get(self.resource_group, azure_identity).id
             except msrestazure.azure_exceptions.CloudError as ex:
-                identity_id = '{}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{}'.format(self._resource_group_scope(), azure_identity)
+                provider = 'Microsoft.ManagedIdentity/userAssignedIdentities'
+                if provider in azure_identity: # already fully qualified
+                    identity_id = azure_identity
+                else:
+                    identity_id = '{}/providers/{}/{}'.format(self._resource_group_scope(), provider, azure_identity)
             body['identity'] = {'type': 'UserAssigned', 'user_assigned_identities': {identity_id: {}}}
 
         if body['tags']:
@@ -1297,11 +1309,6 @@ class Service(ServiceBase):
             except Exception as e:
                 raise_from(vFXTServiceFailure("Failed to lookup proximity placement group {}: {}".format(proximity_placement_group, e)), e)
 
-        identity = options.get('identity') or None
-        if identity:
-            body['identity']['type'] = 'UserAssigned'
-            body['identity']['identity_ids'] = [identity]
-
         # determine where we are getting the root disk
         # if its a url and in our storage account, use it directly
         boot_disk_image_url = urlparse.urlparse(boot_disk_image)
@@ -1318,7 +1325,8 @@ class Service(ServiceBase):
 
             try:
                 self.create_container('{}/{}'.format(self.storage_account, self.SYSTEM_CONTAINER))
-            except ContainerExistsException: pass
+            except ContainerExistsException:
+                pass
 
             # Simple existing check... there may be better ways if we want to invalidate our existing copy
             if not self._blob_exists(self.storage_account, self.SYSTEM_CONTAINER, blob_name):
@@ -1374,16 +1382,16 @@ class Service(ServiceBase):
                 log.debug("Failed to find image: {}".format(e))
                 raise_from(vFXTConfigurationException("Unable to handle boot disk {}".format(boot_disk_image)), e)
 
-        # if we turn on boot diagnostics, log to our non-premium account
+        # turn on boot diagnostics
         if options.get('enable_boot_diagnostics'):
-            blob_host = 'blob.{}'.format(self.storage_suffix) if self.storage_suffix else self.BLOB_HOST
+            body['diagnostics_profile'] = {'boot_diagnostics': {'enabled': True}}
+
+            # if not managed boot diagnostics, optionally use a storage account
             boot_diagnostics_storage_account = options.get('boot_diagnostics_storage') or self.storage_account
-            if not boot_diagnostics_storage_account:
-                raise vFXTConfigurationException("No storage account provided for boot diagnostics")
-            body['diagnostics_profile'] = {'boot_diagnostics': {
-                'enabled': True,
-                'storage_uri': 'https://{}.{}'.format(boot_diagnostics_storage_account, blob_host)
-            }}
+            if boot_diagnostics_storage_account:
+                blob_host = 'blob.{}'.format(self.storage_suffix) if self.storage_suffix else self.BLOB_HOST
+                boot_diagnostics_url = 'https://{}.{}'.format(boot_diagnostics_storage_account, blob_host)
+                body['diagnostics_profile']['boot_diagnostics']['storage_uri'] = boot_diagnostics_url
 
         # UltraSSD needs to be advertised
         if options.get('ultrassd_enabled'):
@@ -1614,6 +1622,7 @@ class Service(ServiceBase):
         cluster.availability_set = None
         cluster.proximity_placement_group = None
         cluster.role = None
+        cluster.identity = None
 
         if not all([cluster.mgmt_ip, cluster.mgmt_netmask, cluster.cluster_ip_start, cluster.cluster_ip_end]):
             raise vFXTConfigurationException("Cluster networking configuration is incomplete")
@@ -1770,10 +1779,13 @@ class Service(ServiceBase):
         try:
             if instance.os_profile.linux_configuration.ssh and 'admin_ssh_data' not in options:
                 options['admin_ssh_data'] = instance.os_profile.linux_configuration.ssh.public_keys[0].key_data
-        except Exception: pass
+        except Exception:
+            pass
 
         if not options.get('azure_role'):
             options['azure_role'] = cluster.role.role_name
+        if not options.get('azure_identity'):
+            options['azure_identity'] = cluster.identity
 
         # set network security group for added nodes
         options['network_security_group'] = cluster.network_security_group
@@ -1942,6 +1954,12 @@ class Service(ServiceBase):
                 cluster.role = self._instance_identity_custom_role(instances[0]) or self._get_role(self.DEFAULT_ROLE)
             except Exception as e:
                 raise_from(vFXTConfigurationException("Failed to lookup cluster role: {}".format(e)), e)
+
+            # if the cluster is using a user assigned identity
+            try:
+                cluster.identity = list(instances[0].identity.user_assigned_identities.keys())[0]
+            except (AttributeError, IndexError) as e:
+                pass
 
             # try and find the network security group
             try:

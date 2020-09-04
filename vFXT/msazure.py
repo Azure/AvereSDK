@@ -808,7 +808,8 @@ class Service(ServiceBase):
         '''
         try:
             return self.connection().virtual_machines.get(self.resource_group, instance_id)
-        except Exception:
+        except Exception as ex:
+            log.error(ex)
             return None
 
     def wait_for_status(self, instance, status, retries=ServiceBase.WAIT_FOR_STATUS):

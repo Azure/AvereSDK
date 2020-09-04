@@ -740,6 +740,11 @@ class Service(ServiceBase):
                     service.network_resource_group = subnet_id.split('/')[4] # our subnet/network may be in different resource groups
 
             service.tenant_id = instance.identity.tenant_id
+            if not service.tenant_id:
+                try:
+                    service.tenant_id = next(service.connection('subscription').tenants.list()).tenant_id
+                except Exception as ex:
+                    raise_from(vFXTServiceFailure("Failed to lookup tenant, check your login credentials"), ex)
             service.zones = [_ for _ in service._instance_zone(instance) or [] if _]
 
             return service

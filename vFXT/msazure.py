@@ -980,9 +980,13 @@ class Service(ServiceBase):
                 instance: backend instance
         '''
         status = self.status(instance)
+        if not status:
+            log.warning("Odd status value for %s: %s", instance.name, status)
+            return False # we can't know
+
         # NOTE status is provisioning state/power state... we do not care if we are stuck updating provisioning
         # if power is on
-        power_state = status[1]
+        power_state = status[-1]
         return power_state not in [self.OFF_STATUS[1], self.STOP_STATUS[1]]
 
     def is_off(self, instance):
@@ -992,9 +996,13 @@ class Service(ServiceBase):
                 instance: backend instance
         '''
         status = self.status(instance)
+        if not status:
+            log.warning("Odd status value for %s: %s", instance.name, status)
+            return False # we can't know
+
         # NOTE status is provisioning state/power state... we do not care if we are stuck updating provisioning
         # if power is off
-        power_state = status[1]
+        power_state = status[-1]
         return power_state in [self.OFF_STATUS[1], self.STOP_STATUS[1]]
 
     def name(self, instance):

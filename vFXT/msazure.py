@@ -250,6 +250,8 @@ class Service(ServiceBase):
         'AzurePublicCloud':  { 'endpoint': msrestazure.azure_cloud.AZURE_PUBLIC_CLOUD.endpoints.resource_manager, 'storage_suffix': msrestazure.azure_cloud.AZURE_PUBLIC_CLOUD.suffixes.storage_endpoint},
         'AzureChinaCloud':   { 'endpoint': msrestazure.azure_cloud.AZURE_CHINA_CLOUD.endpoints.resource_manager, 'storage_suffix': msrestazure.azure_cloud.AZURE_CHINA_CLOUD.suffixes.storage_endpoint},
         'AzureGermanCloud':  { 'endpoint': msrestazure.azure_cloud.AZURE_GERMAN_CLOUD.endpoints.resource_manager, 'storage_suffix': msrestazure.azure_cloud.AZURE_GERMAN_CLOUD.suffixes.storage_endpoint},
+        'USNat':  { 'endpoint': 'https://management.azure.eaglex.ic.gov', 'storage_suffix': 'core.eaglex.ic.gov'},
+        'USSec':  { 'endpoint': 'https://management.azure.microsoft.scloud', 'storage_suffix': 'core.microsoft.scloud'},
         # compat map
         'AZUREUSGOVERNMENTCLOUD': { 'endpoint': msrestazure.azure_cloud.AZURE_US_GOV_CLOUD.endpoints.resource_manager, 'storage_suffix': msrestazure.azure_cloud.AZURE_US_GOV_CLOUD.suffixes.storage_endpoint},
         'AZUREPUBLICCLOUD':       { 'endpoint': msrestazure.azure_cloud.AZURE_PUBLIC_CLOUD.endpoints.resource_manager, 'storage_suffix': msrestazure.azure_cloud.AZURE_PUBLIC_CLOUD.suffixes.storage_endpoint},

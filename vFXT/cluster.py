@@ -1174,7 +1174,8 @@ class Cluster(object): #pylint: disable=useless-object-inheritance
                 quick_destroy (bool, optional) skip cleanup steps that prevent data loss (defaults to False)
                 **options: passed to ServiceInstance.destroy()
         '''
-        if not options.pop('quick_destroy', False) and self.is_on() and self.admin_password:
+        quick_destroy = options.pop('quick_destroy', False)
+        if not quick_destroy and self.is_on() and self.admin_password:
             xmlrpc = self.xmlrpc()
             cluster_name = self.name or 'unknown'
 
@@ -1200,8 +1201,9 @@ class Cluster(object): #pylint: disable=useless-object-inheritance
                     log.info("Removing corefiler {} on cluster {}".format(corefiler, cluster_name))
                     self.remove_corefiler(corefiler)
 
-        if self.service.STOP_BEFORE_DELETE:
+        if self.service.STOP_BEFORE_DELETE and not quick_destroy:
             self.stop()
+
         self.parallel_call(self.nodes, 'destroy', **options)
         # any post destroy cleanup activities that may be remaining
         self.service.post_destroy_cluster(self)

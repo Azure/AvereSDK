@@ -1,5 +1,7 @@
 # GCE Options
 
+**NOTE:** <br/> ***These options are unsupported and deprecated.*** vFXT.py is supported on Azure infrastructure only.
+
 These options can be used only if the `--cloud-type` value is `gce`.
 
 ## GCE Authentication Options

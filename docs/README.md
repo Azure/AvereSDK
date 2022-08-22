@@ -11,13 +11,10 @@ This script has complete capabilities for creating and managing Avere vFXT clust
 
 For ongoing cluster administration, use the Avere Control Panel. Read the Avere cluster [Configuration Guide](<https://azure.github.io/Avere/#operations>) for more details.
 
-The vfxt.py script can be used with any of the cloud computing providers that Avere OS supports. Environment setup requirements are different for the different platforms, and the exact commands available vary by cloud computing provider.
+**NOTE:**
+A previous version of this product supported AWS and GCE environments in addition to Microsoft Azure. These capabilities are deprecated. Some commands related to those capabilities still appear in this documentation. Make sure you are using the specific commands documented for Microsoft Azure.
 
-This document gives a basic overview of the vfxt.py script and its options. It includes information about commands specific to Microsoft Azure, Amazon Web Services, and Google Cloud Platform/Google Compute Engine cloud services. However, setting up a cloud project and configuring it to provide an Avere vFXT cluster includes many more steps than are documented here. Project creation, identity and access management, networking, quota and billing concerns, security, and many other topics are explained in detail in the Avere vFXT Installation Guide customized for your cloud provider. Read the complete details here:
-
-* [vFXT Installation Guide for Amazon Web Services](<https://azure.github.io/Avere/#vfxt>)
-* [vFXT Installation Guide for Google Cloud Platform](<https://azure.github.io/Avere/#vfxt>)
-* vFXT Installation Guide for Microsoft Azure – Deployed from a template in the Azure Marketplace; read current online documentation [here](<https://aka.ms/averedocs>).
+This document gives a basic overview of the vfxt.py script and its options. However, setting up a cloud project and configuring it to provide an Avere vFXT cluster includes many more steps than are documented here. Project creation, identity and access management, networking, quota and billing concerns, security, and many other topics are explained in detail in the [Avere vFXT Installation Guide](<https://aka.ms/averedocs>).
 
 The command `vfxt.py --help` gives a full list of command options, including provider-specific functionality.
 
@@ -37,22 +34,10 @@ The command `vfxt.py --help` gives a full list of command options, including pro
 
 [All options](all_options.md) - Help-style list of options
 
-## Platform-Specific Information
-
-Microsoft Azure:
+## Command reference
 
 * [Quick reference - Using vfxt.py with Microsoft Azure](azure_reference.md)
 * [Azure-specific command options](azure_options.md)
-
-Amazon Web Services:
-
-* [Quick reference - Using vfxt.py with Amazon Web Services](aws_reference.md)
-* [AWS-specific command options](aws_options.md)
-
-Google Cloud Platform:
-
-* [Quick reference - Using vfxt.py with Google Cloud Platform](gce_reference.md)
-* [GCE-specific command options](gce_options.md)
 
 ## Getting Help
 

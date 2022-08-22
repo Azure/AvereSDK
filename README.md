@@ -12,8 +12,9 @@ Licensed under the MIT License.
 
 You can find the user documentation in this repository under [docs](/docs/README.md).
 
-
 # Installation
+
+**NOTE:** ***Only Azure options are supported at this time. Using vFXT with other cloud services is deprecated.***
 
 ## With pip
 
@@ -37,25 +38,6 @@ need to be added to the PATH environment variable.
 
 # vFXT Library
 
-## AWS example:
-
-    from vFXT.cluster import Cluster
-    from vFXT.aws import Service
-
-    aws = Service(region='fill me in', access_key='fill me in', subnet='subnet-f66a618e', secret_access_key='fill me in')
-
-    cluster = Cluster.create(aws, 'r3.8xlarge', 'averecluster', 'PLACEHOLDER')
-    try:
-      cluster.make_test_bucket(bucketname='averecluster-s3bucket', corefiler='averecluster-s3bucket')
-      cluster.add_vserver('vserver')
-      cluster.add_vserver_junction('vserver', 'averecluster-s3bucket')
-    except Exception as e:
-      ...
-
-    from vFXT.serviceInstance import ServiceInstance
-    # via ServiceInstance which calls the backend .create_instance()
-    client = ServiceInstance.create(aws, 'c3.xlarge', 'client1', 'ami-b9faad89', key_name="aws_ssh_keyname")
-
 ## Azure example:
 
     from vFXT.cluster import Cluster
@@ -72,7 +54,7 @@ need to be added to the PATH environment variable.
         sshpubkey = f.read()
     client = ServiceInstance.create(azure, 'Standard_DS1', 'client1', 'debian:debian-10:10:latest', admin_ssh_data=sshpubkey)
 
-## GCE example:
+## GCE example (DEPRECATED):
 
     from vFXT.cluster import Cluster
     from vFXT.gce import Service
@@ -91,6 +73,26 @@ need to be added to the PATH environment variable.
     client = ServiceInstance.create(gce, 'n1-standard-1', 'client1', 'projects/debian-cloud/global/images/debian-10-buster-v20200210', metadata={'ssh-keys':sshpubkey}, tags=['client'])
 
     client_instance.destroy()
+
+## AWS example (DEPRECATED):
+
+    from vFXT.cluster import Cluster
+    from vFXT.aws import Service
+
+    aws = Service(region='fill me in', access_key='fill me in', subnet='subnet-f66a618e', secret_access_key='fill me in')
+
+    cluster = Cluster.create(aws, 'r3.8xlarge', 'averecluster', 'PLACEHOLDER')
+    try:
+      cluster.make_test_bucket(bucketname='averecluster-s3bucket', corefiler='averecluster-s3bucket')
+      cluster.add_vserver('vserver')
+      cluster.add_vserver_junction('vserver', 'averecluster-s3bucket')
+    except Exception as e:
+      ...
+
+    from vFXT.serviceInstance import ServiceInstance
+    # via ServiceInstance which calls the backend .create_instance()
+    client = ServiceInstance.create(aws, 'c3.xlarge', 'client1', 'ami-b9faad89', key_name="aws_ssh_keyname")
+
 
 ## General example:
 

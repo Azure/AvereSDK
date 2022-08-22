@@ -17,7 +17,7 @@ Each vfxt.py command (except for information queries like `--help`) must include
 * The environment options for the cloud network or project.
 * An action to perform – for example, `--create` to create a new vFXT cluster.
 
-<!-- Note that similar commands have different names if they are restricted to one type of cloud provider. For example, the option to set an Amazon location is `region` and the option for setting a Google location is `zone`. This difference serves as a check that the correct cloud service was specified. -->
+Note that similar commands have different names if they are restricted to one type of cloud provider. Be careful to use only the commands that apply to Azure. <!-- For example, the option to set an Amazon location is `region` and the option for setting a Google location is `zone`. This difference serves as a check that the correct cloud service was specified. -->
 
 Actions include things like creating or destroying a cluster, adding nodes, and stopping or starting the cluster. The command `vfxt.py --help` lists all options.
 

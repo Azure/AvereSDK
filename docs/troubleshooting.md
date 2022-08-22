@@ -22,11 +22,7 @@ Save the debugging output from any unresolved situations to send along with your
 
 ## Contacting Support
 
-There are two different methods for getting help with your vFXT cluster. For Azure clusters you should use the ticket system built in to the cloud portal; for AWS and GCE clusters you should contact Microsoft Customer Service and Support (formerly Avere Global Services) online or by phone.
-
 When contacting support, please include the output of any script invocations that are failing.
-
-### Azure users
 
 For help with Microsoft Azure-based systems, open a ticket from the Azure portal:
 
@@ -36,18 +32,3 @@ For help with Microsoft Azure-based systems, open a ticket from the Azure portal
 1. Fill out the request form.
 
    **NOTE:** In the **Service** section on page 1, select **All services** and look under the category **Storage** to find Avere vFXT.
-
-### AWS and GCE users
-
-For vFXT clusters using Amazon Web Services or Google, open a ticket by contacting Avere support.
-
-There are several ways to reach Avere support:
-
-* **Telephone**
-  * US and Canada - toll free: 1-888-88-AVERE (888-882-8373), press 2 for support
-  * United Kingdom: +44 20 3695 1638, press 2 for support
-  * US or International: +1-412-894-2570, press 2 for support
-
-* **Web** - Use the links under Support Information on [https://www.microsoft.com/avere/contact-us](https://www.microsoft.com/avere/contact-us)
-
-* **Email** - averesupport@microsoft.com

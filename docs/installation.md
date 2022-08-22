@@ -54,9 +54,7 @@ For Ubuntu or another Debian-based Linux distribution, run these commands:
 
 Ensure that the Python installation has the latest versions of the API library for your cloud provider:
 
-* Boto AWS API library if using AWS
 * Azure Python SDK if using Azure
-* Google API client library if using GCE
 
 This command can be used with any of the three cloud providers to install the needed library.
 
@@ -92,16 +90,12 @@ Regardless of whether you use vfxt.py on a virtual machine inside your cloud env
 * vfxt.py must be able to authenticate to the cloud environment.
 * vfxt.py must have permission to create and destroy virtual machine instances in the cloud environment.
 
-The details vary greatly by cloud provider. Read the detailed Avere vFXT Installation Guide for your cloud compute provider for complete information about setting up projects, network configuration, security and privileges, and other vital information before attempting to use vfxt.py.
+The details vary greatly by cloud provider. Read the detailed Avere vFXT Installation Guide for complete information about setting up projects, network configuration, security and privileges, and other vital information before attempting to use vfxt.py.
 
-* [vFXT Installation Guide for Amazon Web Services](<https://azure.github.io/Avere/#vfxt>)
-* [vFXT Installation Guide for Google Cloud Platform](<https://azure.github.io/Avere/#vfxt>)
 * vFXT Installation Guide for Microsoft Azure (vfxt.py version in development, read current documentation [here](<https://docs.microsoft.com/azure/avere-vfxt/avere-vfxt-deploy-plan>))
 
 These sections of this documentation also give provider-specific information about using vfxt.py on particular cloud systems.
 
-* [Quick Reference - Using vfxt.py with Amazon Web Services](aws_reference.md)
-* [Quick Reference - Using vfxt.py with Google Cloud Platform](gce_reference.md)
 * [Quick Reference – Using vfxt.py with Microsoft Azure](azure_reference.md)
 
 ## Next Step - Basic vfxt.py Syntax

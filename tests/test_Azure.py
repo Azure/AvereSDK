@@ -85,7 +85,7 @@ class Azure_test(tests.vFXTTestCase.Base):
     def test_create_instance(self):
         service = self.mk_azure_service()
         name = 'vfxttest-lg-test-{}'.format(int(time.time()))
-        instance = ServiceInstance.create(service, self.azure['instance_type'], name, boot_disk_image=self.azure['image'], tags={'purpose':'vfxt-unittest-deleteme'}, user_data="this\nis\na\test")
+        instance = ServiceInstance.create(service, self.azure['instance_type'], name, boot_disk_image=self.azure['image'], tags={'purpose':'vfxt-unittest-deleteme'}, user_data="this\nis\na\test", admin_ssh_data='ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAA{} azure'.format('X'*401))
         self.assertTrue(instance.instance.tags['purpose'] == 'vfxt-unittest-deleteme')
 
         try:
@@ -182,8 +182,8 @@ class Azure_test(tests.vFXTTestCase.Base):
         i2 = None
         try:
             uniq = int(time.time())
-            i1 = ServiceInstance.create(service, self.azure['instance_type'], 'vfxttest-dup-route-1-{}'.format(uniq), self.azure['image'])
-            i2 = ServiceInstance.create(service, self.azure['instance_type'], 'vfxttest-dup-route-2-{}'.format(uniq), self.azure['image'])
+            i1 = ServiceInstance.create(service, self.azure['instance_type'], 'vfxttest-dup-route-1-{}'.format(uniq), self.azure['image'], admin_ssh_data='ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAA{} azure'.format('X'*401))
+            i2 = ServiceInstance.create(service, self.azure['instance_type'], 'vfxttest-dup-route-2-{}'.format(uniq), self.azure['image'], admin_ssh_data='ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAA{} azure'.format('X'*401))
 
             addrs, _ = service.get_available_addresses(count=30)
             addr = addrs[-1]

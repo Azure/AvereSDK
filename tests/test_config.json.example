@@ -21,50 +21,5 @@
         "vfxt_image": null,
         "check_on_instance": false,
         "check_from_environment": false
-    },
-    "gce": {
-        "enabled": false,
-        "zone_id": "us-central1-b",
-        "network_id": "fill in your network",
-        "subnetwork_id": "default",
-        "zones": [
-            "us-central1-a",
-            "us-central1-b",
-            "us-central1-c"
-        ],
-        "client_email": "email of service account",
-        "key_file": "p12/json file",
-        "project_id": "your project id",
-        "bucket": "an existing bucket",
-        "bucket_file": "an existing file in bucket",
-        "image": "https://www.googleapis.com/compute/v1/projects/centos-cloud/global/images/centos-6-v20150226",
-        "instance_type": "n1-highmem-8",
-        "existing_instances": ["an existing instance id to test against", "2nd instance id"],
-        "vfxt_image": null,
-        "check_on_instance": false,
-        "check_from_environment": false,
-        "private_range": null
-    },
-    "aws": {
-        "enabled": false,
-        "access_key": "account access key",
-        "secret_access_key": "account secret access key",
-        "s3_access_key": "can reuse access_key here",
-        "s3_secret_access_key": "can reuse secret_access_key here",
-        "subnet": "subnet-yoursubnet",
-        "subnets": [
-            "subnet-yoursubnet1",
-            "subnet-yoursubnet2",
-            "subnet-yoursubnet3"
-        ],
-        "region": "us-west-2",
-        "ami": "ami-9ff7e8af#REMOVE THIS STRING Amazon Linux AMI 2015.09 (HVM)",
-        "instance_type": "r3.8xlarge",
-        "existing_instances": ["an existing instance id to test against", "2nd instance id"],
-        "bucket": "an existing bucket",
-        "bucket_file": "an existing file in bucket",
-        "vfxt_image": null,
-        "check_on_instance": false,
-        "check_from_environment": false
     }
 }

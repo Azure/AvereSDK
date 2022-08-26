@@ -65,8 +65,10 @@ newmsazure = vFXT.msazure.Service(**serializeme)
 
 '''
 import base64
+
+
 from builtins import range #pylint: disable=redefined-builtin
-from future.moves.urllib import parse as urlparse
+from urllib import parse as urlparse
 from future.utils import raise_from
 import time
 import threading
@@ -122,6 +124,7 @@ IP_CONFIG_HACK_RE = re.compile(r'which is being cleaned up and was allocated to 
 class Service(ServiceBase):
     '''Azure service backend'''
     ON_STATUS = ['ProvisioningState/succeeded', 'PowerState/running']
+    STATUS_FILTER = ['ProvisioningState','PowerState']
     OFF_STATUS = ['ProvisioningState/succeeded', 'PowerState/deallocated']
     STOP_STATUS = ['ProvisioningState/succeeded', 'PowerState/stopped']
     #DESTROYED_STATUS=['ProvisioningState/succeeded']
@@ -160,7 +163,12 @@ class Service(ServiceBase):
         'Standard_E4s_v3':  {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 8, 'max_localdisk_iops': 6400, 'max_localdisk_mbps': 96, 'accelerated_networking': True},
         'Standard_E8s_v3':  {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 16, 'max_localdisk_iops': 12800, 'max_localdisk_mbps': 192, 'accelerated_networking': True},
         'Standard_E16s_v3': {'data_disk_size': 256, 'data_disk_count': 4, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 25600, 'max_localdisk_mbps': 384, 'accelerated_networking': True},
+        'Standard_E16s_v5': {'data_disk_size': 256, 'data_disk_count': 4, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 25600, 'max_localdisk_mbps': 768, 'accelerated_networking': True},
         'Standard_E32s_v3': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 51200, 'max_localdisk_mbps': 768, 'accelerated_networking': True},
+        'Standard_E32s_v4': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 51200, 'max_localdisk_mbps': 768, 'accelerated_networking': True},
+        'Standard_E32s_v5': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 51200, 'max_localdisk_mbps': 768, 'accelerated_networking': True},
+        'Standard_E32as_v4': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 51200, 'max_localdisk_mbps': 768, 'accelerated_networking': True},
+        'Standard_E48as_v4': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 76800, 'max_localdisk_mbps': 1148, 'accelerated_networking': True},
         'Standard_E64s_v3': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 80000, 'max_localdisk_mbps': 1200, 'accelerated_networking': True},
         'Standard_E64is_v3':{'data_disk_size': 512, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 80000, 'max_localdisk_mbps': 1200, 'accelerated_networking': True},
         'Standard_G3':      {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
@@ -169,15 +177,16 @@ class Service(ServiceBase):
         'Standard_GS3':     {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 20000, 'max_localdisk_mbps': 500},
         'Standard_GS4':     {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 40000, 'max_localdisk_mbps': 1000},
         'Standard_GS5':     {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 80000, 'max_localdisk_mbps': 2000},
-        'Standard_L8s': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 10000, 'max_localdisk_mbps': 250},
-        'Standard_L16s': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 0, 'max_data_disk_count': 64, 'max_localdisk_iops': 20000, 'max_localdisk_mbps': 500},
-        'Standard_L32s': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 0, 'max_data_disk_count': 64, 'max_localdisk_iops': 40000, 'max_localdisk_mbps': 1000},
-        'Standard_L8s_v2': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 0, 'max_data_disk_count': 16, 'max_localdisk_iops': 8000, 'max_localdisk_mbps': 160, 'accelerated_networking': True},
-        'Standard_L16s_v2': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 16000, 'max_localdisk_mbps': 320, 'accelerated_networking': True},
-        'Standard_L32s_v2': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 32000, 'max_localdisk_mbps': 640, 'accelerated_networking': True},
-        'Standard_L48s_v2': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 48000, 'max_localdisk_mbps': 960, 'accelerated_networking': True},
-        'Standard_L64s_v2': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 64000, 'max_localdisk_mbps': 1280, 'accelerated_networking': True},
-        'Standard_L80s_v2': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 80000, 'max_localdisk_mbps': 1400, 'accelerated_networking': True},
+        'Standard_L8s': {'data_disk_size': 256, 'data_disk_count': 0, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 10000, 'max_localdisk_mbps': 250},
+        'Standard_L16s': {'data_disk_size': 256, 'data_disk_count': 0, 'node_count': 0, 'max_data_disk_count': 64, 'max_localdisk_iops': 20000, 'max_localdisk_mbps': 500},
+        'Standard_L32s': {'data_disk_size': 256, 'data_disk_count': 0, 'node_count': 0, 'max_data_disk_count': 64, 'max_localdisk_iops': 40000, 'max_localdisk_mbps': 1000},
+        'Standard_L8s_v2': {'data_disk_size': 256, 'data_disk_count': 0, 'node_count': 0, 'max_data_disk_count': 16, 'max_localdisk_iops': 8000, 'max_localdisk_mbps': 160, 'accelerated_networking': True},
+        'Standard_L16s_v2': {'data_disk_size': 256, 'data_disk_count': 0, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 16000, 'max_localdisk_mbps': 320, 'accelerated_networking': True},
+        'Standard_L32s_v2': {'data_disk_size': 256, 'data_disk_count': 0, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 32000, 'max_localdisk_mbps': 640, 'accelerated_networking': True},
+        'Standard_L32s_v3': {'data_disk_size': 256, 'data_disk_count': 0, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 32000, 'max_localdisk_mbps': 640, 'accelerated_networking': True},
+        'Standard_L48s_v2': {'data_disk_size': 256, 'data_disk_count': 0, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 48000, 'max_localdisk_mbps': 960, 'accelerated_networking': True},
+        'Standard_L64s_v2': {'data_disk_size': 256, 'data_disk_count': 0, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 64000, 'max_localdisk_mbps': 1280, 'accelerated_networking': True},
+        'Standard_L80s_v2': {'data_disk_size': 256, 'data_disk_count': 0, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 80000, 'max_localdisk_mbps': 1400, 'accelerated_networking': True},
     }
     # managed also supports 32 and 64
     # 256 mentioned here: https://docs.microsoft.com/en-us/azure/virtual-machines/windows/managed-disks-overview
@@ -266,6 +275,9 @@ class Service(ServiceBase):
     # Stop the virtual machines prior to deletion in order to prevent a network resource race if some nodes are not
     # scheduled to be destroyed at the same time as the rest.
     STOP_BEFORE_DELETE = True
+    # Limit the in-use address checks to the network RG, the default is subscription wide. Override this to allow
+    # the same ips to be used in separate vnets. Other service IPS will still be scanned on the subscription.
+    IN_USE_NETWORK_RG_ONLY = False
 
     def __init__(self, subscription_id=None, application_id=None, application_secret=None,
                        tenant_id=None, resource_group=None, storage_account=None,
@@ -820,7 +832,7 @@ class Service(ServiceBase):
             log.error(ex)
             return None
 
-    def wait_for_status(self, instance, status, retries=ServiceBase.WAIT_FOR_STATUS):
+    def wait_for_status(self, instance, status, retries=ServiceBase.WAIT_FOR_STATUS, status_filter=None):
         '''Poll on a given instance for status
 
             Arguments:
@@ -838,7 +850,11 @@ class Service(ServiceBase):
             time.sleep(self.POLLTIME)
             try:
                 instance = self.refresh(instance)
-                s = self.status(instance)
+                if status_filter==None:
+                    s = self.status(instance)
+                else:
+                    # only include status items which match the list of prefixes in status_filter
+                    s = [_ for _ in self.status(instance) if _.split('/')[0] in status_filter]
                 status_errors = [_ for _ in s if 'ProvisioningState/failed' in _]
                 if status_errors:
                     raise vFXTServiceFailure("Instance {} failed: {}".format(instance.name, status_errors))
@@ -1354,7 +1370,7 @@ class Service(ServiceBase):
                 raise_from(vFXTConfigurationException("Unable to handle boot disk {}".format(boot_disk_image)), e)
 
         # if its a azure image gallery /subscriptions/<>/resoureceGroups/<>/providers/Microsoft.Compute/galleries/<>
-        elif boot_disk_image.startswith('/subscriptions/') and '/providers/Microsoft.Compute/galleries/' in boot_disk_image and len(boot_disk_image.split('/')) == 11:
+        elif boot_disk_image.startswith('/subscriptions/') and '/providers/Microsoft.Compute/galleries/' in boot_disk_image:
             # TODO: check with conn.galleries.get... but that cannot span subscriptions so just try it and let access errors occur
             body['storage_profile']['image_reference'] = {'id': boot_disk_image}
         # if its a marketplace path like OpenLogic:CentOS:7.1:latest
@@ -1446,7 +1462,7 @@ class Service(ServiceBase):
             if role_name and not azure_identity:
                 self._assign_role(instance.identity.principal_id, role_name)
 
-            self.wait_for_status(instance, self.ON_STATUS, wait_for_success)
+            self.wait_for_status(instance, self.ON_STATUS, wait_for_success, status_filter=self.STATUS_FILTER)
             return instance
         except Exception as e:
             log.debug("Failed to create instance: {}".format(e))
@@ -2018,7 +2034,7 @@ class Service(ServiceBase):
         body = instance.serialize()
         body['properties']['storageProfile']['dataDisks'] = []
         instance = self._commit_instance(instance, body)
-        self.wait_for_status(instance, self.OFF_STATUS, self.WAIT_FOR_STOP)
+        self.wait_for_status(instance, self.OFF_STATUS, self.WAIT_FOR_STOP, status_filter=self.STATUS_FILTER)
 
         # delete the disk blobs
         errors = ShelveErrors()
@@ -2042,7 +2058,7 @@ class Service(ServiceBase):
             body = instance.serialize()
             body['tags']['shelved'] = shelved
             instance = self._commit_instance(instance, body)
-            self.wait_for_status(instance, self.OFF_STATUS)
+            self.wait_for_status(instance, self.OFF_STATUS, status_filter=self.STATUS_FILTER)
         except Exception as e:
             log.debug(e)
             raise_from(vFXTServiceFailure("Failed to shelve instance {}: {}".format(instance['name'], e)), e)
@@ -2125,7 +2141,7 @@ class Service(ServiceBase):
             body['properties']['storageProfile']['dataDisks'] = data_disks
             del body['tags']['shelved']
             instance = self._commit_instance(instance, body)
-            self.wait_for_status(instance, self.OFF_STATUS)
+            self.wait_for_status(instance, self.OFF_STATUS, status_filter=self.STATUS_FILTER)
         except Exception as e:
             log.debug(e)
             raise_from(vFXTServiceFailure("Failed to shelve instance {}: {}".format(instance['name'], e)), e)
@@ -2514,7 +2530,16 @@ class Service(ServiceBase):
         c           = Cidr(cidr_block)
         addresses   = set()
 
-        for nic in conn.network_interfaces.list_all():
+        if self.IN_USE_NETWORK_RG_ONLY:
+            # After scanning nics, continue to scan the other non-nic ips in the sub just in case. Since we only care about
+            # nics in our RG, we may hit other cases we do not know about in Azure network configuration that may
+            # disallow us from using addresses also used in the services below (gateways, load balancers, etc...)
+            log.debug('Limiting in-use address search to network RG')
+            nic_list = conn.network_interfaces.list(resource_group_name=self.network_resource_group)
+        else:
+            nic_list = conn.network_interfaces.list_all()
+
+        for nic in nic_list:
             for ip_config in nic.ip_configurations:
                 addr = ip_config.private_ip_address
                 if c.contains(addr):

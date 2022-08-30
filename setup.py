@@ -10,7 +10,7 @@ with open("vFXT/version.py") as f:
     exec(f.read(), version) #pylint: disable=exec-used
 
 base_deps = ['future', 'requests']
-azure_deps = ['requests-oauthlib', 'adal==1.2.7', 'azure-cli-core==2.35.0', 'azure-common==1.1.28', 'azure-mgmt-authorization==0.61.0', 'azure-mgmt-compute==13.1.1', 'azure-identity==1.9.0', 'azure-mgmt-msi==6.0.0', 'azure-mgmt-network==13.0.0', 'azure-mgmt-resource==13.0.0', 'azure-mgmt-storage==11.2.0', 'azure-storage-blob==12.11.0', 'azure-storage-queue==12.2.0', 'azure-storage-common==2.1.0', 'knack==0.9.0', 'msrest==0.6.21', 'msrestazure==0.6.4']
+azure_deps = ['requests-oauthlib', 'adal==1.2.7', 'azure-cli-core==2.39.0', 'azure-common==1.1.28', 'azure-mgmt-authorization==2.0.0', 'azure-mgmt-compute==27.1.0', 'azure-identity==1.10.0', 'azure-mgmt-msi==6.0.1', 'azure-mgmt-network==20.0.0', 'azure-mgmt-resource==21.1.0b1', 'azure-mgmt-storage==20.0.0', 'azure-storage-blob==12.11.0', 'azure-storage-queue==12.2.0', 'azure-storage-common==2.1.0', 'knack==0.9.0', 'msrest==0.7.1', 'msrestazure==0.6.4']
 
 setup(name='vFXT',
     version=version['__version__'],

@@ -12,7 +12,6 @@ Licensed under the MIT License.
 
 You can find the user documentation in this repository under [docs](/docs/README.md).
 
-
 # Installation
 
 ## With pip
@@ -29,9 +28,9 @@ need to be added to the PATH environment variable.
 
 ```pip install --user .```
 
-## Authentication requirements - specific for each service backend
+## Authentication requirements
 
-- Azure: requires an AD application/service principal
+Azure requires an AD application/service principal.
 
 # vFXT Library
 

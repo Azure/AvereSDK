@@ -12,7 +12,7 @@ This script has complete capabilities for creating and managing Avere vFXT clust
 For ongoing cluster administration, use the Avere Control Panel. Read the Avere cluster [Configuration Guide](<https://azure.github.io/Avere/#operations>) for more details.
 
 **NOTE:**
-A previous version of this product supported AWS and GCE environments in addition to Microsoft Azure. These capabilities are deprecated. Some commands related to those capabilities still appear in this documentation. Make sure you are using the specific commands documented for Microsoft Azure.
+A previous version of this product supported AWS and GCE environments in addition to Microsoft Azure. These capabilities have been deprecated. Some commands related to those capabilities still appear in this documentation. Make sure you are using the specific commands documented for Microsoft Azure.
 
 This document gives a basic overview of the vfxt.py script and its options. However, setting up a cloud project and configuring it to provide an Avere vFXT cluster includes many more steps than are documented here. Project creation, identity and access management, networking, quota and billing concerns, security, and many other topics are explained in detail in the [Avere vFXT Installation Guide](<https://aka.ms/averedocs>).
 

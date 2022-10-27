@@ -282,12 +282,12 @@ An example session:
 
 ```bash
 
-# ./vfxt.py --cloud-type gce --on-instance --interact
+# ./vfxt.py --cloud-type azure --on-instance --interact
 
 --- Service object available as 'service' ---
 
 >>> service.export()
-{'subnetwork_id': None, 'zone': ['us-central1-a'], 'network_id': 'gce1', 'access_token': u'ya29.Cj4ZAxwtZZZQP8MJ6Z6Pf_uZZZZZZiwARn291ekyz_igBntzZzPx4BchAbmsoJ84XpNiWRrp0cjy66HnsFZDw', 'client_email': 'projectid-compute@developer.gserviceaccount.com', 'project_id': 'some-project'}
+{...}
 >>> help(service)
 
 ```

@@ -9,20 +9,7 @@ interface.
 
 Cookbook/examples:
 
-# AWS existing
-inst = ServiceInstance(service=aws, instance_id='i-83739423')
-# AWS new
-i = aws.create_instance(...)
-inst = ServiceInstance(aws, i)
-
-# GCE existing
-inst = ServiceInstance(service=gce, instance_id='my-node-1')
-# GCE new
-i = gce.create_instance(...)
-inst = ServiceInstance(gce, i)
-
-# or the .create() constructor which takes
-srv = aws or gce or azure
+srv = azure
 inst = ServiceInstance.create(srv, **opts)
 
 # using the ServiceInstance

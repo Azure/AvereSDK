@@ -93,7 +93,6 @@ These options apply to any supported cloud provider.
 | `--cluster-range` *IP_range* | IP address range (CIDR format) for the cluster. This range is assigned to the cluster to use for client traffic and cluster management tasks.  |
 | `--cluster-proxy-uri` *URL* | Proxy resource for the cluster - for example, `http://user:pass@172.16.16.20:8080/`. **NOTE:** Use the IP address rather than hostname in case DNS becomes unreachable. |
 | `--junction` *vserver_junction_path* | Sets the GNS path for the vserver's junction. The path must start with `/`. If not set, the default value is the cloud provider name (`/azure`), or the last segment of the NFS export path (/smithj for an NFS export with the path /files/smithj)  |
-| <!--**xxx gce only? xxx**--> `--labels` *key*:*value*  | Specify a key:value pair label for the cluster. Specify one label at a time; you can use as many label statements as needed. |
 | `--no-vserver` | Skips automatically creating a vserver with the cluster |
 | `--root-size` *boot_disk_size_in_GB* | Use this to specify the size of each node's boot disk, in GB. <br/> **NOTE:** This setting might not be honored by some cloud providers. |
 | `--timezone` *zone* | Cluster time zone (in TZ database format - for example, `--timezone America/Puerto_Rico`) |
@@ -120,7 +119,7 @@ These options apply to any supported cloud provider.
 | <img width=800 /> | |
 | ---------- | ------------------ |
 | `--core-filer` *core_filer_name* | Name for the core filer that will be created with the cluster. |
-| `--azurecontainer` <br/> or <br/>`--bucket` *s3_bucket_name*  *blob_container_name* | Name of an existing, empty cloud storage container to use as the core filer. <br/> • For Azure, use `--azurecontainer` to specify a blob container.<br/> For AWS or GCE, use `--bucket` to specify an S3 bucket |
+| `--azurecontainer` <br/> or <br/>`--bucket` *s3_bucket_name*  *blob_container_name* | Name of an existing, empty cloud storage container to use as the core filer. <br/> • For Azure, use `--azurecontainer` to specify a blob container.<br/> |
 | `--no-corefiler` | Skip creating a cloud core filer when creating the cluster. This will create a cluster without any core filers. |
 | `--nfs-mount` host:/path | NFS mountpoint to use as the core filer (in host:/path format). If you use this option when creating a cluster, it will use the specified resource instead of creating a cloud core filer. |
 | `--nfs-type` {`NetappNonClustered`\| `NetappClustered`\|`EmcIsilon`} | Specify the type of appliance used as the core filer in the `--nfs-mount` argument. This type is important for correct SMB operation and cannot be easily detected. |
@@ -138,7 +137,3 @@ These options apply to any supported cloud provider.
 Read the linked articles to learn about vfxt.py arguments that apply only to specific cloud providers:
 
 * [Azure-specific command options](azure_options.md)
-
-**NOTE:** <br/> ***The options below are deprecated. vFXT.py is supported on Azure infrastructure only.***
-* [AWS-specific command options](aws_options.md)
-* [GCE-specific command options](gce_options.md)

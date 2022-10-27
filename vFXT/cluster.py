@@ -5,8 +5,8 @@
 
 Cookbook/examples:
 
-# A cluster is built with a service object (aws or gce)
-service = vFXT.aws.Service() | vFXT.gce.Service()
+# A cluster is built with a service object
+service = vFXT.msazure.Service()
 
 # create a cluster
 cluster = Cluster.create(service, ...)
@@ -69,22 +69,6 @@ cluster.rebalance_directory_managers()
 
 cluster.refresh()
 cluster.reload()
-
-
-# Full AWS example
-cluster = Cluster.create(aws, 'r3.2xlarge', 'mycluster', 'PLACEHOLDER',
-                        subnet='subnet-f99a618e',
-                        placement_group='perf1',
-                        wait_for_state='yellow')
-try:
-    cluster.make_test_bucket(bucketname='mycluster-bucket', corefiler='aws')
-    cluster.add_vserver('vserver')
-    cluster.add_vserver_junction('vserver', 'aws')
-except Exception as e:
-    cluster.destroy()
-    raise
-
-
 '''
 from builtins import range #pylint: disable=redefined-builtin
 from future.utils import raise_from

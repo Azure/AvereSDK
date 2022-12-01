@@ -2,7 +2,7 @@
 # Copyright (c) 2015-2020 Avere Systems, Inc.  All Rights Reserved.
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License. See LICENSE in the project root for license information.
-from future.moves.urllib import parse as urlparse
+from urllib import parse as urlparse
 from future.utils import viewitems
 import argparse
 import base64
@@ -136,18 +136,10 @@ def _add_bucket_corefiler(cluster, logger, args):
         if args.azure_storage_suffix:
             bucket_opts['serverName'] = '{}.blob.{}'.format(cluster.service.storage_account, args.azure_storage_suffix)
 
-    tags = args.metadata
-    if tags:
-        bucket_opts['tags'] = tags
-
     key = None # encryption key data
     if not args.bucket:
-        logger.info("Creating corefiler {} with new cloud storage: {}".format(corefiler, bucketname))
-        if args.govcloud:
-            cluster.service.create_bucket(bucketname, storage_class=args.storage_class)
-            key = cluster.attach_bucket(corefiler, '{}:{}'.format(bucketname, cluster.service.region), **bucket_opts)
-        else:
-            key = cluster.make_test_bucket(bucketname=bucketname, corefiler=corefiler, storage_class=args.storage_class, **bucket_opts)
+        logger.info("Creating corefiler %s with new cloud storage: %s", corefiler, bucketname)
+        key = cluster.make_test_bucket(bucketname=bucketname, corefiler=corefiler, **bucket_opts)
     else: # existing bucket
         logger.info("Attaching an existing cloud storage {} to corefiler {}".format(bucketname, corefiler))
         bucket_opts['existing_data'] = args.bucket_not_empty
@@ -191,9 +183,6 @@ def main():
 
     # service arguments
     parser.add_argument("--cloud-type", help="the cloud provider to use", choices=['azure'], required=True)
-    parser.add_argument('--s3-access-key', help='custom or specific S3 access key', default=None)
-    parser.add_argument('--s3-secret-key', help='custom or specific S3 secret key', default=None)
-    parser.add_argument('--s3-profile', help='custom or specific S3 profile', default=None)
     parser.add_argument("--on-instance", help="Assume running on instance and query for instance credentials", action="store_true")
     parser.add_argument("--from-environment", help="Assume credentials from local configuration/environment", action="store_true")
     parser.add_argument("--image-id", help="Root disk image ID used to instantiate nodes")
@@ -224,6 +213,7 @@ def main():
     azure_opts.add_argument("--azure-endpoint-base-url", help="The base URL of the API endpoint (if non-public Azure)", type=_validate_url, default=None)
     azure_opts.add_argument("--azure-storage-suffix", help="The storage service suffix (if non-public Azure)", default=None)
     azure_opts.add_argument("--ultra-ssd", help="Use UltraSSD disks for cache", action="store_true")
+    azure_opts.add_argument("--proximity-placement-group", help="Assign any created VMs to the named Azure proximity placement group", type=str, default=None)
 
     # optional arguments
     parser.add_argument('--version', action='version', version=vFXT.__version__)
@@ -277,7 +267,7 @@ def main():
     # corefiler
     cluster_opts.add_argument("--no-corefiler", help="Skip creating core filer", action='store_true')
     cluster_opts.add_argument("--no-vserver", help="Skip creating default virtual server", action='store_true')
-    cluster_opts.add_argument("--bucket", "--azurecontainer", help="S3 bucket, Google Storage bucket, Azure storageaccount/container to use as the core filer (must be empty), otherwise one will be created", metavar='STORAGE')
+    cluster_opts.add_argument("--bucket", "--azurecontainer", help="Azure storageaccount/container to use as the core filer (must be empty), otherwise one will be created", metavar='STORAGE')
     cluster_opts.add_argument("--bucket-not-empty", "--azurecontainer-not-empty", action='store_true', help="Existing storage endpoint has data in it")
     cluster_opts.add_argument("--disable-bucket-encryption", "--disable-azurecontainer-encryption", action='store_true', help="Disable the use of encryption for objects written to the storage endpoint")
     cluster_opts.add_argument("--enable-bucket-encryption", "--enable-azurecontainer-encryption", action='store_true', help=argparse.SUPPRESS) # "Enable the use of encryption for objects written to the storage endpoint"
@@ -479,39 +469,30 @@ def main():
             'data_disk_mbps': args.data_disk_mbps,
             'root_image': args.image_id,
             'root_size': args.root_size,
-            'iamrole': args.iam_role,
-            'placement_group': args.placement_group,
-            'dedicated_tenancy': args.dedicated_tenancy,
             'wait_for_state': args.wait_for_state,
             'wait_for_state_duration': args.wait_for_state_duration,
-            'security_group_ids': args.security_group,
             'network_security_group': args.network_security_group,
             'config_expiration': args.configuration_expiration,
             'tags': args.azure_tag,
-            'labels': args.labels,
-            'metadata': args.metadata,
             'skip_cleanup': args.skip_cleanup,
             'skip_node_renaming': args.skip_node_renaming,
             'proxy_uri': args.cluster_proxy_uri,
-            'disk_encryption': not args.no_disk_encryption,
-            'ebs_optimized': None if not args.no_ebs_optimized else not args.no_ebs_optimized, # use machine defaults
             'auto_public_address': args.public_address,
             'management_address': args.management_address,
             'address_range_start': args.cluster_address_range_start,
             'address_range_end': args.cluster_address_range_end,
             'address_range_netmask': args.cluster_address_range_netmask,
-            'instance_addresses': args.instance_addresses or args.azure_instance_addresses,
+            'instance_addresses': args.azure_instance_addresses,
             'trace_level': args.trace_level,
             'timezone': args.timezone,
             'admin_ssh_data': args.ssh_key, # azure ssh key
             'azure_role': args.azure_role,
             'azure_identity': args.azure_identity,
             'join_wait': args.join_wait or None,
-            'service_account': args.service_account,
-            'scopes': args.scopes,
             'enable_boot_diagnostics': args.enable_boot_diagnostics,
             'root_disk_caching': args.root_disk_caching,
             'data_disk_caching': args.data_disk_caching,
+            'proximity_placement_group': args.proximity_placement_group
         }
         # prune out unfortunate command line defaults
         options = {k: v for k, v in viewitems(options) if v is not None and v != ''}
@@ -715,19 +696,16 @@ def main():
             'data_disk_iops': args.data_disk_iops,
             'data_disk_mbps': args.data_disk_mbps,
             'tags': args.azure_tag,
-            'metadata': args.metadata,
             'skip_cleanup': args.skip_cleanup,
             'skip_node_renaming': args.skip_node_renaming,
             'machine_type': args.instance_type,
             'auto_public_address': args.public_address,
             'join_wait': args.join_wait or None,
-            'service_account': args.service_account,
             'home_addresses': args.vserver_home_addresses,
             'admin_ssh_data': args.ssh_key, # azure ssh key
-            'instance_addresses': args.instance_addresses,
             'azure_role': args.azure_role,
             'azure_identity': args.azure_identity,
-            'zone': args.zone or args.azure_zones,
+            'zone': args.azure_zones,
         }
         # prune out unfortunate command line defaults
         options = {k: v for k, v in viewitems(options) if v is not None and v != ''}

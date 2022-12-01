@@ -1365,9 +1365,6 @@ class Cluster(object): #pylint: disable=useless-object-inheritance
         if options.get('serverName'):
             data['serverName'] = options.get('serverName')
 
-        if data['cloudType'] == 's3':
-            data['s3Type'] = options.get('s3_type') or self.service.S3TYPE_NAME
-
         log.info("Creating corefiler {}".format(corefiler))
         log.debug("corefiler.createCloudFiler options {}".format(data))
 

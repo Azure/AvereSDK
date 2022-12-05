@@ -2265,7 +2265,7 @@ class Service(ServiceBase):
 
         try:
             storage_account_props = self.connection('storage').storage_accounts.get_properties(self.storage_resource_group, storage_account)
-            if storage_account_props.sku.tier.name == 'premium':
+            if storage_account_props.sku.tier.lower()== 'premium':
                 raise Exception("Premium tier storage accounts are not supported")
 
             log.debug("storage account type {}".format(storage_account_props.sku.name))

@@ -91,6 +91,7 @@ logging.getLogger('msrestazure.azure_active_directory').setLevel(logging.CRITICA
 logging.getLogger('keyring.backend').setLevel(logging.CRITICAL)
 
 import azure.identity
+from azure.identity import AzureCliCredential
 import azure.storage.blob
 import azure.storage.common
 import azure.common.client_factory
@@ -100,6 +101,8 @@ import azure.mgmt.compute
 import azure.mgmt.network
 import azure.mgmt.storage
 import azure.mgmt.resource
+from azure.mgmt.resource import SubscriptionClient
+from azure.mgmt.resource import ResourceManagementClient
 import azure.mgmt.msi
 import msrestazure.azure_active_directory
 import msrestazure.azure_cloud
@@ -122,6 +125,7 @@ IP_CONFIG_HACK_RE = re.compile(r'which is being cleaned up and was allocated to 
 class Service(ServiceBase):
     '''Azure service backend'''
     ON_STATUS = ['ProvisioningState/succeeded', 'PowerState/running']
+    STATUS_FILTER = ['ProvisioningState','PowerState']
     OFF_STATUS = ['ProvisioningState/succeeded', 'PowerState/deallocated']
     STOP_STATUS = ['ProvisioningState/succeeded', 'PowerState/stopped']
     #DESTROYED_STATUS=['ProvisioningState/succeeded']
@@ -160,7 +164,12 @@ class Service(ServiceBase):
         'Standard_E4s_v3':  {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 8, 'max_localdisk_iops': 6400, 'max_localdisk_mbps': 96, 'accelerated_networking': True},
         'Standard_E8s_v3':  {'data_disk_size': 256, 'data_disk_count': 1, 'node_count': 3, 'max_data_disk_count': 16, 'max_localdisk_iops': 12800, 'max_localdisk_mbps': 192, 'accelerated_networking': True},
         'Standard_E16s_v3': {'data_disk_size': 256, 'data_disk_count': 4, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 25600, 'max_localdisk_mbps': 384, 'accelerated_networking': True},
+        'Standard_E16s_v5': {'data_disk_size': 256, 'data_disk_count': 4, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 25600, 'max_localdisk_mbps': 768, 'accelerated_networking': True},
         'Standard_E32s_v3': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 51200, 'max_localdisk_mbps': 768, 'accelerated_networking': True},
+        'Standard_E32s_v4': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 51200, 'max_localdisk_mbps': 768, 'accelerated_networking': True},
+        'Standard_E32s_v5': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 51200, 'max_localdisk_mbps': 768, 'accelerated_networking': True},
+        'Standard_E32as_v4': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 51200, 'max_localdisk_mbps': 768, 'accelerated_networking': True},
+        'Standard_E48as_v4': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 76800, 'max_localdisk_mbps': 1148, 'accelerated_networking': True},
         'Standard_E64s_v3': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 80000, 'max_localdisk_mbps': 1200, 'accelerated_networking': True},
         'Standard_E64is_v3':{'data_disk_size': 512, 'data_disk_count': 8, 'node_count': 3, 'max_data_disk_count': 32, 'max_localdisk_iops': 80000, 'max_localdisk_mbps': 1200, 'accelerated_networking': True},
         'Standard_G3':      {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 500, 'max_localdisk_mbps': 8},
@@ -169,15 +178,16 @@ class Service(ServiceBase):
         'Standard_GS3':     {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 20000, 'max_localdisk_mbps': 500},
         'Standard_GS4':     {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 40000, 'max_localdisk_mbps': 1000},
         'Standard_GS5':     {'data_disk_size': 512, 'data_disk_count': 2, 'node_count': 0, 'max_data_disk_count': 4, 'max_localdisk_iops': 80000, 'max_localdisk_mbps': 2000},
-        'Standard_L8s': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 10000, 'max_localdisk_mbps': 250},
-        'Standard_L16s': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 0, 'max_data_disk_count': 64, 'max_localdisk_iops': 20000, 'max_localdisk_mbps': 500},
-        'Standard_L32s': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 0, 'max_data_disk_count': 64, 'max_localdisk_iops': 40000, 'max_localdisk_mbps': 1000},
-        'Standard_L8s_v2': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 0, 'max_data_disk_count': 16, 'max_localdisk_iops': 8000, 'max_localdisk_mbps': 160, 'accelerated_networking': True},
-        'Standard_L16s_v2': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 16000, 'max_localdisk_mbps': 320, 'accelerated_networking': True},
-        'Standard_L32s_v2': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 32000, 'max_localdisk_mbps': 640, 'accelerated_networking': True},
-        'Standard_L48s_v2': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 48000, 'max_localdisk_mbps': 960, 'accelerated_networking': True},
-        'Standard_L64s_v2': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 64000, 'max_localdisk_mbps': 1280, 'accelerated_networking': True},
-        'Standard_L80s_v2': {'data_disk_size': 256, 'data_disk_count': 8, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 80000, 'max_localdisk_mbps': 1400, 'accelerated_networking': True},
+        'Standard_L8s': {'data_disk_size': 256, 'data_disk_count': 0, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 10000, 'max_localdisk_mbps': 250},
+        'Standard_L16s': {'data_disk_size': 256, 'data_disk_count': 0, 'node_count': 0, 'max_data_disk_count': 64, 'max_localdisk_iops': 20000, 'max_localdisk_mbps': 500},
+        'Standard_L32s': {'data_disk_size': 256, 'data_disk_count': 0, 'node_count': 0, 'max_data_disk_count': 64, 'max_localdisk_iops': 40000, 'max_localdisk_mbps': 1000},
+        'Standard_L8s_v2': {'data_disk_size': 256, 'data_disk_count': 0, 'node_count': 0, 'max_data_disk_count': 16, 'max_localdisk_iops': 8000, 'max_localdisk_mbps': 160, 'accelerated_networking': True},
+        'Standard_L16s_v2': {'data_disk_size': 256, 'data_disk_count': 0, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 16000, 'max_localdisk_mbps': 320, 'accelerated_networking': True},
+        'Standard_L32s_v2': {'data_disk_size': 256, 'data_disk_count': 0, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 32000, 'max_localdisk_mbps': 640, 'accelerated_networking': True},
+        'Standard_L32s_v3': {'data_disk_size': 256, 'data_disk_count': 0, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 32000, 'max_localdisk_mbps': 640, 'accelerated_networking': True},
+        'Standard_L48s_v2': {'data_disk_size': 256, 'data_disk_count': 0, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 48000, 'max_localdisk_mbps': 960, 'accelerated_networking': True},
+        'Standard_L64s_v2': {'data_disk_size': 256, 'data_disk_count': 0, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 64000, 'max_localdisk_mbps': 1280, 'accelerated_networking': True},
+        'Standard_L80s_v2': {'data_disk_size': 256, 'data_disk_count': 0, 'node_count': 0, 'max_data_disk_count': 32, 'max_localdisk_iops': 80000, 'max_localdisk_mbps': 1400, 'accelerated_networking': True},
     }
     # managed also supports 32 and 64
     # 256 mentioned here: https://docs.microsoft.com/en-us/azure/virtual-machines/windows/managed-disks-overview
@@ -266,6 +276,9 @@ class Service(ServiceBase):
     # Stop the virtual machines prior to deletion in order to prevent a network resource race if some nodes are not
     # scheduled to be destroyed at the same time as the rest.
     STOP_BEFORE_DELETE = True
+    # Limit the in-use address checks to the network RG, the default is subscription wide. Override this to allow
+    # the same ips to be used in separate vnets. Other service IPS will still be scanned on the subscription.
+    IN_USE_NETWORK_RG_ONLY = False
 
     def __init__(self, subscription_id=None, application_id=None, application_secret=None,
                        tenant_id=None, resource_group=None, storage_account=None,
@@ -339,11 +352,11 @@ class Service(ServiceBase):
         if not self.resource_group:
             raise vFXTConfigurationException("You must provide the resource group name")
 
-        log.debug("Using azure.mgmt.authorization version {}".format(azure.mgmt.authorization.version.VERSION))
-        log.debug("Using azure.mgmt.compute version {}".format(azure.mgmt.compute.version.VERSION))
-        log.debug("Using azure.mgmt.network version {}".format(azure.mgmt.network.version.VERSION))
-        log.debug("Using azure.mgmt.storage version {}".format(azure.mgmt.storage.version.VERSION))
-        log.debug("Using azure.mgmt.resource version {}".format(azure.mgmt.resource.version.VERSION))
+        #log.debug("Using azure.mgmt.authorization version {}".format(version('azure.mgmt.authorization')))
+        #log.debug("Using azure.mgmt.compute version {}".format(version('azure.mgmt.compute')))
+        #log.debug("Using azure.mgmt.network version {}".format(version('azure.mgmt.network')))
+        #log.debug("Using azure.mgmt.storage version {}".format(version('azure.mgmt.storage')))
+        #log.debug("Using azure.mgmt.resource version {}".format(version('azure.mgmt.resource')))
 
         if not options.get('no_connection_test', None):
             self.connection_test()
@@ -363,6 +376,29 @@ class Service(ServiceBase):
             raise_from(vFXTServiceConnectionFailure("Failed to establish connection to service: {}".format(e)), e)
 
         return True
+    @staticmethod
+    def fetch_subscription_for_resource_group(res_grp=None):
+        """
+        Input  : Name of resource group or None
+        Output : First subscription which contains the resource group or
+                 First subscription if input is None
+        Returns an object of type azure.mgmt.resource.subscriptions
+        """
+        cred = AzureCliCredential()
+        newconn = SubscriptionClient(cred)
+        subs_list = newconn.subscriptions.list()
+        if not res_grp:
+            try:
+                return subs_list.next()
+            except StopIteration:
+                pass
+        for sub_crp in subs_list:
+            sub_id = sub_crp.subscription_id
+            rclient = ResourceManagementClient(cred, sub_id)
+            rgs = [x.name for x in rclient.resource_groups.list()]
+            if res_grp in rgs:
+                return sub_crp
+        return None
 
     def check(self, percentage=0.6, instances=0, machine_type=None, data_disk_type=None, data_disk_size=None, data_disk_count=None): #pylint: disable=unused-argument,arguments-differ
         '''Check quotas and API access
@@ -439,15 +475,16 @@ class Service(ServiceBase):
             except Exception as e:
                 log.debug(e)
 
+        default_api_version = None
         connection_types = {
-            'authorization': {'cls': azure.mgmt.authorization.AuthorizationManagementClient, 'pass_subscription': True},
+            'authorization': {'cls': azure.mgmt.authorization.AuthorizationManagementClient, 'pass_subscription': True, 'api_version': '2018-01-01-preview'},
             'blobstorage': None, # special handling below
-            'compute': {'cls': azure.mgmt.compute.ComputeManagementClient, 'pass_subscription': True},
-            'identity': {'cls': azure.mgmt.msi.ManagedServiceIdentityClient, 'pass_subscription': True},
-            'network': {'cls': azure.mgmt.network.NetworkManagementClient, 'pass_subscription': True},
-            'resource': {'cls': azure.mgmt.resource.ResourceManagementClient, 'pass_subscription': True},
-            'storage': {'cls': azure.mgmt.storage.StorageManagementClient, 'pass_subscription': True},
-            'subscription': {'cls': azure.mgmt.resource.SubscriptionClient, 'pass_subscription': False},
+            'compute': {'cls': azure.mgmt.compute.ComputeManagementClient, 'pass_subscription': True, 'api_version': default_api_version},
+            'identity': {'cls': azure.mgmt.msi.ManagedServiceIdentityClient, 'pass_subscription': True, 'api_version': default_api_version},
+            'network': {'cls': azure.mgmt.network.NetworkManagementClient, 'pass_subscription': True, 'api_version': default_api_version},
+            'resource': {'cls': azure.mgmt.resource.ResourceManagementClient, 'pass_subscription': True, 'api_version': default_api_version},
+            'storage': {'cls': azure.mgmt.storage.StorageManagementClient, 'pass_subscription': True, 'api_version': default_api_version},
+            'subscription': {'cls': azure.mgmt.resource.SubscriptionClient, 'pass_subscription': False, 'api_version': default_api_version},
         }
         proxies = {'http': self.proxy_uri, 'https': self.proxy_uri} if self.proxy_uri else {}
 
@@ -488,7 +525,16 @@ class Service(ServiceBase):
                 retries = 3
                 while True:
                     try:
-                        newconn = azure.common.client_factory.get_client_from_cli_profile(connection_cls)
+                        cli_credential = AzureCliCredential()
+                        if not self.subscription_id:
+                            subscription_account = Service.fetch_subscription_for_resource_group(self.resource_group)
+                            if subscription_account:
+                                self.subscription_id = subscription_account.subscription_id
+                                self.tenant_id = subscription_account.tenant_id
+                        else:
+                            newconn = SubscriptionClient(cli_credential)
+                        if connection_type != "blobstorage":
+                            newconn = connection_types[connection_type]['cls'](cli_credential, self.subscription_id, api_version=connection_types[connection_type]['api_version'])
                         break
                     except Exception as e:
                         if log.isEnabledFor(logging.DEBUG):
@@ -769,7 +815,10 @@ class Service(ServiceBase):
         options['use_environment_for_auth'] = True
         s = Service(**options)
         if not s.subscription_id:
-            s.subscription_id = s.connection().config.subscription_id
+            subscription_account = Service.fetch_subscription_for_resource_group(options['resource_group'])
+            if subscription_account:
+                s.subscription_id = subscription_account.subscription_id
+                s.tenant_id = subscription_account.tenant_id
         if not s.tenant_id:
             try:
                 s.tenant_id = next(s.connection('subscription').tenants.list()).tenant_id
@@ -820,7 +869,7 @@ class Service(ServiceBase):
             log.error(ex)
             return None
 
-    def wait_for_status(self, instance, status, retries=ServiceBase.WAIT_FOR_STATUS):
+    def wait_for_status(self, instance, status, retries=ServiceBase.WAIT_FOR_STATUS, status_filter=None):
         '''Poll on a given instance for status
 
             Arguments:
@@ -838,7 +887,11 @@ class Service(ServiceBase):
             time.sleep(self.POLLTIME)
             try:
                 instance = self.refresh(instance)
-                s = self.status(instance)
+                if status_filter==None:
+                    s = self.status(instance)
+                else:
+                    # only include status items which match the list of prefixes in status_filter
+                    s = [_ for _ in self.status(instance) if _.split('/')[0] in status_filter]
                 status_errors = [_ for _ in s if 'ProvisioningState/failed' in _]
                 if status_errors:
                     raise vFXTServiceFailure("Instance {} failed: {}".format(instance.name, status_errors))
@@ -963,7 +1016,7 @@ class Service(ServiceBase):
         instance_resource_group = self._instance_resource_group(instance)
 
         try:
-            op = conn.virtual_machines.delete(instance_resource_group, self.name(instance))
+            op = conn.virtual_machines.begin_delete(instance_resource_group, self.name(instance))
             # we wait because we cannot destroy resources still attached to the instance
             self._wait_for_operation(op, msg='{} to be destroyed'.format(self.name(instance)), retries=wait)
         except vFXTServiceTimeout as e:
@@ -974,7 +1027,7 @@ class Service(ServiceBase):
         # Also need to delete any leftover disks
         try:
             if instance.storage_profile.os_disk.managed_disk:
-                conn.disks.delete(instance_resource_group, instance.storage_profile.os_disk.name)
+                conn.disks.begin_delete(instance_resource_group, instance.storage_profile.os_disk.name)
             elif instance.storage_profile.os_disk.vhd:
                 disk = self._parse_vhd_uri(instance.storage_profile.os_disk.vhd.uri)
                 self._delete_blob(**disk)
@@ -987,7 +1040,7 @@ class Service(ServiceBase):
         for data_disk in instance.storage_profile.data_disks:
             try:
                 if data_disk.managed_disk:
-                    conn.disks.delete(instance_resource_group, data_disk.name)
+                    conn.disks.begin_delete(instance_resource_group, data_disk.name)
                 elif data_disk.vhd:
                     disk = self._parse_vhd_uri(data_disk.vhd.uri)
                     self._delete_blob(**disk)
@@ -1354,7 +1407,7 @@ class Service(ServiceBase):
                 raise_from(vFXTConfigurationException("Unable to handle boot disk {}".format(boot_disk_image)), e)
 
         # if its a azure image gallery /subscriptions/<>/resoureceGroups/<>/providers/Microsoft.Compute/galleries/<>
-        elif boot_disk_image.startswith('/subscriptions/') and '/providers/Microsoft.Compute/galleries/' in boot_disk_image and len(boot_disk_image.split('/')) == 11:
+        elif boot_disk_image.startswith('/subscriptions/') and '/providers/Microsoft.Compute/galleries/' in boot_disk_image:
             # TODO: check with conn.galleries.get... but that cannot span subscriptions so just try it and let access errors occur
             body['storage_profile']['image_reference'] = {'id': boot_disk_image}
         # if its a marketplace path like OpenLogic:CentOS:7.1:latest
@@ -1437,7 +1490,7 @@ class Service(ServiceBase):
                 except BarrierTimeout:
                     raise vFXTServiceFailure("Failed waiting for all network interfaces to create.")
 
-            op = conn.virtual_machines.create_or_update(resource_group, name, body)
+            op = conn.virtual_machines.begin_create_or_update(resource_group, name, body)
             wait_for_success = options.get('wait_for_success') or self.WAIT_FOR_SUCCESS
             self._wait_for_operation(op, msg="instance {} to be created".format(name), retries=wait_for_success)
             instance = conn.virtual_machines.get(resource_group, name)
@@ -1446,7 +1499,7 @@ class Service(ServiceBase):
             if role_name and not azure_identity:
                 self._assign_role(instance.identity.principal_id, role_name)
 
-            self.wait_for_status(instance, self.ON_STATUS, wait_for_success)
+            self.wait_for_status(instance, self.ON_STATUS, wait_for_success, status_filter=self.STATUS_FILTER)
             return instance
         except Exception as e:
             log.debug("Failed to create instance: {}".format(e))
@@ -1469,14 +1522,14 @@ class Service(ServiceBase):
                 log.debug("Failed while trying to read failed instance {}: {}".format(name, instance_e))
 
             try: # it seems we have to manually delete a failed instance
-                op = conn.virtual_machines.delete(resource_group, name)
+                op = conn.virtual_machines.begin_delete(resource_group, name)
                 self._wait_for_operation(op, msg='instance {} to be destroyed'.format(name), retries=self.WAIT_FOR_DESTROY)
             except Exception as instance_e:
                 log.debug("Failed while cleaning up instance: {}".format(instance_e))
 
             if public_ip_address:
                 try:
-                    op = self.connection('network').public_ip_addresses.delete(resource_group, '{}-public-address'.format(name))
+                    op = self.connection('network').public_ip_addresses.begin_delete(resource_group, '{}-public-address'.format(name))
                     self._wait_for_operation(op, msg="public IP address to be removed")
                 except Exception as addr_e:
                     log.debug("Failed while cleaning up public address: {}".format(addr_e))
@@ -1484,14 +1537,14 @@ class Service(ServiceBase):
             # delete nic
             try:
                 if nic:
-                    self.connection('network').network_interfaces.delete(resource_group, nic.name)
+                    self.connection('network').network_interfaces.begin_delete(resource_group, nic.name)
             except Exception as nic_e:
                 log.debug("Failed while cleaning up instance NIC: {}".format(nic_e))
 
             # delete root disk if we did not attach it
             if body['storage_profile']['os_disk']['create_option'] != 'Attach':
                 try:
-                    conn.disks.delete(resource_group, root_disk_name)
+                    conn.disks.begin_delete(resource_group, root_disk_name)
                 except Exception as root_disk_e:
                     log.debug("Failed while cleaning up instance root disk: {}".format(root_disk_e))
 
@@ -1500,7 +1553,7 @@ class Service(ServiceBase):
                 for disk in other_disks:
                     try:
                         if disk.get('managed_disk') and disk.get('name'):
-                            conn.disks.delete(resource_group, disk['name'])
+                            conn.disks.begin_delete(resource_group, disk['name'])
                         else:
                             vhd_data = self._parse_vhd_uri(disk['vhd']['uri'])
                             self._delete_blob(**vhd_data)
@@ -1982,7 +2035,7 @@ class Service(ServiceBase):
         '''
         conn = self.connection()
         try:
-            op = conn.virtual_machines.create_or_update(self._instance_resource_group(instance), instance.name, body)
+            op = conn.virtual_machines.begin_create_or_update(self._instance_resource_group(instance), instance.name, body)
             self._wait_for_operation(op, msg="{} to be updated".format(self.name(instance)), retries=self.WAIT_FOR_SUCCESS)
             return self.refresh(instance)
         except Exception as e:
@@ -2018,7 +2071,7 @@ class Service(ServiceBase):
         body = instance.serialize()
         body['properties']['storageProfile']['dataDisks'] = []
         instance = self._commit_instance(instance, body)
-        self.wait_for_status(instance, self.OFF_STATUS, self.WAIT_FOR_STOP)
+        self.wait_for_status(instance, self.OFF_STATUS, self.WAIT_FOR_STOP, status_filter=self.STATUS_FILTER)
 
         # delete the disk blobs
         errors = ShelveErrors()
@@ -2042,7 +2095,7 @@ class Service(ServiceBase):
             body = instance.serialize()
             body['tags']['shelved'] = shelved
             instance = self._commit_instance(instance, body)
-            self.wait_for_status(instance, self.OFF_STATUS)
+            self.wait_for_status(instance, self.OFF_STATUS, status_filter=self.STATUS_FILTER)
         except Exception as e:
             log.debug(e)
             raise_from(vFXTServiceFailure("Failed to shelve instance {}: {}".format(instance['name'], e)), e)
@@ -2125,7 +2178,7 @@ class Service(ServiceBase):
             body['properties']['storageProfile']['dataDisks'] = data_disks
             del body['tags']['shelved']
             instance = self._commit_instance(instance, body)
-            self.wait_for_status(instance, self.OFF_STATUS)
+            self.wait_for_status(instance, self.OFF_STATUS, status_filter=self.STATUS_FILTER)
         except Exception as e:
             log.debug(e)
             raise_from(vFXTServiceFailure("Failed to shelve instance {}: {}".format(instance['name'], e)), e)
@@ -2212,7 +2265,7 @@ class Service(ServiceBase):
 
         try:
             storage_account_props = self.connection('storage').storage_accounts.get_properties(self.storage_resource_group, storage_account)
-            if storage_account_props.sku.tier.name == 'premium':
+            if storage_account_props.sku.tier.lower()== 'premium':
                 raise Exception("Premium tier storage accounts are not supported")
 
             log.debug("storage account type {}".format(storage_account_props.sku.name))
@@ -2426,10 +2479,10 @@ class Service(ServiceBase):
             nic_data = nic.serialize()
             nic_data['properties']['ipConfigurations'].append(new_ip)
             try:
-                log.info("Starting add_instance_address.create_or_update for address {} to {}".format(address, nic.name))
-                op = conn.network_interfaces.create_or_update(nic_rsg, nic.name, nic_data)
+                log.info("Starting add_instance_address.begin_create_or_update for address {} to {}".format(address, nic.name))
+                op = conn.network_interfaces.begin_create_or_update(nic_rsg, nic.name, nic_data)
                 self._wait_for_operation(op, retries=self.WAIT_FOR_IPCONFIG, msg='{} to be assigned to {}'.format(address, nic.name))
-                log.info("Completed add_instance_address.create_or_update for address {} to {}".format(address, nic.name))
+                log.info("Completed add_instance_address.begin_create_or_update for address {} to {}".format(address, nic.name))
                 break
             # check for retry-able/fatal exceptions
             except (msrestazure.azure_exceptions.CloudError, vFXTServiceFailure) as e:
@@ -2442,7 +2495,7 @@ class Service(ServiceBase):
                             bad_nic = conn.network_interfaces.get(bad_nic_rsg, bad_nic_name)
                             if bad_nic:
                                 bad_nic_data = bad_nic.serialize()
-                                conn.network_interfaces.create_or_update(bad_nic_rsg, bad_nic_name, bad_nic_data)
+                                conn.network_interfaces.begin_create_or_update(bad_nic_rsg, bad_nic_name, bad_nic_data)
                         except Exception as hack_error:
                             log.error("Hack failed: {}".format(hack_error))
 
@@ -2487,10 +2540,10 @@ class Service(ServiceBase):
             nic_data['properties']['ipConfigurations'] = [_ for _ in nic_data['properties']['ipConfigurations'] if _['properties']['privateIPAddress'] != address]
 
             try:
-                log.info("Starting _remove_address_from_nic.create_or_update for address {} on {}".format(address,nic.name))
-                op = conn.network_interfaces.create_or_update(nic_rsg, nic.name, nic_data)
+                log.info("Starting _remove_address_from_nic.begin_create_or_update for address {} on {}".format(address,nic.name))
+                op = conn.network_interfaces.begin_create_or_update(nic_rsg, nic.name, nic_data)
                 self._wait_for_operation(op, retries=self.WAIT_FOR_IPCONFIG, msg='{} to be removed from {}'.format(address, nic.name))
-                log.info("Completed _remove_address_from_nic.create_or_update for address {} on {}".format(address,nic.name))
+                log.info("Completed _remove_address_from_nic.begin_create_or_update for address {} on {}".format(address,nic.name))
                 break
             # check for retry-able/fatal exceptions
             except (msrestazure.azure_exceptions.CloudError, vFXTServiceFailure) as e:
@@ -2514,7 +2567,16 @@ class Service(ServiceBase):
         c           = Cidr(cidr_block)
         addresses   = set()
 
-        for nic in conn.network_interfaces.list_all():
+        if self.IN_USE_NETWORK_RG_ONLY:
+            # After scanning nics, continue to scan the other non-nic ips in the sub just in case. Since we only care about
+            # nics in our RG, we may hit other cases we do not know about in Azure network configuration that may
+            # disallow us from using addresses also used in the services below (gateways, load balancers, etc...)
+            log.debug('Limiting in-use address search to network RG')
+            nic_list = conn.network_interfaces.list(resource_group_name=self.network_resource_group)
+        else:
+            nic_list = conn.network_interfaces.list_all()
+
+        for nic in nic_list:
             for ip_config in nic.ip_configurations:
                 addr = ip_config.private_ip_address
                 if c.contains(addr):
@@ -2785,7 +2847,7 @@ class Service(ServiceBase):
                     'public_ip_allocation_method': 'Dynamic'
                 }
                 log.debug("Creating public ip address {}-public-address: {}".format(name, body))
-                op = conn.public_ip_addresses.create_or_update(resource_group, '{}-public-address'.format(name), body)
+                op = conn.public_ip_addresses.begin_create_or_update(resource_group, '{}-public-address'.format(name), body)
                 self._wait_for_operation(op, msg='IP address to be created')
 
                 public_address = conn.public_ip_addresses.get(resource_group, '{}-public-address'.format(name))
@@ -2799,7 +2861,7 @@ class Service(ServiceBase):
             data['network_security_group'] = {'id': self._network_security_group_scope(network_security_group)}
 
         log.debug("Creating network interface {}: {}".format(name, data))
-        op = conn.network_interfaces.create_or_update(resource_group, name, data)
+        op = conn.network_interfaces.begin_create_or_update(resource_group, name, data)
         self._wait_for_operation(op, retries=self.WAIT_FOR_NIC, msg='network interface {} to be created'.format(name))
         log.info("Created network interface {}".format(name))
         return conn.network_interfaces.get(resource_group, name)
@@ -2809,12 +2871,12 @@ class Service(ServiceBase):
         resource_group = resource_group or self.resource_group
 
         nic = netconn.network_interfaces.get(resource_group, name)
-        op = netconn.network_interfaces.delete(resource_group, name)
+        op = netconn.network_interfaces.begin_delete(resource_group, name)
         self._wait_for_operation(op, retries=self.WAIT_FOR_NIC, msg='network interface {} to be deleted'.format(name))
 
         # if a public address is associated
         for public_addr in [config.public_ip_address.id.split('/')[-1] for config in nic.ip_configurations if config.public_ip_address]:
-            op = netconn.public_ip_addresses.delete(resource_group, public_addr)
+            op = netconn.public_ip_addresses.begin_delete(resource_group, public_addr)
             # skip self._wait_for_operation(op, msg='public address {} to be deleted'.format(public_addr))
 
         # clean up routes pointing to this nic
@@ -2830,7 +2892,7 @@ class Service(ServiceBase):
                         route_rg = route.id.split('/')[4]
                         table_name = route.id.split('/')[-3]
                         route_name = route.id.split('/')[-1]
-                        op = netconn.routes.delete(route_rg, route_table_name=table_name, route_name=route_name)
+                        op = netconn.routes.begin_delete(route_rg, route_table_name=table_name, route_name=route_name)
                         # skip self._wait_for_operation(op, msg='route to be deleted')
                     except Exception as route_del_e:
                         log.error("Failed to delete route for nic {}: {}".format(name, route_del_e))
@@ -2874,7 +2936,7 @@ class Service(ServiceBase):
             assignments = [_ for _ in conn.role_assignments.list() if role.id == _.role_definition_id]
             for assignment in assignments:
                 # this will fail if we do not have permissions
-                conn.role_assignments.delete(assignment.scope, assignment.name)
+                conn.role_assignments.begin_delete(assignment.scope, assignment.name)
 
             # this will fail if we do not have permissions
             conn.role_definitions.delete(self._resource_group_scope(), role.id)
@@ -3194,7 +3256,7 @@ class Service(ServiceBase):
         }
 
         log.debug("Creating image {} with parameters {}".format(name, params))
-        op = conn.images.create_or_update(self.resource_group, name, params)
+        op = conn.images.begin_create_or_update(self.resource_group, name, params)
         self._wait_for_operation(op, msg='image to be created')
         return conn.images.get(self.resource_group, name)
 

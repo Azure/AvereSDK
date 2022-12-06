@@ -2,8 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License. See LICENSE in the project root for license information.
 '''Service commons'''
-from future.moves.urllib import parse as urlparse
-from future.moves.urllib import request as urllib
+from urllib import parse as urlparse
+from urllib import request as urllib
 from future.utils import viewitems
 import re
 import os
@@ -86,7 +86,10 @@ def gethostbyname(host, timeout=DNS_TIMEOUT):
         except Exception: pass
 
         try:
-            return r.query(host)[0].to_text()
+            if hasattr(r, 'query'): # deprecated in 2.x
+                return r.query(host)[0].to_text()
+            else:
+                return r.resolve(host, search=True)[0].to_text()
         except Exception as e:
             raise socket.gaierror(e)
     except ImportError:

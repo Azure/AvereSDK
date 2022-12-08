@@ -4,16 +4,15 @@ vfxt.py - Create an Create an Avere vFXT cluster
 
 usage:
 
-```
+```bash
 vfxt.py [-h] [-d]
 (--create|--destroy|--stop|--start|--add-nodes|--upgrade|--check|--telemetry|--interact)
 --cloud-type {azure}
 [--on-instance] [--from-environment] [--image-id IMAGE_ID]
-[--s3-access-key S3_ACCESS_KEY] [--s3-secret-key S3_SECRET_KEY] [--s3-profile S3_PROFILE]
 [--access-key ACCESS_KEY] [--secret-key SECRET_KEY] [--profile PROFILE]
 [--security-group SECURITY_GROUP] [--region REGION]
 [--iam-role IAM_ROLE] [--iam-host IAM_HOST]
-[--iam-role-principal-service IAM_ROLE_PRINCIPAL_SERVICE]  
+[--iam-role-principal-service IAM_ROLE_PRINCIPAL_SERVICE]
 [--arn ARN] [--ephemeral] [--placement-group PLACEMENT_GROUP]
 [--dedicated-tenancy]
 [--subnet SUBNET [SUBNET ...]]

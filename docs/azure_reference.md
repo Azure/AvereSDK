@@ -1,108 +1,76 @@
-# Quick Reference – Using vfxt.py with Microsoft Azure
+# Quick Reference – Using vfxt.py
 
-This section gives an overview of how to configure a vfxt.py installation to be able to create Avere clusters in a Microsoft Azure environment.
+This section gives an overview of how to create Avere clusters in a Microsoft Azure environment.
 
-**NOTE:** A wizard for creating an Avere vFXT for Azure clusters is available in the Azure Marketplace. Read the [Avere vFXT for Azure documentation](https://docs.microsoft.com/azure/avere-vfxt/) for more complete information about the template-based deploy and additional preconfiguration required. The deployment wizard  automates most of these steps.
+> **SETUP NOTES:** A wizard for creating an Avere vFXT for Azure clusters is available in the Azure Marketplace. Read the [Avere vFXT for Azure documentation](https://docs.microsoft.com/azure/avere-vfxt/) for more complete information about the template-based deploy and additional preconfiguration required. The deployment wizard  automates most of these steps.
+> Setup instructions without using a controller can be found [here](setup.md).
 
-Configuring the Azure environment to allow vfxt.py access includes the following steps:
+## Choosing authentication:
 
-* Create a virtual network and subnet for the cluster
-* Create or identify a Linux-style system to use for vfxt.py commands
-* Install Azure Python modules on the command system
-* Before creating a cluster make sure you have configured the following infrastructure:
+There are three options for authenticating.
+1. the azure-cli to authenticate as an individual user
+2. system assigned managed identity
+3. service principal
 
-  * Check your subscription’s resource quotas and request an increase if needed
-  * Set up a storage account for the cluster cache and, optionally, for cloud-based backend data storage
+The authentication method chosen must have the ability to create and manage clusters in a resource group.
 
-Note that many of these steps require ownership privileges for the subscription that will host the cluster.
+### 1. Using the azure-cli as a user (recommended) (required for remote consoles)
 
-## Choosing a vfxt.py Command Console
+To authenticate:
 
-The system that you use to issue vfxt.py commands must be a Linux-style system that meets the installation prerequisites described in [vfxt.py Software Requirements](installation.md#vfxtpy-software-requirements) in the installation and setup article. It also must have secure access to the cluster instances – for example, an Azure VM that is located in the same resource group, network, and subnet where your cluster will reside.
+```bash
+az login # login as a user OR
+az login --identity # login with a system managed identity
+```
 
-If creating a cloud-based VM for vfxt.py commands, you can use any instance type that can run a Linux operating system for command-line access; it does not need much processing power or storage. You can choose a general purpose A0 or A1 VM with HDD type disks. The VM should be created from the same subscription that you will use to create the cluster.
+Since you used the azure-cli, add the `--from-environment` flag to your vfxt.py command.
 
-## Install the Azure SDK for Python
+### 2. Using a system assigned managed identity
 
-On the system where you will run vfxt.py, install the [Microsoft Azure SDK for Python](<https://github.com/Azure/azure-sdk-for-python#microsoft-azure-sdk-for-python>). This is available as a single meta-package named azure in the Python package installer:
+If you are using a controller and created a system assigned managed identity during setup, or if you followed the steps in [setup.md](setup.md) to create a VM
+with the system assigned managed identity enabled, add the `--on-instance` flag to your vfxt.py command. The system assigned managed identity should have `Owner` permissions on its resource group.
+Skip the rest of this section.
 
-`pip install –-user azure`
+If you've got an Avere controller or other instance that doesn't have a system assigned managed identity, navigate to the instance in the portal, click on `Identity` in the left sidebar, turn `Status` to `On`, and assign the role `Owner` over the resource group. Owner is required to assign roles.
 
-**NOTE:** The Azure Marketplace includes preconfigured images that you can use to quickly create an Avere vFXT cluster for Azure, or to create a cluster controller for a customized deploy or for cluster maintenance.
+Read more in the [Azure Managed Service Identity documentation](https://docs.microsoft.com/azure/app-service/app-service-managed-service-identity).
 
-## Azure Authentication Options
+### 3. Using a service principal
 
-When issuing a vfxt.py command on a Microsoft Azure system, you must include the appropriate parameters to authenticate the system running vfxt.py to your Azure subscription. There are three main approaches to authentication, depending on your command console’s location (in the cloud environment or remote) and your system’s infrastructure and guidelines.
-
-### Cloud Instance
-
-If running vfxt.py on an instance on the same virtual network where you are creating the cluster, you can query the instance metadata and obtain an authentication token.
-
-There are two basic steps to set up this authentication option:
-
-1. Create an instance that has managed service identity enabled
-2. Change the role for the instance’s service principal from contributor to owner
-
-When creating the instance, turn on the Managed Service Identity optional feature (read more in the [Azure Managed Service Identity documentation](<https://docs.microsoft.com/azure/app-service/app-service-managed-service-identity>)). This option creates a service principal (SP) in Azure AD for the instance. However, the default role for these instances is Contributor, which is insufficient for creating and managing an Avere vFXT cluster, so you need to change it to have the role Owner.
-
-To assign an owner role to the service principal, follow these steps:
-
-1. Find the principal ID for your instance by using a command like the one below.
-
-       az vm show
-        --resource-group group
-        --name instance_name
-        --query 'identity.principalId'
-        --output tsv
-
-2. Assign the Owner role to this instance.
-
-       az role assignment create
-         --assignee principal_id
-         --scope /subscriptions/id
-         --role Owner
-
-Now authenticate:
-`vfxt.py --cloud-type azure --on-instance`
-
-### Remote Console
-
-To use a remote system, after connecting to the Azure environment with an SSL tunnel or by using a VPN or ExpressRoute, run the configuration step `az login` before using vfxt.py.
-
-    az login
-    az account set --subscription id
-
-Then authenticate using the credentials from that login: `vfxt.py --cloud-type azure --from-environment`
-
-**TIP**: You can use ``az login --identity`` with any VM that has a managed identity.  
-
-### Service Principal Authentication Option
-
-A more complicated authentication strategy exists that does not require managed service identities or az login. This option can be used either from within Azure or remotely.
+This is a more complicated strategy and should only be used when managed identities or the azure-cli cannot be used. It can be used both remotely or on an Azure instance.
 
 To use this option, you must create a service principal specifically for cluster creation and administration, then provide that SP’s credentials to authenticate. Read the Azure documentation about [creating service principals for access control](<https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli>).
 
-Assign the owner role to the SP – see the commands in [Cloud Instance](#cloud-instance), above, for hints.
+Give the service principal `Owner` permissions on the resource group.
 
-When using this method to authenticate the instance, the Azure subscription ID and AD tenant ID are also required.
+Add the following commands to your vfxt.py command:
 
-    vfxt.py --cloud-type azure
-     --subscription-id id_number
-       --tenant-id 'id_number'
-      --application-id 'ID_number'
-      --application-secret 'password'
+```bash
+--subscription-id 'subscription'
+--tenant-id 'tenant'
+--application-id 'client_id' # from the service principal
+--application-secret 'password'
+```
 
 ## Azure Environment Options
 
 Required environment options for each vfxt.py command in Azure include the resource group, location, network, and subnet. If you are using Blob storage as a backend cloud core filer, you must also specify the storage account.
 
-    vfxt.py --cloud-type azure
-      <authentication options>
-      --resource-group group
-      --storage-account account
-      --location location
-      --azure-network network
-      --azure-subnet subnet
+```bash
+vfxt.py
+ --create                                 \
+ --from-environment                       \
+ --subscription-id      "subscsription"   \
+ --azure-network        "vnet"            \
+ --azure-subnet         "subnet"          \
+ --location             "region"          \
+ --resource-group       "resource_group"  \
+ --cluster-name         "cluster_name"    \
+ --admin-password       "admin_password"  \
+ --storage-account      "storage_account" \
+ --instance-type        "instance_type"   \
+ {[--on-instance] OR [--from-environment] OR [--subscription-id,--tenant-id,--application-id,--application-secret]}
+```
 
 ## Extra Azure Configuration Options
 
@@ -142,7 +110,7 @@ The cluster nodes role should be scoped to the subscription that you will use fo
 
 Save the role in a .json file (for example, avereclustercustom.json).
 
-```
+```json
 {
     "AssignableScopes": [ "/subscriptions/your-subscription-ID" ],
     "Name": "avere-cluster-custom",
@@ -182,7 +150,7 @@ When you issue the vfxt.py `--create` command, pass the custom role name (from t
 Example:
 
 ```bash
-vfxt.py --cloud-type azure  --from-environment \
+vfxt.py --from-environment \
 --resource-group "group"  --location "location" \
 --azure-network "network" --azure-subnet "subnet" \
 --create \

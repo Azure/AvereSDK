@@ -183,7 +183,7 @@ def main():
     action_opts.add_argument("--interact", help="Use the Python interpreter", action="store_true")
 
     # service arguments
-    parser.add_argument("--cloud-type", help="the cloud provider to use", choices=['azure'], required=True)
+    parser.add_argument("--cloud-type", help="the cloud provider to use", choices=['azure'], default='azure')
     parser.add_argument("--on-instance", help="Assume running on instance and query for instance credentials", action="store_true")
     parser.add_argument("--from-environment", help="Assume credentials from local configuration/environment", action="store_true")
     parser.add_argument("--image-id", help="Root disk image ID used to instantiate nodes")

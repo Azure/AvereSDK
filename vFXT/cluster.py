@@ -1321,8 +1321,7 @@ class Cluster(object): #pylint: disable=useless-object-inheritance
                 proxy (str, optional): proxy configuration to use
 
                 type (str, optional): type of corefiler (default 'cloud')
-                cloud_type (str, optional): cloud type (default 's3')
-                s3_type (str, optional): S3 type (default Service.S3TYPE_NAME)
+                cloud_type (str, optional): cloud type (azure)
                 https (str, optional): 'yes' or 'no' to use HTTPS (default 'yes')
                 crypto_mode (str, optional): crypto mode (default CBC-AES-256-HMAC-SHA-512)
                 compress_mode (str, optional): compression mode (default LZ4)

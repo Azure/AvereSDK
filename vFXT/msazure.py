@@ -2255,7 +2255,7 @@ class Service(ServiceBase):
 
         try:
             storage_account_props = self.connection('storage').storage_accounts.get_properties(self.storage_resource_group, storage_account)
-            if storage_account_props.sku.tier.lower()== 'premium':
+            if storage_account_props.sku.tier.lower() == 'premium':
                 raise Exception("Premium tier storage accounts are not supported")
 
             log.debug("storage account type {}".format(storage_account_props.sku.name))
@@ -2957,7 +2957,6 @@ class Service(ServiceBase):
                 if principal in [_.principal_id for _ in assignments]:
                     log.debug("Assignment for role {} and principal {} exists.".format(role.role_name, principal))
                     return None
-
                 body = {
                         'role_definition_id': role.id,
                         'principal_id': principal

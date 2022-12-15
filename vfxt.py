@@ -8,6 +8,7 @@ import argparse
 import base64
 import logging
 import getpass
+import os
 import ssl
 import sys
 import uuid
@@ -182,7 +183,7 @@ def main():
     action_opts.add_argument("--interact", help="Use the Python interpreter", action="store_true")
 
     # service arguments
-    parser.add_argument("--cloud-type", help="the cloud provider to use", choices=['azure'], required=True)
+    parser.add_argument("--cloud-type", help="the cloud provider to use", choices=['azure'], default='azure')
     parser.add_argument("--on-instance", help="Assume running on instance and query for instance credentials", action="store_true")
     parser.add_argument("--from-environment", help="Assume credentials from local configuration/environment", action="store_true")
     parser.add_argument("--image-id", help="Root disk image ID used to instantiate nodes")
@@ -362,6 +363,13 @@ def main():
                 if not all([args.subscription_id, args.azure_network, args.azure_subnet, args.resource_group, args.location]):
                     logger.error("Arguments subscription-id, azure-network, azure-subnet, resource-group, and location are required")
                     parser.exit(1)
+
+
+                # set these env vars based on the credentials passed into vfxt.py
+                # DefaultAzureCredential will use them to create an EnvironmentCredential
+                os.environ['AZURE_TENANT_ID'] = args.tenant_id
+                os.environ['AZURE_CLIENT_ID'] = args.application_id
+                os.environ['AZURE_CLIENT_SECRET'] = args.application_secret
 
             opts = {
                 'subscription_id': args.subscription_id,

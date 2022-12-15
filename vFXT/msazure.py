@@ -90,8 +90,7 @@ logging.getLogger('requests_oauthlib.oauth2_session').setLevel(logging.CRITICAL)
 logging.getLogger('msrestazure.azure_active_directory').setLevel(logging.CRITICAL)
 logging.getLogger('keyring.backend').setLevel(logging.CRITICAL)
 
-import azure.identity
-from azure.identity import AzureCliCredential
+from azure.identity import DefaultAzureCredential
 import azure.storage.blob
 import azure.storage.common
 import azure.common.client_factory
@@ -377,14 +376,14 @@ class Service(ServiceBase):
 
         return True
     @staticmethod
-    def fetch_subscription_for_resource_group(res_grp=None):
+    def fetch_subscription_for_resource_group(res_grp=None, cred=None):
         """
         Input  : Name of resource group or None
         Output : First subscription which contains the resource group or
                  First subscription if input is None
         Returns an object of type azure.mgmt.resource.subscriptions
         """
-        cred = AzureCliCredential()
+        cred = cred or DefaultAzureCredential()
         newconn = SubscriptionClient(cred)
         subs_list = newconn.subscriptions.list()
         if not res_grp:
@@ -477,7 +476,7 @@ class Service(ServiceBase):
 
         default_api_version = None
         connection_types = {
-            'authorization': {'cls': azure.mgmt.authorization.AuthorizationManagementClient, 'pass_subscription': True, 'api_version': '2018-01-01-preview'},
+            'authorization': {'cls': azure.mgmt.authorization.AuthorizationManagementClient, 'pass_subscription': True, 'api_version': '2022-04-01'},
             'blobstorage': None, # special handling below
             'compute': {'cls': azure.mgmt.compute.ComputeManagementClient, 'pass_subscription': True, 'api_version': default_api_version},
             'identity': {'cls': azure.mgmt.msi.ManagedServiceIdentityClient, 'pass_subscription': True, 'api_version': default_api_version},
@@ -503,31 +502,32 @@ class Service(ServiceBase):
             if connection_type == 'blobstorage':
                 storage_account = options.get('storage_account') or self.storage_account
                 resource_group = options.get('resource_group') or self.storage_resource_group
-                credential = None
-                if self.on_instance: # use MSI for auth
-                    credential = azure.identity.ManagedIdentityCredential()
-                else:
-                    try:
-                        keys = self.connection('storage').storage_accounts.list_keys(resource_group, storage_account).keys
-                        if not keys:
-                            raise Exception()
-                    except Exception:
-                        raise vFXTConfigurationException("Unable to look up storage keys for {}".format(storage_account))
-                    credential = keys[0].value # just use the first one, may be multiple
+                try:
+                    keys = self.connection('storage').storage_accounts.list_keys(resource_group, storage_account).keys
+                    if not keys:
+                        raise Exception()
+                except Exception:
+                    raise vFXTConfigurationException("Unable to look up storage keys for {}".format(storage_account))
+                credential = keys[0].value # just use the first one, may be multiple
                 blob_host = 'blob.{}'.format(self.storage_suffix) if self.storage_suffix else self.BLOB_HOST
                 storage_uri = 'https://{}.{}'.format(storage_account, blob_host)
                 return azure.storage.blob.BlobServiceClient(storage_uri, credential=credential)
 
             connection_settings = connection_types[connection_type]
             connection_cls = connection_settings['cls']
+
+            # if not run with on-instance, exclude managed identity as a valid auth method
+            # managed identity gets tried before environment or azure-cli credentials and, if there is ANY
+            # identity assigned (such as an azsecpack uami), it'll get picked up and used (against user intentions)
+            auth_kwargs = {"exclude_managed_identity_credential": True} if not self.on_instance else {}
+            cli_credential = DefaultAzureCredential(**auth_kwargs)
             if self.use_environment_for_auth:
                 # get_client_from_cli_profile seems racy, retry a few times
                 retries = 3
                 while True:
                     try:
-                        cli_credential = AzureCliCredential()
                         if not self.subscription_id:
-                            subscription_account = Service.fetch_subscription_for_resource_group(self.resource_group)
+                            subscription_account = Service.fetch_subscription_for_resource_group(self.resource_group, cred=cli_credential)
                             if subscription_account:
                                 self.subscription_id = subscription_account.subscription_id
                                 self.tenant_id = subscription_account.tenant_id
@@ -545,17 +545,6 @@ class Service(ServiceBase):
             else:
                 session = requests.sessions.Session()
                 session.proxies = proxies
-                cloud_environment = msrestazure.azure_cloud.get_cloud_from_metadata_endpoint(self.endpoint_base_url, session=session) if self.endpoint_base_url else None
-                if self.on_instance:
-                    if cloud_environment:
-                        creds = msrestazure.azure_active_directory.AADTokenCredentials(self.local.instance_data['access_token'], cloud_environment=cloud_environment)
-                    else:
-                        creds = msrestazure.azure_active_directory.AADTokenCredentials(self.local.instance_data['access_token'])
-                else:
-                    if cloud_environment:
-                        creds = azure.common.credentials.ServicePrincipalCredentials(self.application_id, self.application_secret, tenant=self.tenant_id, cloud_environment=cloud_environment)
-                    else:
-                        creds = azure.common.credentials.ServicePrincipalCredentials(self.application_id, self.application_secret, tenant=self.tenant_id)
 
                 connection_args = {}
                 if options.get('api_version'):
@@ -565,7 +554,7 @@ class Service(ServiceBase):
                 if connection_settings['pass_subscription']:
                     connection_args['subscription_id'] = self.subscription_id
 
-                newconn = connection_cls(creds, **connection_args)
+                newconn = connection_cls(cli_credential, **connection_args)
             # Add our proxy configuration, we do it here so we can support all cred types.
             # Some cred types support passing proxies, but some credential factories do
             # not support that mechanism
@@ -814,8 +803,10 @@ class Service(ServiceBase):
         '''
         options['use_environment_for_auth'] = True
         s = Service(**options)
+        # exclude managed identity credential so we pick up the credentials from the azure-cli instead
+        credential = DefaultAzureCredential(exclude_managed_identity_credential=True)
         if not s.subscription_id:
-            subscription_account = Service.fetch_subscription_for_resource_group(options['resource_group'])
+            subscription_account = Service.fetch_subscription_for_resource_group(options['resource_group'], cred=credential)
             if subscription_account:
                 s.subscription_id = subscription_account.subscription_id
                 s.tenant_id = subscription_account.tenant_id
@@ -1168,8 +1159,7 @@ class Service(ServiceBase):
         if not getattr(identity, 'principal_id', None):
             raise vFXTConfigurationException("Instance {} has no identity configuration".format(self.name(instance)))
 
-        principal_id = identity.principal_id
-        role_assignments = conn.role_assignments.list("principalId eq '{}'".format(principal_id))
+        role_assignments = conn.role_assignments.list_for_resource_group(self._instance_resource_group(instance))
         roles = [conn.role_definitions.get_by_id(_.role_definition_id) for _ in role_assignments]
         custom_roles = [_ for _ in roles if _.role_type == 'CustomRole']
         if custom_roles:
@@ -2265,7 +2255,7 @@ class Service(ServiceBase):
 
         try:
             storage_account_props = self.connection('storage').storage_accounts.get_properties(self.storage_resource_group, storage_account)
-            if storage_account_props.sku.tier.lower()== 'premium':
+            if storage_account_props.sku.tier.lower() == 'premium':
                 raise Exception("Premium tier storage accounts are not supported")
 
             log.debug("storage account type {}".format(storage_account_props.sku.name))
@@ -2933,7 +2923,7 @@ class Service(ServiceBase):
             raise vFXTConfigurationException("No such role: {}".format(role_name))
         try:
             # must delete assignments first
-            assignments = [_ for _ in conn.role_assignments.list() if role.id == _.role_definition_id]
+            assignments = conn.role_assignments.list_by_resource_group(self.resource_group)
             for assignment in assignments:
                 # this will fail if we do not have permissions
                 conn.role_assignments.begin_delete(assignment.scope, assignment.name)
@@ -2963,15 +2953,13 @@ class Service(ServiceBase):
             association_id = str(uuid.uuid4())
             try:
                 conn = self.connection('authorization')
-                assignments = [_ for _ in conn.role_assignments.list() if role.id == _.role_definition_id]
+                assignments = conn.role_assignments.list_for_resource_group(self.resource_group)
                 if principal in [_.principal_id for _ in assignments]:
                     log.debug("Assignment for role {} and principal {} exists.".format(role.role_name, principal))
                     return None
-
                 body = {
-                    'role_definition_id': role.id,
-                    'principal_id': principal,
-                    'principal_type': 'ServicePrincipal',
+                        'role_definition_id': role.id,
+                        'principal_id': principal
                 }
 
                 scope = self._resource_group_scope()

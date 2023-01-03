@@ -8,10 +8,10 @@ Note that options might have changed since this document was created in May 2020
 
 For all operations (except the help and version commands), these elements are required:
 
-* `--cloud-type` {`azure`} - The cloud provider being used
+* `--cloud-type azure` - The cloud provider being used (only Azure is supported)
 * Authentication information
 * Environment information
-* Action (create, destroy, stop, start, add nodes)
+* Action {create, destroy, stop, start, add nodes}
 
 For operations on existing vFXT clusters, you must supply information to identify the cluster instances.
 
@@ -71,30 +71,27 @@ These options are used with the commands above.
 
 ## Cluster Configuration Options
 
-These options apply to any supported cloud provider.
-
 ### Authentication and Environment Options
 
 | <img width=1500 /> | |
 | ---------- | ------------------ |
-| `--on-instance` | Query the cloud environment for instance credentials. Use this option when running vfxt.py in a cloud instance instead of passing authentication credentials. Read the setup information for your cloud platform to learn more. |
-| `--from-environment` | Query the local host configuration for service credentials. Use this option when running vfxt.py from a non-cloud host where you have installed your cloud provider's custom command-line tool (that is, Azure [az](<https://docs.microsoft.com/en-us/cli/azure/?view=azure-cli-latest>)) and configured it with the appropriate credentials. Read the CLI setup information for your cloud platform (linked in the tool names above) to learn more. |
+| `--on-instance` | Use a VM's managed identity for authentication |
+| `--from-environment` | Login through the [azure-cli](<https://docs.microsoft.com/en-us/cli/azure/?view=azure-cli-latest>)); vfxt.py will utilize these credentials |
 | `--admin-password` *cluster_password* | Administrator password for cluster management. This option serves two functions: <br/> • When creating a cluster, this option sets the password for the admin login account. <br/> • When modifying an online cluster, use this option to supply the password in order to authenticate to the cluster. <br/> **NOTE:** You cannot use this option as a command to change an existing password. Use the Avere Control Panel web interface or the XML-RPC command-line API to change a cluster’s administrator password. |
 | `--management-address` *cluster_mgmt_IP* | The cluster's management address. <br/>• When creating a cluster, this option sets the management IP address. <br/> • When modifying an online cluster, use this option to specify which cluster is being modified. |
 | `--instances` *instance1_ID* *instance2_ID* *instance3_ID*  | Instance identifiers for the cluster nodes - use this to specify an offline cluster. Read [Specifying Which Cluster To Modify](using_vfxt_py.md#specifying-which-cluster-to-modify) for more information. |
-`--s3-access-key` *S3_access_key* <br/> `--s3-secret-key` *S3_secret_key* <br/> `--s3-profile` *S3_profile* | Use these options if you need to pass an additional S3 credential for your cluster resources. |
 | `--ssh-key` *key*  | SSH key for cluster authentication - this option allows for systems that use key-based authentication via SSH instead of password-based authentication. <br/> For Amazon Web Services, provide the SSH key name; for Azure and Google Compute, provide the path to the public key file. |
 
 ### Miscellaneous Cluster Options
 
 | <img width=1000 /> | |
 | ---------- | ------------------ |
-| `--cluster-name` *cluster_name* | Name for the cluster (also used to tag resources). This name should be compatible with DNS, since some cloud providers process it into a DNS hostname. |
+| `--cluster-name` *cluster_name* | Name for the cluster (also used to tag resources). This name should be compatible with DNS. |
 | `--cluster-range` *IP_range* | IP address range (CIDR format) for the cluster. This range is assigned to the cluster to use for client traffic and cluster management tasks.  |
 | `--cluster-proxy-uri` *URL* | Proxy resource for the cluster - for example, `http://user:pass@172.16.16.20:8080/`. **NOTE:** Use the IP address rather than hostname in case DNS becomes unreachable. |
-| `--junction` *vserver_junction_path* | Sets the GNS path for the vserver's junction. The path must start with `/`. If not set, the default value is the cloud provider name (`/azure`), or the last segment of the NFS export path (/smithj for an NFS export with the path /files/smithj)  |
+| `--junction` *vserver_junction_path* | Sets the GNS path for the vserver's junction. The path must start with `/`. If not set, the default value is `/azure`, or the last segment of the NFS export path (/smithj for an NFS export with the path /files/smithj)  |
 | `--no-vserver` | Skips automatically creating a vserver with the cluster |
-| `--root-size` *boot_disk_size_in_GB* | Use this to specify the size of each node's boot disk, in GB. <br/> **NOTE:** This setting might not be honored by some cloud providers. |
+| `--root-size` *boot_disk_size_in_GB* | Use this to specify the size of each node's boot disk, in GB. |
 | `--timezone` *zone* | Cluster time zone (in TZ database format - for example, `--timezone America/Puerto_Rico`) |
 | `--trace-level` *level* | Trace level for the created cluster |
 | `--vserver` *vserver_name* | Name for the vserver that will be created with the cluster |
@@ -107,9 +104,8 @@ These options apply to any supported cloud provider.
 | `--node-cache-size` *size_in_GB* | Size of the data cache space for each node (in GB). Use this to automatically set `--data-disk-count` and `--data-disk-size`, or use those two settings to set each manually. All nodes will have identical storage capacity. Read [Initial Configuration for the New Cluster](using_vfxt_py.md#initial-configuration-for-the-new-cluster) for additional information. |
 | `--data-disk-count` *number_of_disks* | Number of data disk volumes per cluster node. This option can be used with `--create` or with `--add-nodes`. <br/>You can use `--node-cache-size` to set this automatically. Read [Initial Configuration for the New Cluster](using_vfxt_py.md#initial-configuration-for-the-new-cluster) for additional information.  |
 |`--data-disk-size` *size_in_GB* | Size of data disk volumes to create for the vFXT cluster. This option can be used with `--create` or with `--add-nodes`. <br/>You can use `--node-cache-size` to set this automatically. Read [Initial Configuration for the New Cluster](using_vfxt_py.md#initial-configuration-for-the-new-cluster) for additional information.     |
-| `--data-disk-type` *volume_type* | Type of storage volumes to create for the vFXT cluster cache. Values depend on the cloud provider; Azure supports only one disk type (premium LRS) and does not use this option. |
 |`--instance-type` *instance_type* | Type of instance to use when creating nodes. This is required for creating a cluster or when adding nodes to a cluster. Read [Create a Cluster](using_vfxt_py.md#create-a-cluster) for details. |
-| `--image-id` *image_ID_or_URI* | Optionally, use this parameter to specify an image instead of using the default image when creating the cluster. Consult support for guidance before using this advanced option. <br/>The image ID or URL should match what your cloud provider uses. <br /> Azure URN example: `microsoft-avere:vfxt:avere-vfxt-node:latest` |
+| `--image-id` *image_ID_or_URI* | Optionally, use this parameter to specify an image instead of using the default image when creating the cluster. Consult support for guidance before using this advanced option. <br /> Azure URN example: `microsoft-avere:vfxt:avere-vfxt-node:latest` |
 | `--skip-load-defaults` | Do not look for the defaults.json file in standard online locations. You must specify the installation version manually with the `--image-id` parameter |
 | `--join-instance-address` | Join nodes using the instance address rather than the management address |
 | `--join-wait wait_time` | Set a custom time (in seconds) to wait for nodes to join the cluster. This is a troubleshooting option that should only be used when recommended by support staff. |
@@ -119,7 +115,7 @@ These options apply to any supported cloud provider.
 | <img width=800 /> | |
 | ---------- | ------------------ |
 | `--core-filer` *core_filer_name* | Name for the core filer that will be created with the cluster. |
-| `--azurecontainer` <br/> or <br/>`--bucket` *s3_bucket_name*  *blob_container_name* | Name of an existing, empty cloud storage container to use as the core filer. <br/> • For Azure, use `--azurecontainer` to specify a blob container.<br/> |
+| `--azurecontainer` <br/> or <br/>`--bucket` *blob_container_name* | Name of an existing, empty cloud storage container to use as the core filer. <br/> • For Azure, use `--azurecontainer` to specify a blob container.<br/> |
 | `--no-corefiler` | Skip creating a cloud core filer when creating the cluster. This will create a cluster without any core filers. |
 | `--nfs-mount` host:/path | NFS mountpoint to use as the core filer (in host:/path format). If you use this option when creating a cluster, it will use the specified resource instead of creating a cloud core filer. |
 | `--nfs-type` {`NetappNonClustered`\| `NetappClustered`\|`EmcIsilon`} | Specify the type of appliance used as the core filer in the `--nfs-mount` argument. This type is important for correct SMB operation and cannot be easily detected. |
@@ -131,9 +127,3 @@ These options apply to any supported cloud provider.
 | `--disable-azurecontainer-compression`  <br/> or <br/> `--disable-bucket-compression` | Don't allow compression for objects written to the storage endpoint |
 | `--disable-azurecontainer-https` <br/> or <br/> `--disable-bucket-https` | Don't use HTTPS for communication with the storage endpoint |
 | `--disable-azurecontainer-https-verify`   <br/> or <br/> `--disable-bucket-https-verify` | Don't verify encryption certificates for communication with the storage endpoint |
-
-## Provider-specific Options
-
-Read the linked articles to learn about vfxt.py arguments that apply only to specific cloud providers:
-
-* [Azure-specific command options](azure_options.md)

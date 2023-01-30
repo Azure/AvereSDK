@@ -939,8 +939,8 @@ class Service(ServiceBase):
         retries = self.CLOUD_API_RETRIES
         while True:
             try:
-                # use deallocate (instead of stop) so that we do not get charged for the vm
-                op = conn.virtual_machines.deallocate(self._instance_resource_group(instance), self.name(instance))
+                # use begin_deallocate (instead of stop) so that we do not get charged for the vm
+                op = conn.virtual_machines.begin_deallocate(self._instance_resource_group(instance), self.name(instance))
                 break
             except msrestazure.azure_exceptions.CloudError:
                 if retries == 0:

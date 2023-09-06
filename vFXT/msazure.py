@@ -1807,7 +1807,7 @@ class Service(ServiceBase):
         data_disk_type    = options.get('data_disk_type') or instance.storage_profile.data_disks[0].managed_disk.storage_account_type
         data_disk_count   = options.get('data_disk_count', len(instance.storage_profile.data_disks))
         data_disk_size    = options.get('data_disk_size') or instance.storage_profile.data_disks[0].disk_size_gb
-        data_disk_caching = options.get('data_disk_caching') or instance.storage_profile.data_disks[0].caching.value
+        data_disk_caching = options.get('data_disk_caching') or instance.storage_profile.data_disks[0].caching
         root_image        = options.get('root_image') or None
         tags              = options.get('tags') or instance.tags or {}
         machine_type      = cluster.machine_type

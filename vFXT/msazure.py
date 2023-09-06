@@ -1312,7 +1312,14 @@ class Service(ServiceBase):
                     identity_id = azure_identity
                 else:
                     identity_id = '{}/providers/{}/{}'.format(self._resource_group_scope(), provider, azure_identity)
-            body['identity'] = {'type': 'UserAssigned', 'user_assigned_identities': {identity_id: {}}}
+            except azure.core.exceptions.ResourceNotFoundError as ex:
+                # skip the identity if it can't be found in the RG
+                log.warning(ex)
+                log.warning("Unable to find identity {} in {}, skipping assigning this identity.".format(azure_identity, self.resource_group))
+                identity_id = None
+
+            if identity_id:
+                body['identity'] = {'type': 'UserAssigned', 'user_assigned_identities': {identity_id: {}}}
 
         if body['tags']:
             if len(body['tags']) > 15:

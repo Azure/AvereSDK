@@ -93,6 +93,7 @@ logging.getLogger('keyring.backend').setLevel(logging.CRITICAL)
 from azure.identity import DefaultAzureCredential
 import azure.storage.blob
 import azure.storage.common
+from azure.core.pipeline.policies import ProxyPolicy
 import azure.common.client_factory
 import azure.common.credentials
 import azure.mgmt.authorization
@@ -486,6 +487,7 @@ class Service(ServiceBase):
             'subscription': {'cls': azure.mgmt.resource.SubscriptionClient, 'pass_subscription': False, 'api_version': default_api_version},
         }
         proxies = {'http': self.proxy_uri, 'https': self.proxy_uri} if self.proxy_uri else {}
+        proxy_policy = ProxyPolicy(proxies=proxies)
 
         # if we do not already have a cached connection, make one
         if not self.local.connections.get(connection_type, False):
@@ -534,7 +536,7 @@ class Service(ServiceBase):
                         else:
                             newconn = SubscriptionClient(cli_credential)
                         if connection_type != "blobstorage":
-                            newconn = connection_types[connection_type]['cls'](cli_credential, self.subscription_id, api_version=connection_types[connection_type]['api_version'])
+                            newconn = connection_types[connection_type]['cls'](cli_credential, self.subscription_id, api_version=connection_types[connection_type]['api_version'], proxy_policy=proxy_policy)
                         break
                     except Exception as e:
                         if log.isEnabledFor(logging.DEBUG):
@@ -555,12 +557,7 @@ class Service(ServiceBase):
                     connection_args['subscription_id'] = self.subscription_id
 
                 newconn = connection_cls(cli_credential, **connection_args)
-            # Add our proxy configuration, we do it here so we can support all cred types.
-            # Some cred types support passing proxies, but some credential factories do
-            # not support that mechanism
-            for proto, url in proxies.items():
-                newconn.config.proxies.add(proto, url)
-            # save it off
+
             self.local.connections[connection_type] = newconn
 
         return self.local.connections[connection_type]
@@ -1312,7 +1309,14 @@ class Service(ServiceBase):
                     identity_id = azure_identity
                 else:
                     identity_id = '{}/providers/{}/{}'.format(self._resource_group_scope(), provider, azure_identity)
-            body['identity'] = {'type': 'UserAssigned', 'user_assigned_identities': {identity_id: {}}}
+            except azure.core.exceptions.ResourceNotFoundError as ex:
+                # skip the identity if it can't be found in the RG
+                log.warning(ex)
+                log.warning("Unable to find identity {} in {}, skipping assigning this identity.".format(azure_identity, self.resource_group))
+                identity_id = None
+
+            if identity_id:
+                body['identity'] = {'type': 'UserAssigned', 'user_assigned_identities': {identity_id: {}}}
 
         if body['tags']:
             if len(body['tags']) > 15:
@@ -1803,7 +1807,7 @@ class Service(ServiceBase):
         data_disk_type    = options.get('data_disk_type') or instance.storage_profile.data_disks[0].managed_disk.storage_account_type
         data_disk_count   = options.get('data_disk_count', len(instance.storage_profile.data_disks))
         data_disk_size    = options.get('data_disk_size') or instance.storage_profile.data_disks[0].disk_size_gb
-        data_disk_caching = options.get('data_disk_caching') or instance.storage_profile.data_disks[0].caching.value
+        data_disk_caching = options.get('data_disk_caching') or instance.storage_profile.data_disks[0].caching
         root_image        = options.get('root_image') or None
         tags              = options.get('tags') or instance.tags or {}
         machine_type      = cluster.machine_type

@@ -144,6 +144,7 @@ class Cluster(object): #pylint: disable=useless-object-inheritance
         self.node_rename      = True
         self.first_node_error = None
         self.timezone         = None
+        self.identity         = None
         self.instance_addresses = []
 
         if self.proxy:

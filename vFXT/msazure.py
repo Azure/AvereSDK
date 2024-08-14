@@ -1704,10 +1704,10 @@ class Service(ServiceBase):
 
         instance_addresses = cluster.instance_addresses or [None] * cluster_size
         subnet = self.connection('network').subnets.get(self.network_resource_group, self.network, subnets[0])
-        if not Cidr(subnet.address_prefix).contains(cluster.cluster_ip_start):
+        if not Cidr(self._parse_subnet_address(subnet)).contains(cluster.cluster_ip_start):
             raise vFXTConfigurationException("Cluster addresses must reside within subnet {}".format(subnets[0]))
         if instance_addresses[0]: # must be defined, not None
-            if not Cidr(subnet.address_prefix).contains(instance_addresses[0]):
+            if not Cidr(self._parse_subnet_address(subnet)).contains(instance_addresses[0]):
                 raise vFXTConfigurationException("Cluster addresses must reside within subnet {}".format(subnets[0]))
 
         log.info('Creating cluster configuration')
@@ -1820,7 +1820,7 @@ class Service(ServiceBase):
         # our instance addresses must always reside within the subnet
         if instance_addresses[0]: # must be defined, not None
             subnet = self.connection('network').subnets.get(self.network_resource_group, self.network, subnets[0])
-            if not Cidr(subnet.address_prefix).contains(instance_addresses[0]):
+            if not Cidr(self._parse_subnet_address(subnet)).contains(instance_addresses[0]):
                 raise vFXTConfigurationException("Cluster addresses must reside within subnet {}".format(subnets[0]))
 
         try:
@@ -2312,7 +2312,7 @@ class Service(ServiceBase):
         subnet_id   = subnet_id or self.subnets[0]
         conn        = self.connection('network')
         subnet      = conn.subnets.get(self.network_resource_group, self.network, subnet_id)
-        c           = Cidr(subnet.address_prefix)
+        c           = Cidr(self._parse_subnet_address(subnet))
         return c.to_address(c.start() + 1)
 
     def get_dns_servers(self):
@@ -2355,7 +2355,7 @@ class Service(ServiceBase):
         if not addr_range:
             for subnet in network.subnets:
                 if subnet.name == self.subnets[0]:
-                    addr_range = subnet.address_prefix
+                    addr_range = self._parse_subnet_address(subnet)
                     log.debug("Using range {} from subnet {}".format(addr_range, subnet.name))
                     break
             if not addr_range:
@@ -2429,7 +2429,7 @@ class Service(ServiceBase):
         }
 
         # address must ber in subnet range since we use IP configurations
-        if not Cidr(subnet.address_prefix).contains(address):
+        if not Cidr(self._parse_subnet_address(subnet)).contains(address):
             raise vFXTConfigurationException("Address {} is does not fall within subnet {}".format(address, subnet.name))
 
         # check for existing
@@ -2518,7 +2518,7 @@ class Service(ServiceBase):
 
         # address must be in subnet range since we use IP configurations
         subnet = self._instance_subnet(instance)
-        if not Cidr(subnet.address_prefix).contains(address):
+        if not Cidr(self._parse_subnet_address(subnet)).contains(address):
             raise vFXTConfigurationException("Address {} is does not fall within subnet {}".format(address, subnet.name))
 
         nic = self._instance_primary_nic(instance)
@@ -3255,8 +3255,22 @@ class Service(ServiceBase):
     def _cidr_overlaps_network(self, cidr_range):
         cidr = Cidr(cidr_range)
         network = self._get_network()
-        for address_prefix in [subnet.address_prefix for subnet in network.subnets]:
-            address_cidr = Cidr(address_prefix)
+        for subnet in network.subnets:
+            address_cidr = Cidr(self._parse_subnet_address(subnet))
             if address_cidr.contains(cidr.start_address()):
                 return True
         return False
+    
+    def _parse_subnet_address(self, subnet):
+        ''' Depending on the Azure API the subnet address can be in different fields.
+            This function will determine the address prefix for the subnet.
+            The case of having multiple address prefixes is not handled at this time. 
+            The first address prefix will be used. '''
+        
+        if subnet.address_prefixes:
+            address_prefix = subnet.address_prefixes[0]
+        if subnet.address_prefix:
+            address_prefix = subnet.address_prefix
+        if not address_prefix:
+            raise vFXTConfigurationException("Failed to determine address prefix for subnet {}".format(subnet.name))
+        return address_prefix

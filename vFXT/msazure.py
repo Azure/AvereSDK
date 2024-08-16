@@ -2378,7 +2378,9 @@ class Service(ServiceBase):
             for address in generator:
                 if address in used:
                     continue
-                check = conn.virtual_networks.check_ip_address_availability(self.network_resource_group, network.name, address)
+                check = conn.virtual_networks.check_ip_address_availability(resource_group_name=self.network_resource_group, 
+                                                                            virtual_network_name=network.name,
+                                                                            ip_address=address)
                 if not check.available:
                     # mark a range as used from this address to the address *before* the next available address as reported
                     used.update(Cidr.expand_address_range(address, Cidr.to_address(Cidr.from_address(check.available_ip_addresses[0])-1)))

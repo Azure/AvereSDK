@@ -533,10 +533,12 @@ class Service(ServiceBase):
                             if subscription_account:
                                 self.subscription_id = subscription_account.subscription_id
                                 self.tenant_id = subscription_account.tenant_id
+                            else:
+                                raise vFXTConfigurationException("Unable to determine subscription ID, ensure the resource group is correct ({})", self.resource_group)
                         else:
                             newconn = SubscriptionClient(cli_credential)
                         if connection_type != "blobstorage":
-                            newconn = connection_types[connection_type]['cls'](cli_credential, self.subscription_id, api_version=connection_types[connection_type]['api_version'], proxy_policy=proxy_policy)
+                            newconn = connection_types[connection_type]['cls'](cli_credential, subscription_id=self.subscription_id, api_version=connection_types[connection_type]['api_version'], proxy_policy=proxy_policy)
                         break
                     except Exception as e:
                         if log.isEnabledFor(logging.DEBUG):

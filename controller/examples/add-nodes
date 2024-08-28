@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+set -exu
+
+# Resource groups
+# At a minimum specify the resource group.  If the network resources live in a
+# different group, specify the network resource group.  Likewise for the storage
+# account resource group.
+RESOURCE_GROUP=
+#NETWORK_RESOURCE_GROUP=
+#STORAGE_RESOURCE_GROUP=
+
+# eastus, etc.  To list:
+# az account list-locations --query '[].name' --output tsv
+LOCATION=
+
+# Your VNET and Subnet names.
+NETWORK=
+SUBNET=
+
+# The preconfigured Azure AD role for use by the vFXT cluster nodes.  Refer to
+# the vFXT documentation.
+AVERE_CLUSTER_ROLE=
+
+# The cluster management address, this can be the Avere management address
+# or the primary IP address of one of the Avere cluster virtual machines
+CLUSTER_MGMT_ADDRESS=
+# Administrative password for the cluster
+ADMIN_PASSWORD=PLACEHOLDER
+
+# The number of nodes to add
+NODE_COUNT=1
+
+# Cluster sizing for VM and cache disks.
+INSTANCE_TYPE=Standard_D16s_v3 # or Standard_E32s_v3]
+CACHE_SIZE=1024 # or 4096, 8192
+
+# Do not edit below this line
+NRG_OPT=
+if [ -n "${NETWORK_RESOURCE_GROUP:=}" ]; then
+    NRG_OPT="--network-resource-group ${NETWORK_RESOURCE_GROUP}"
+fi
+SRG_OPT=
+if [ -n "${STORAGE_RESOURCE_GROUP:=}" ]; then
+    SRG_OPT="--storage-resource-group ${STORAGE_RESOURCE_GROUP}"
+fi
+
+vfxt.py --cloud-type azure --from-environment \
+--resource-group "${RESOURCE_GROUP}" $NRG_OPT \
+--location "${LOCATION}" --azure-network "${NETWORK}" --azure-subnet "${SUBNET}" \
+--add-nodes --nodes ${NODE_COUNT} \
+--management-address "${CLUSTER_MGMT_ADDRESS}" --admin-password "${ADMIN_PASSWORD}" \
+--instance-type "${INSTANCE_TYPE}" --node-cache-size "${CACHE_SIZE}" \
+--azure-role "${AVERE_CLUSTER_ROLE}" \
+$SRG_OPT \
+--log ~/vfxt.log

@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+set -exu
+
+# Resource groups
+# At a minimum specify the resource group.  If the network resources live in a
+# different group, specify the network resource group.
+RESOURCE_GROUP=
+#NETWORK_RESOURCE_GROUP=
+
+# eastus, etc.  To list:
+# az account list-locations --query '[].name' --output tsv
+LOCATION=
+
+# Your VNET and Subnet names.
+NETWORK=
+SUBNET=
+
+# The preconfigured Azure AD role for use by the vFXT cluster nodes.  Refer to
+# the vFXT documentation.
+AVERE_CLUSTER_ROLE=
+
+# The cluster name should be unique within the resource group.
+CLUSTER_NAME=avere-cluster
+# Administrative password for the cluster
+ADMIN_PASSWORD=PLACEHOLDER
+
+# Cluster sizing for VM and cache disks.
+INSTANCE_TYPE=Standard_D16s_v3 # or Standard_E32s_v3]
+CACHE_SIZE=1024 # or 4096, 8192
+
+# DEBUG="--debug"
+
+# Do not edit below this line
+NRG_OPT=
+if [ -n "${NETWORK_RESOURCE_GROUP:=}" ]; then
+    NRG_OPT="--network-resource-group ${NETWORK_RESOURCE_GROUP}"
+fi
+IMG_OPT=
+if [ -n "${IMAGE_ID_VALUE:=}" ]; then
+    IMG_OPT="--image-id ${IMAGE_ID_VALUE}"
+fi
+
+SSH_OPT=
+PUBKEY=$(curl -s -f -H Metadata:true "http://169.254.169.254/metadata/instance?api-version=2019-02-01" | jq -r .compute.publicKeys[0].keyData)
+if [[ "${PUBKEY}" != "null" ]]; then
+    KEYFILE=$(mktemp)
+    echo "${PUBKEY}" > ${KEYFILE}
+    SSH_OPT="--ssh-key ${KEYFILE}"
+fi
+
+vfxt.py --cloud-type azure  --from-environment \
+--resource-group "${RESOURCE_GROUP}" $NRG_OPT \
+--location "${LOCATION}" --azure-network "${NETWORK}" --azure-subnet "${SUBNET}" \
+--create \
+--cluster-name "${CLUSTER_NAME}" --admin-password "${ADMIN_PASSWORD}" \
+--instance-type "${INSTANCE_TYPE}" --node-cache-size "${CACHE_SIZE}" \
+--azure-role "${AVERE_CLUSTER_ROLE}"  \
+--no-corefiler $IMG_OPT \
+$SSH_OPT \
+--log ~/vfxt.log ${DEBUG:=}

@@ -533,10 +533,12 @@ class Service(ServiceBase):
                             if subscription_account:
                                 self.subscription_id = subscription_account.subscription_id
                                 self.tenant_id = subscription_account.tenant_id
+                            else:
+                                raise vFXTConfigurationException("Unable to determine subscription ID, ensure the resource group is correct ({})", self.resource_group)
                         else:
                             newconn = SubscriptionClient(cli_credential)
                         if connection_type != "blobstorage":
-                            newconn = connection_types[connection_type]['cls'](cli_credential, self.subscription_id, api_version=connection_types[connection_type]['api_version'], proxy_policy=proxy_policy)
+                            newconn = connection_types[connection_type]['cls'](cli_credential, subscription_id=self.subscription_id, api_version=connection_types[connection_type]['api_version'], proxy_policy=proxy_policy)
                         break
                     except Exception as e:
                         if log.isEnabledFor(logging.DEBUG):
@@ -2378,7 +2380,9 @@ class Service(ServiceBase):
             for address in generator:
                 if address in used:
                     continue
-                check = conn.virtual_networks.check_ip_address_availability(self.network_resource_group, network.name, address)
+                check = conn.virtual_networks.check_ip_address_availability(resource_group_name=self.network_resource_group, 
+                                                                            virtual_network_name=network.name,
+                                                                            ip_address=address)
                 if not check.available:
                     # mark a range as used from this address to the address *before* the next available address as reported
                     used.update(Cidr.expand_address_range(address, Cidr.to_address(Cidr.from_address(check.available_ip_addresses[0])-1)))

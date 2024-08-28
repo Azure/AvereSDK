@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -exu
+
+# Resource groups
+# At a minimum specify the resource group.  If the network resources live in a
+# different group, specify the network resource group.
+RESOURCE_GROUP=
+#NETWORK_RESOURCE_GROUP=
+
+# eastus, etc.  To list:
+# az account list-locations --query '[].name' --output tsv
+LOCATION=
+
+# Your VNET and Subnet names.
+NETWORK=
+SUBNET=
+
+# The cluster IP address (the Avere management IP or an IP of a VM)
+CLUSTER_ADDRESS=
+# Administrative password for the cluster
+ADMIN_PASSWORD=PLACEHOLDER
+
+# DEBUG="--debug"
+
+# Do not edit below this line
+NRG_OPT=
+if [ -n "${NETWORK_RESOURCE_GROUP:=}" ]; then
+    NRG_OPT="--network-resource-group ${NETWORK_RESOURCE_GROUP}"
+fi
+
+vfxt.py --cloud-type azure  --from-environment \
+--resource-group "${RESOURCE_GROUP}" $NRG_OPT \
+--location "${LOCATION}" --azure-network "${NETWORK}" --azure-subnet "${SUBNET}" \
+--destroy \
+--management-address "${CLUSTER_ADDRESS}" --admin-password "${ADMIN_PASSWORD}" \
+--log ~/vfxt.log ${DEBUG:=}

@@ -1,0 +1,34 @@
+
+Please log in to the Azure service and choose the active subscription using the following commands:
+    az login --use-device-code
+    az account set --subscription <subscription UUID>
+
+Make sure you are the subscription owner when logged in with the above command.  This is required
+for the following commands.
+
+You must create a role for the Avere cluster to use.  Edit /avere-cluster.json adding in the
+subscription UUID. Then run:
+    az role definition create --role-definition /tmp/cluster.json
+
+Please accept the terms of the Avere image before creating a cluster:
+    az vm image accept-terms --urn microsoft-avere:vfxt:avere-vfxt-node:latest
+
+You can use the following provided example scripts to deploy a vFXT cluster.
+Please edit them for the specific environment configuration.
+    /create-cloudbacked-cluster
+    /create-onprembacked-cluster
+    /create-minimal-cluster
+To destroy a cluster:
+    /destroy-cluster
+
+
+Here is an example using the vFXT helper utility that is run by the above scripts:
+
+    vfxt.py --cloud-type azure  --from-environment \
+    --resource-group <> --network-resource-group <if different from resource group> \
+    --location eastus --azure-network <> --azure-subnet <> \
+    --create \
+    --cluster-name <> --admin-password <> \
+    --instance-type [Standard_D16s_v3 | Standard_E32s_v3] \
+    --azure-role avere-cluster  --cluster-range <> \
+    [ --storage-resource-group <if different> --storage-account <>  | --no-corefiler | --nfs-mount <> ]

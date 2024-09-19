@@ -88,10 +88,10 @@ update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 mkdir -p /examples
 REPO=Azure/AvereSDK
 BRANCH=main
-curl -L -o /examples/add-nodes https://raw.githubusercontent.com/${REPO}/${BRANCH}/examples/add-nodes
-curl -L -o /examples/avere-cluster.json https://raw.githubusercontent.com/${REPO}/${BRANCH}/examples/avere-cluster.json
-curl -L -o /examples/create-cloudbacked-cluster https://raw.githubusercontent.com/${REPO}/${BRANCH}/examples/create-cloudbacked-cluster
-curl -L -o /examples/create-minimal-cluster https://raw.githubusercontent.com/${REPO}/${BRANCH}/examples/create-minimal-cluster
-curl -L -o /examples/destroy-cluster https://raw.githubusercontent.com/${REPO}/${BRANCH}/examples/destroy-cluster
-curl -L -o /examples/VFXT_README https://raw.githubusercontent.com/${REPO}/${BRANCH}/examples/VFXT_README
+curl -L -o /examples/add-nodes https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/examples/add-nodes
+curl -L -o /examples/avere-cluster.json https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/examples/avere-cluster.json
+curl -L -o /examples/create-cloudbacked-cluster https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/examples/create-cloudbacked-cluster
+curl -L -o /examples/create-minimal-cluster https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/examples/create-minimal-cluster
+curl -L -o /examples/destroy-cluster https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/examples/destroy-cluster
+curl -L -o /examples/VFXT_README https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/examples/VFXT_README
 printf "\nCheck out /examples/VFXT_README for help on using this Avere Controller virtual machine\n\n" > /etc/update-motd.d/99-vfxt

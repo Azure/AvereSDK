@@ -89,15 +89,15 @@ mkdir -p /armscripts
 mkdir -p /opt/avere
 REPO=Azure/AvereSDK
 BRANCH=main
-curl -L -o /armscripts/add-nodes https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/add-nodes
-curl -L -o /armscripts/avere-cluster.json https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/avere-cluster.json
-curl -L -o /armscripts/create-cloudbacked-cluster https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/create-cloudbacked-cluster
-curl -L -o /armscripts/create-minimal-cluster https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/create-minimal-cluster
-curl -L -o /armscripts/destroy-cluster https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/destroy-cluster
-curl -L -o /armscripts/VFXT_README https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/VFXT_README
-curl -L -o /usr/local/bin/averecmd.py https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/averecmd.py
-curl -L -o /opt/avere/installvfxt.sh https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/installvfxt.sh
-curl -L -o /opt/avere/enablecloudtrace.sh https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/enablecloudtrace.sh
+curl -f -L -o /armscripts/add-nodes https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/add-nodes
+curl -f -L -o /armscripts/avere-cluster.json https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/avere-cluster.json
+curl -f -L -o /armscripts/create-cloudbacked-cluster https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/create-cloudbacked-cluster
+curl -f -L -o /armscripts/create-minimal-cluster https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/create-minimal-cluster
+curl -f -L -o /armscripts/destroy-cluster https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/destroy-cluster
+curl -f -L -o /armscripts/VFXT_README https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/VFXT_README
+curl -f -L -o /usr/local/bin/averecmd.py https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/averecmd.py
+curl -f -L -o /opt/avere/installvfxt.sh https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/installvfxt.sh
+curl -f -L -o /opt/avere/enablecloudtrace.sh https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/enablecloudtrace.sh
 
 printf "\nCheck out /armscripts/VFXT_README for help on using this Avere Controller virtual machine\n\n" > /etc/update-motd.d/99-vfxt
 

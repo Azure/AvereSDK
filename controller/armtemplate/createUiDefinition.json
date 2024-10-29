@@ -1,0 +1,297 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+    "handler": "Microsoft.Compute.MultiVm",
+    "version": "0.1.2-preview",
+    "parameters": {
+      "basics": [
+        {
+          "name": "prereqs",
+          "type": "Microsoft.Common.TextBlock",
+          "visible": true,
+          "options": {
+            "text": "Before creating a VM, you must create a new subscription for the Avere vFXT project, configure subscription ownership, check quotas and request an increase if needed, and accept terms for using the Avere vFXT software.",
+            "link": {
+              "label": "Read 'Avere vFXT for Azure - deployment overview' for detailed instructions",
+              "uri": "https://docs.microsoft.com/azure/avere-vfxt/avere-vfxt-deploy-overview"
+            }
+          }
+        },
+        {
+          "name": "controllerName",
+          "type": "Microsoft.Common.TextBox",
+          "label": "Cluster controller name",
+          "toolTip": "A unique name for the controller VM used to create and manage the Avere vFXT cluster.",
+          "constraints": {
+            "required": true,
+            "regex": "^[a-z]([-a-z0-9]*[a-z0-9]){0,31}$",
+            "validationMessage": "Only lowercase alphanumeric characters are allowed, and the value must be 1-32 characters long."
+          },
+          "visible": true
+        },
+        {
+          "name": "controllerAdminUsername",
+          "type": "Microsoft.Compute.UserNameTextBox",
+          "label": "Controller username",
+          "toolTip": "Administrative login name for the cluster controller.",
+          "osPlatform": "Linux",
+          "constraints": {
+            "required": true,
+            "regex": "^[a-z][-a-z0-9]*$"
+          }
+        },
+        {
+          "name": "controllerSSHKeyData",
+          "type": "Microsoft.Compute.CredentialsCombo",
+          "label": {
+            "authenticationType": "Authentication type",
+            "password": "Password",
+            "confirmPassword": "Confirm password",
+            "sshPublicKey": "SSH public key"
+          },
+          "toolTip": "Administrative SSH public key for the cluster controller.",
+          "constraints": {
+            "required": true,
+            "customPasswordRegex": "^(?=.*[A-Za-z])(?=.*\\d).{12,}$",
+            "customValidationMessage": "The password must contain at least 12 characters, with at least 1 letter and 1 number."
+          },
+          "options": {
+            "hideConfirmation": false,
+            "hidePassword": false
+          },
+          "osPlatform": "Linux"
+        }
+      ],
+      "steps": [
+        {
+          "name": "AvereVFXTConfiguration",
+          "label": "Avere vFXT configuration",
+          "subLabel": {
+            "preValidation": "Configure the Avere vFXT",
+            "postValidation": "Done"
+          },
+          "bladeTitle": "Avere vFXT configuration",
+          "elements": [
+            {
+              "name": "avereNodeCount",
+              "type": "Microsoft.Common.DropDown",
+              "label": "Avere vFXT cluster node count",
+              "defaultValue": "3 nodes",
+              "toolTip": "Number of cluster nodes to create (between 3 and 12)",
+              "constraints": {
+                "allowedValues": [
+                  {
+                    "label": "3 nodes",
+                    "value": 3
+                  },
+                  {
+                    "label": "4 nodes",
+                    "value": 4
+                  },
+                  {
+                    "label": "5 nodes",
+                    "value": 5
+                  },
+                  {
+                    "label": "6 nodes",
+                    "value": 6
+                  },
+                  {
+                    "label": "7 nodes",
+                    "value": 7
+                  },
+                  {
+                    "label": "8 nodes",
+                    "value": 8
+                  },
+                  {
+                    "label": "9 nodes",
+                    "value": 9
+                  },
+                  {
+                    "label": "10 nodes",
+                    "value": 10
+                  },
+                  {
+                    "label": "11 nodes",
+                    "value": 11
+                  },
+                  {
+                    "label": "12 nodes",
+                    "value": 12
+                  }
+                ],
+                "required": true
+              },
+              "visible": true
+            },
+            {
+              "name": "adminPassword",
+              "type": "Microsoft.Common.PasswordBox",
+              "label": {
+                "password": "Cluster administration password",
+                "confirmPassword": "Confirm password"
+              },
+              "toolTip": "The password used with the username 'admin' to configure the Avere vFXT cluster.",
+              "constraints": {
+                "required": true
+              },
+              "options": {
+                "hideConfirmation": false
+              },
+              "visible": true
+            },
+            {
+              "name": "avereClusterName",
+              "type": "Microsoft.Common.TextBox",
+              "label": "Avere vFXT cluster name",
+              "toolTip": "The cluster name should be unique within the resource group.",
+              "constraints": {
+                "required": true,
+                "regex": "^[a-z]([-a-z0-9]*[a-z0-9]){0,127}$",
+                "validationMessage": "cluster name must be < 128 > 1 and match this regular expression: ^[a-z]([-a-z0-9]*[a-z0-9])?$"
+              },
+              "visible": true
+            },
+            {
+              "name": "avereInstanceType",
+              "type": "Microsoft.Compute.SizeSelector",
+              "label": "Size",
+              "toolTip": "The VM instance type to use for the Avere vFXT cluster nodes.",
+              "recommendedSizes": [
+                "Standard_E32s_v3"
+              ],
+              "constraints": {
+                "allowedSizes": [
+                  "Standard_E32s_v3"
+                ]
+              },
+              "options": {
+                "hideDiskTypeFilter": true
+              },
+              "osPlatform": "Linux",
+              "imageReference": {
+                "publisher": "microsoft-avere",
+                "offer": "vfxt",
+                "sku": "avere-vfxt-controller"
+              },
+              "count": "[steps('AvereVFXTConfiguration').avereNodeCount]",
+              "visible": true
+            },
+            {
+              "name": "avereCacheSizeGB",
+              "type": "Microsoft.Common.DropDown",
+              "label": "Cache size per node",
+              "defaultValue": "1 TB",
+              "toolTip": "The attached disk cache size to use on each cluster node. The cluster's total cache size is the sum of all of the node caches.",
+              "constraints": {
+                "allowedValues": [
+                  {
+                    "label": "1 TB",
+                    "value": 1024
+                  },
+                  {
+                    "label": "4 TB",
+                    "value": 4096
+                  }
+                ],
+                "required": true
+              },
+              "visible": true
+            },
+            {
+              "name": "virtualNetwork",
+              "type": "Microsoft.Network.VirtualNetworkCombo",
+              "label": {
+                "virtualNetwork": "Virtual network",
+                "subnets": "Subnet"
+              },
+              "toolTip": {
+                "virtualNetwork": "Create or select the Avere vFXT cluster's virtual network. If you create a new vnet, the cluster controller will be assigned a public IP address for access.",
+                "subnets": "Subnet for the virtual network"
+              },
+              "defaultValue": {
+                "name": "VirtualNetwork",
+                "addressPrefixSize": "/16"
+              },
+              "constraints": {
+                "minAddressPrefixSize": "/32"
+              },
+              "subnets": {
+                "subnet1": {
+                  "label": "Subnet",
+                  "defaultValue": {
+                    "name": "Subnet-1",
+                    "addressPrefixSize": "/24"
+                  },
+                  "constraints": {
+                    "minAddressPrefixSize": "/28",
+                    "minAddressCount": 12,
+                    "requireContiguousAddresses": true
+                  }
+                }
+              }
+            },
+            {
+              "name": "useAvereBackedStorageAccount",
+              "type": "Microsoft.Common.DropDown",
+              "label": "Create and use blob storage",
+              "defaultValue": "true",
+              "toolTip": "Choose 'true' to automatically create a storage account and a new blob container as the cluster's backend storage. If false, you must attach storage after creating the cluster.",
+              "constraints": {
+                "allowedValues": [
+                  {
+                    "label": "true",
+                    "value": "true"
+                  },
+                  {
+                    "label": "false",
+                    "value": "false"
+                  }
+                ],
+                "required": true
+              },
+              "visible": true
+            },
+            {
+              "name": "avereBackedStorageAccountName",
+              "type": "Microsoft.Common.TextBox",
+              "label": "(New) Storage account",
+              "toolTip": "A unique storage account name to create and use with the cluster blob storage. (Not needed if 'Create and use blob storage' is set to false.)",
+              "constraints": {
+                "required": true,
+                "regex": "^[a-z0-9]{3,24}$",
+                "validationMessage": "The field can contain only lowercase letters and numbers. Name must be between 3 and 24 characters."
+              },
+              "visible": "[contains(steps('AvereVFXTConfiguration').useAvereBackedStorageAccount, 'true')]"
+            }
+          ]
+        }
+      ],
+      "outputs": {
+        "location": "[location()]",
+        "controllerName": "[basics('controllerName')]",
+        "controllerAdminUsername": "[basics('controllerAdminUsername')]",
+        "controllerAuthenticationType": "[basics('controllerSSHKeyData').authenticationType]",
+        "controllerPassword": "[basics('controllerSSHKeyData').password]",
+        "controllerSSHKeyData": "[basics('controllerSSHKeyData').sshPublicKey]",
+        "avereCreateClusterRoleId": "4f8fab4f-1852-4a58-a46a-8eaf358af14a",
+
+        "avereNodeCount": "[steps('AvereVFXTConfiguration').avereNodeCount]",
+        "adminPassword": "[steps('AvereVFXTConfiguration').adminPassword]",
+        "avereClusterRole": "Avere Operator",
+        "avereClusterName": "[steps('AvereVFXTConfiguration').avereClusterName]",
+        "avereInstanceType": "[steps('AvereVFXTConfiguration').avereInstanceType]",
+        "avereCacheSizeGB": "[steps('AvereVFXTConfiguration').avereCacheSizeGB]",
+        "createVirtualNetwork": "[contains(steps('AvereVFXTConfiguration').virtualNetwork.newOrExisting, 'new')]",
+        "virtualNetworkResourceGroup": "[steps('AvereVFXTConfiguration').virtualNetwork.resourceGroup]",
+        "virtualNetworkName": "[steps('AvereVFXTConfiguration').virtualNetwork.name]",
+        "virtualNetworkSubnetName": "[steps('AvereVFXTConfiguration').virtualNetwork.subnets.subnet1.name]",
+        "vnetAddressSpacePrefix": "[first(steps('AvereVFXTConfiguration').virtualNetwork.addressPrefixes)]",
+        "subnetAddressRangePrefix": "[steps('AvereVFXTConfiguration').virtualNetwork.subnets.subnet1.addressPrefix]",
+        "useAvereBackedStorageAccount": "[contains(steps('AvereVFXTConfiguration').useAvereBackedStorageAccount, 'true')]",
+        "avereBackedStorageAccountName": "[coalesce(steps('AvereVFXTConfiguration').avereBackedStorageAccountName, 'nostorage')]",
+
+        "rbacRoleAssignmentUniqueId": "[guid()]"
+      }
+    }
+  }

@@ -1,0 +1,4 @@
+1. Package the createUIDefinition.json and mainTemplate.json into a zip file named marketplace.zip.
+2. The offer-id is vfxt-template
+3. The Offer and Plan is:  Home > Marketplace offers > Avere vFXT for Azure - ARM Template > Plan overview > Avere vFXT ARM Deployment (https://partner.microsoft.com/en-us/dashboard/commercial-marketplace/offers/221d543a-3ef8-4c1f-8159-d58841f8fd32/plans/2118022800000058462/technicalconfiguration)
+

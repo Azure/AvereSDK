@@ -85,13 +85,26 @@ echo "Update alternatives"
 update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 
 
-mkdir -p /examples
+mkdir -p /armscripts
+mkdir -p /opt/avere
 REPO=Azure/AvereSDK
 BRANCH=main
-curl -L -o /examples/add-nodes https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/examples/add-nodes
-curl -L -o /examples/avere-cluster.json https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/examples/avere-cluster.json
-curl -L -o /examples/create-cloudbacked-cluster https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/examples/create-cloudbacked-cluster
-curl -L -o /examples/create-minimal-cluster https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/examples/create-minimal-cluster
-curl -L -o /examples/destroy-cluster https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/examples/destroy-cluster
-curl -L -o /examples/VFXT_README https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/examples/VFXT_README
-printf "\nCheck out /examples/VFXT_README for help on using this Avere Controller virtual machine\n\n" > /etc/update-motd.d/99-vfxt
+curl -L -o /armscripts/add-nodes https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/add-nodes
+curl -L -o /armscripts/avere-cluster.json https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/avere-cluster.json
+curl -L -o /armscripts/create-cloudbacked-cluster https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/create-cloudbacked-cluster
+curl -L -o /armscripts/create-minimal-cluster https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/create-minimal-cluster
+curl -L -o /armscripts/destroy-cluster https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/destroy-cluster
+curl -L -o /armscripts/VFXT_README https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/VFXT_README
+curl -L -o /usr/local/bin/averecmd.py https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/averecmd.py
+curl -L -o /opt/avere/installvfxt.sh https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/installvfxt.sh
+curl -L -o /opt/avere/enablecloudtrace.sh https://raw.githubusercontent.com/${REPO}/${BRANCH}/controller/armscripts/enablecloudtrace.sh
+
+printf "\nCheck out /armscripts/VFXT_README for help on using this Avere Controller virtual machine\n\n" > /etc/update-motd.d/99-vfxt
+
+chmod 755 /armscripts/add-nodes
+chmod 755 /armscripts/create-cloudbacked-cluster
+chmod 755 /armscripts/create-minimal-cluster
+chmod 755 /armscripts/destroy-cluster
+chmod 755 /usr/local/bin/averecmd.py
+chmod 755 /opt/avere/installvfxt.sh
+chmod 755 /opt/avere/enablecloudtrace.sh

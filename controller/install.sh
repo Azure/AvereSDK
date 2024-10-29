@@ -5,7 +5,7 @@ set -ex
 export DEBIAN_FRONTEND=noninteractive
 
 AZCLI_VERSION=2.65.0
-TERRAFORM_VERSION=1.9.4
+TERRAFORM_VERSION=1.9.8
 AVERE_TERRAFORM_PROVIDER_VERSION=1.3.3
 
 echo "Sleeping for 2 minutes to allow the VM to settle"
